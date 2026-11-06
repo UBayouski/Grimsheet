@@ -730,8 +730,33 @@ export const mutatedDocumentArbitrary: fc.Arbitrary<unknown> = fc
 // JSON values, strings, deep nesting (Property 4 to 6)
 // ---------------------------------------------------------------------------
 
-/** Any JSON-compatible value. */
-export const jsonValueArbitrary: fc.Arbitrary<unknown> = fc.jsonValue({ maxDepth: 6 });
+/**
+ * Maps every -0 to 0. JSON cannot represent -0 (`JSON.stringify(-0)` is "0"), so a JSON-compatible
+ * value must not hold one. Builds new arrays and objects; the input is not changed.
+ */
+function withoutNegativeZero(value: unknown): unknown {
+  if (typeof value === 'number') return Object.is(value, -0) ? 0 : value;
+  if (Array.isArray(value)) return (value as unknown[]).map(withoutNegativeZero);
+  if (typeof value === 'object' && value !== null) {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      // defineProperty keeps keys such as "__proto__" as own properties, as JSON.parse does.
+      Object.defineProperty(out, key, {
+        value: withoutNegativeZero((value as Record<string, unknown>)[key]),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    }
+    return out;
+  }
+  return value;
+}
+
+/** Any JSON-compatible value, never holding -0 (see `withoutNegativeZero`). */
+export const jsonValueArbitrary: fc.Arbitrary<unknown> = fc
+  .jsonValue({ maxDepth: 6 })
+  .map(withoutNegativeZero);
 
 const REPEAT_CHARS = ['{', '[', 'x', ' ', '"', '9', '\\', '\u0000'];
 

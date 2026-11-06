@@ -40,6 +40,17 @@
 .grid-table {
   border-collapse: collapse;
   table-layout: fixed;
+  /* An explicit width is what makes table-layout: fixed apply. Keep it equal to the sum of the <col>
+     widths set in render.ts: 3rem row headers + 12 * 2.5rem cells. */
+  width: 33rem;
+}
+
+.grid-table col.col-row-header {
+  width: 3rem;
+}
+
+.grid-table col.col-cell {
+  width: 2.5rem;
 }
 
 .grid-table th,

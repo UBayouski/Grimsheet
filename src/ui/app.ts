@@ -70,6 +70,8 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   let state: AppState = createInitialState(env, store.load());
   let destroyed = false;
   view.update(viewOf(state, env));
+  // Startup effects (focus the grid) were dropped before; run them so play starts with the grid focused.
+  runEffect({ type: 'focus', target: 'grid' });
 
   function runEffect(effect: Effect): void {
     try {
@@ -147,6 +149,10 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     if (result === undefined) return;
     if (result.preventDefault) e.preventDefault();
     command(result.command);
+    // Game keys work from the body (design: focus management), but focus belongs on the grid during play.
+    if (doc.activeElement === null || doc.activeElement === doc.body) {
+      runEffect({ type: 'focus', target: 'grid' });
+    }
   });
 
   const onClick = guarded<MouseEvent>((e) => {

@@ -2,7 +2,16 @@
 // It imports only node:fs and the three layer barrels. It uses no clock and no source of randomness.
 import { readFileSync } from 'node:fs';
 import { formatValue, parseAddress } from '../engine/index';
-import { applyAction, cellRawText, cellValue, createRandom, seedOf, startRun } from '../game/index';
+import {
+  applyAction,
+  cellName,
+  cellRawText,
+  cellValue,
+  createRandom,
+  isCellLocked,
+  seedOf,
+  startRun,
+} from '../game/index';
 import type { Action, ActionResult, Direction, RunState } from '../game/index';
 import { loadLevelText } from '../model/index';
 import type { Level } from '../model/index';
@@ -343,6 +352,38 @@ export function walkableCount(state: RunState): number {
     }
   }
   return count;
+}
+
+export interface LockReport {
+  /** Map_Area cells (rows 1 to 12) that are not locked. */
+  readonly openMapCells: string[];
+  /** Non-empty cells in column A of rows 14 to 20 (the panel labels) that are not locked. */
+  readonly openLabelCells: string[];
+  /** The other non-empty cells that are not locked: the Cell_Name, or the Address when there is none. */
+  readonly openCells: string[];
+}
+
+/**
+ * The lock policy of the levels (Decision 7): every map cell and every panel label is locked, and the
+ * only open cells are the level's Editable_Cells. Read through the public API for all 240 cells.
+ * Empty cells outside the map are ignored, because they hold nothing to protect.
+ */
+export function lockReport(state: RunState): LockReport {
+  const openMapCells: string[] = [];
+  const openLabelCells: string[] = [];
+  const openCells: string[] = [];
+  ADDRESSES.forEach((address, index) => {
+    const row = Math.floor(index / 12) + 1;
+    const locked = isCellLocked(state, address) === true;
+    if (row <= 12) {
+      if (!locked) openMapCells.push(address);
+      return;
+    }
+    if (locked || (cellRawText(state, address) ?? '') === '') return;
+    if (address.startsWith('A') && row >= 14) openLabelCells.push(address);
+    else openCells.push(cellName(state, address) ?? address);
+  });
+  return { openMapCells, openLabelCells, openCells };
 }
 
 /** Manhattan distance between two Addresses. Throws on a bad Address. */

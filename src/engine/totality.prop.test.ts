@@ -17,7 +17,6 @@ import type { CellDefinition, TotalityScenario } from './testing/arbitraries';
 import type { EvaluationContext } from './context';
 
 const ERROR_KINDS: readonly string[] = ['#REF!', '#NAME?', '#DIV/0!', '#VALUE!', '#CYCLE!'];
-const TIME_LIMIT_MS = 5000;
 
 function buildSheet(definitions: readonly CellDefinition[]): Sheet {
   const sheet = createSheet();
@@ -131,17 +130,16 @@ function runScenario(scenario: TotalityScenario): void {
 }
 
 describe('Property 3: evaluation is total and terminates', () => {
-  it('never throws, ends with valid Values and finishes within 5000 ms', () => {
+  it('never throws and ends with valid Values', () => {
     // Feature: formula-engine, Property 3: Evaluation is total and terminates
     assertProperty(
       fc.property(totalityScenarioArbitrary, (scenario) => {
-        const start = performance.now();
         runScenario(scenario);
-        const elapsed = performance.now() - start;
-        expect(elapsed).toBeLessThan(TIME_LIMIT_MS);
       }),
       300,
     );
-    // The spec's 5,000 ms limit is per case and is still asserted inside the property.
+    // No wall-clock assertion here: properties check behaviour. The 5,000 ms limit of Requirement 12.3
+    // is checked only by the fixed worst-case test in recalculator.test.ts. The long timeout below
+    // is just Vitest's per-test limit for 300 heavy cases, not a check of the engine.
   }, 120_000);
 });

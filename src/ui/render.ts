@@ -156,6 +156,15 @@ export function createView(root: HTMLElement): View {
   table.setAttribute('aria-label', STRINGS.gridLabel);
   table.setAttribute('tabindex', '0');
 
+  // Fixed column widths live in the stylesheet (the view never sets a style attribute). The stylesheet
+  // also gives the table an explicit width, so table-layout: fixed applies and a long cell text is
+  // clipped instead of widening its column.
+  const colgroup = make(doc, 'colgroup');
+  colgroup.append(make(doc, 'col', 'col-row-header'));
+  for (let col = 1; col <= COLUMNS; col++) {
+    colgroup.append(make(doc, 'col', 'col-cell'));
+  }
+
   const thead = make(doc, 'thead');
   const headRow = make(doc, 'tr');
   headRow.append(make(doc, 'th', 'corner'));
@@ -202,7 +211,7 @@ export function createView(root: HTMLElement): View {
     }
     tbody.append(tr);
   }
-  table.append(thead, tbody);
+  table.append(colgroup, thead, tbody);
 
   const banner = make(doc, 'div', 'end-banner', 'end-banner');
   banner.setAttribute('role', 'alert');
