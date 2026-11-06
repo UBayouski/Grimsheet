@@ -12,6 +12,25 @@
         "chatSessionId": "sess_3bbe63ae-239a-4a19-aa0b-66df54bfb04c",
         "timestamp": 1793934176255
       }
+    ],
+    "4.4 [Batch 7] Create `evaluate-cell.ts` with tests": [
+      {
+        "executionId": "b02d9bcf-9dd6-4f99-b84a-933d3859d75e",
+        "chatSessionId": "sess_82763630-1740-4783-854e-199bebf5736a",
+        "timestamp": 1793934711412
+      },
+      {
+        "executionId": "b02d9bcf-9dd6-4f99-b84a-933d3859d75e",
+        "chatSessionId": "sess_82763630-1740-4783-854e-199bebf5736a",
+        "timestamp": 1793934805835
+      }
+    ],
+    "4. Graph, sheet, recalculation and per-monster evaluation": [
+      {
+        "executionId": "b02d9bcf-9dd6-4f99-b84a-933d3859d75e",
+        "chatSessionId": "sess_82763630-1740-4783-854e-199bebf5736a",
+        "timestamp": 1793934805993
+      }
     ]
   }
 }

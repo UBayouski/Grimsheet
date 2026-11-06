@@ -212,3 +212,42 @@ What changed because of it (time saved, bug caught, decision made):
   - The task ran one at a time in the main checkout, not in a separate worktree.
   - I approved each change in the diff view, instead of reviewing a plan and merging a branch afterwards.
   - Kiro committed nothing, so there are no per-step commits and no separate author in the history. This entry is the record of what Kiro did.
+
+## 2026-11-05 — formula-engine task 4.4 (evaluate-cell, per-monster evaluation) run in the IDE
+
+Surface: IDE
+
+Features: spec
+
+What I asked for: Run task 4.4 of the formula-engine spec, `evaluate-cell.ts` with tests, from the spec panel with Start task, with Autopilot off.
+
+What Kiro did:
+- Created `src/engine/evaluate-cell.ts` and `src/engine/evaluate-cell.test.ts`. The exports are `EvaluateCellResult`, `evaluateCell`, `listCycleCells`, `ErrorDescription`, `DescribeErrorResult` and `describeError`.
+- `evaluateCell` checks in the designed order. It returns `cell-not-found` first. A Cell that is not a Rule_Cell, or a Rule_Cell on a cycle, returns its stored Value with `source: 'stored'` and never reads the context. Only a Rule_Cell off a cycle validates the context, and a bad one gives `invalid-context` with the field name. It then evaluates with the Self_Address, reads stored Values, and stores nothing.
+- `listCycleCells` returns cycle Cell addresses in reading order with no duplicates. `describeError` returns the kind, cause and origin of an error Value, or `null` for a Cell that is not an error.
+- The tests cover:
+  - `cell-not-found` before the context check, for an address and for a name.
+  - A Rule_Cell evaluated with a Self_Address.
+  - `#REF!` for an absent or out-of-sheet Self_Address.
+  - Stored Values returned without touching the context, using a context that throws if read.
+  - An empty Cell returning `""`.
+  - Nothing stored.
+  - A Rule_Cell that references a Rule_Cell seeing `#VALUE!`.
+  - An erroring formula returned as an Error_Value with `ok: true`.
+  - `stale` after an unrecalculated edit.
+  - Cycle list ordering and the empty list.
+  - `describeError` for an error, a non-error and a missing Cell.
+- Result: 16 test files, 340 tests passing (17 of them new), typecheck and lint clean.
+
+What changed because of it (time saved, bug caught, decision made):
+- Choices beyond the design, open to review:
+  - An exception thrown while evaluating a formula becomes a `#VALUE!` Error_Value with the cause "internal error", so `evaluateCell` never throws.
+  - A broken lookup, or any exception outside evaluation, is reported as `cell-not-found`.
+  - A Cell with no parsed formula is treated like a non-Rule_Cell and returns its stored Value.
+  - A reference to a Cell that has no record first fell back to the evaluated Cell's own stored Value. On review this was changed (see below).
+  - Cell names are matched case-insensitively, by upper-casing the name.
+  - `stale` copies the sheet's dirty flag, so it is true for every Cell after any unrecalculated edit, not only for the Cells that edit affects.
+- Orchestration: the task was dispatched to a sub-agent. Its first lookup used the short task id `4.4`, which the task tool did not recognize. The id had to be the full title string.
+- Follow-up on the missing-record fallback: every Sheet from `createSheet` has exactly 240 Cell records, and the evaluator only asks for in-sheet points (it returns `#REF!` itself for anything else), so the path cannot run through the public API. It can only run if the sheet state is corrupted. I replaced the fallback with a `#REF!` whose cause names the missing Address (for example `refers to B1, which has no cell record`), marked in the code as defensive. A new test deletes the B1 record from the sheet state and checks that `=B1+ROW(SELF)` gives `#REF!` with `B1` in the cause. The old fallback would have returned a different error there.
+- I re-ran `npm test` and `npm run check` myself after that change: 16 test files, 341 tests passing, typecheck and lint clean. The 340 count above is the sub-agent's earlier report.
+- As with task 4.3, Kiro committed nothing, so this entry is the record of what Kiro did.

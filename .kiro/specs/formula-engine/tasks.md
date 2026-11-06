@@ -125,7 +125,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including the extended `evaluator.test.ts`; `npm run check` passes
     - _Requirements: 8.9, 8.11, 9.5, 9.6, 9.7, 9.8, 9.9, 9.10, 9.11, 9.12, 9.13, 9.14, 9.15, 9.17, 9.18, 9.19, 9.23, 9.24, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 13.3, 13.9_
 
-- [ ] 4. Graph, sheet, recalculation and per-monster evaluation
+- [x] 4. Graph, sheet, recalculation and per-monster evaluation
   - [x] 4.1 [Batch 4] Create `graph.ts` with tests
     - Files: create `src/engine/graph.ts`, `src/engine/graph.test.ts`
     - Export `DependencyGraph`, `GraphCell`, `extractDependencies`, `buildGraph` (takes `GraphCell[]`, a name resolver and the hero index), `findCycleCells` (iterative Tarjan: two or more members, or one member with a self-edge), `topologicalOrder` (Kahn over the condensation, smallest reading index first, members of a cycle emitted together)
@@ -149,7 +149,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `recalculator.test.ts`; `npm run check` passes
     - _Requirements: 1.8, 1.9, 8.1, 8.3, 8.4, 8.13, 8.14, 8.15, 8.17, 10.12, 11.2, 11.3, 11.4, 11.9, 11.10, 11.11, 12.2, 13.1, 13.2, 13.3, 13.4, 13.9_
 
-  - [ ] 4.4 [Batch 7] Create `evaluate-cell.ts` with tests
+  - [x] 4.4 [Batch 7] Create `evaluate-cell.ts` with tests
     - Files: create `src/engine/evaluate-cell.ts`, `src/engine/evaluate-cell.test.ts`
     - Export `EvaluateCellResult`, `evaluateCell` (check order: Cell exists, then Rule_Cell off a cycle needs a valid context, then evaluate with Self_Address reading stored Values, store nothing), `listCycleCells` (reading order, no duplicates), `ErrorDescription`, `DescribeErrorResult`, `describeError`
     - Tests: `cell-not-found` before the context check; Rule_Cell evaluated with Self_Address; absent or out-of-sheet Self_Address gives `#REF!`; non-Rule_Cell and cycle Rule_Cell return stored Values without reading the context; empty Cell returns `""`; nothing stored; Rule_Cell referencing a Rule_Cell sees `#VALUE!`; erroring formula returns the Error_Value; `stale`; cycle list ordering and empty list; `describeError` for an error, a non-error and a missing Cell
