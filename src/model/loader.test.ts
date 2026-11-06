@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadLevel, loadLevelText, quote } from './loader';
+import { checkCells, createErrorCollector, loadLevel, loadLevelText, quote } from './loader';
 import type { LoadError, LoadErrorCode, LoadResult } from './types';
 
 const random = (): number => 0.5;
@@ -427,5 +427,258 @@ describe('loadLevelText', () => {
     for (const doc of docs) {
       expect(loadLevelText(JSON.stringify(doc), random)).toEqual(loadLevel(JSON.parse(JSON.stringify(doc)) as unknown, random));
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Requirement 5: cell specs, layout and labels
+// ---------------------------------------------------------------------------
+
+function withCells(cells: unknown[]): Record<string, unknown> {
+  return { ...baseDoc(), cells };
+}
+
+function cellErrors(cells: unknown[]): readonly LoadError[] {
+  return errorsOf(loadLevel(withCells(cells), random));
+}
+
+/** A label cell in column A with a rule cell beside it, in the rules panel. */
+const LABEL = { address: 'A14', raw: 'Damage' };
+
+describe('loadLevel: Requirement 5 addresses and raw text', () => {
+  it('refuses a malformed address and one outside the sheet (criterion 1)', () => {
+    for (const address of ['', 'M1', 'A21', 'A0', '1A', 'AA1', 'A 1']) {
+      const errors = cellErrors([{ address, raw: 'x' }]);
+      const hit = errors.find((e) => e.code === 'bad-address');
+      expect(hit?.path).toBe('cells[0].address');
+      expect(hit?.message).toContain('columns A to L and rows 1 to 20');
+    }
+  });
+
+  it('refuses row 13 with its own message (criterion 2)', () => {
+    const errors = cellErrors([{ address: 'C13', raw: 'x' }]);
+    const hit = errors.find((e) => e.code === 'reserved-row');
+    expect(hit?.path).toBe('cells[0].address');
+    expect(hit?.message).toContain('row 13');
+    expect(hit?.message).toContain('reserved');
+    expect(errors.map((e) => e.code)).not.toContain('bad-address');
+  });
+
+  it('refuses a duplicate address, even when only the case differs (criterion 3)', () => {
+    const errors = cellErrors([
+      { address: 'B3', raw: 'x' },
+      { address: 'b3', raw: 'y' },
+    ]);
+    const hit = errors.find((e) => e.code === 'duplicate-address');
+    expect(hit?.path).toBe('cells[1].address');
+    expect(hit?.message).toContain('B3');
+    expect(hit?.message).toContain('cells[0]');
+    expect(errors.filter((e) => e.code === 'duplicate-address')).toHaveLength(1);
+  });
+
+  it('accepts lower-case addresses and the corners of the sheet', () => {
+    const codes = cellErrors([
+      { address: 'a1', raw: 'x' },
+      { address: 'L12', raw: 'x' },
+      { address: 'A20', raw: 'x' },
+    ]).map((e) => e.code);
+    expect(codes).not.toContain('bad-address');
+    expect(codes).not.toContain('reserved-row');
+    expect(codes).not.toContain('duplicate-address');
+  });
+
+  it('accepts raw of 500 characters and refuses 501 (criterion 4)', () => {
+    const ok = cellErrors([{ address: 'A1', raw: 'x'.repeat(500) }]).map((e) => e.code);
+    expect(ok).not.toContain('bad-raw');
+    const errors = cellErrors([{ address: 'A1', raw: 'x'.repeat(501) }]);
+    const hit = errors.find((e) => e.code === 'bad-raw');
+    expect(hit?.path).toBe('cells[0].raw');
+    expect(hit?.message).toContain('500');
+  });
+
+  it('keeps a long formula from reaching the parser', () => {
+    const errors = cellErrors([{ address: 'A1', raw: '=' + '1+'.repeat(300) + '1' }]);
+    expect(errors.map((e) => e.code)).toEqual(['bad-raw']);
+  });
+
+  it('reports a formula parse error with the engine text and the address (criterion 5)', () => {
+    const errors = cellErrors([{ address: 'c5', raw: '=1+' }]);
+    const hit = errors.find((e) => e.code === 'formula-parse');
+    expect(hit?.path).toBe('cells[0].raw');
+    expect(hit?.message).toMatch(/Col \d+: .+\./);
+    expect(hit?.message).toContain('C5');
+  });
+
+  it('accepts a valid formula and plain text', () => {
+    const codes = cellErrors([
+      { address: 'A1', raw: '=1+2' },
+      { address: 'B1', raw: 'hello' },
+      { address: 'C1', raw: '' },
+    ]).map((e) => e.code);
+    expect(codes).not.toContain('formula-parse');
+    expect(codes).not.toContain('bad-raw');
+  });
+});
+
+describe('loadLevel: Requirement 5 locked flag', () => {
+  it('reports a non-boolean locked once, as wrong-type (criterion 6)', () => {
+    const errors = cellErrors([{ address: 'A1', raw: 'x', locked: 'yes' }]);
+    const hits = errors.filter((e) => e.path === 'cells[0].locked');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.code).toBe('wrong-type');
+  });
+
+  it('accepts an omitted locked flag (criterion 7)', () => {
+    const codes = cellErrors([{ address: 'A1', raw: 'x' }]).map((e) => e.code);
+    expect(codes).not.toContain('wrong-type');
+    expect(codes).not.toContain('missing-field');
+  });
+});
+
+describe('loadLevel: Requirement 5 names', () => {
+  const failures: [string, string][] = [
+    ['1abc', 'letters, digits and underscores'],
+    ['has space', 'letters, digits and underscores'],
+    ['hero', 'reserved'],
+    ['Self', 'reserved'],
+    ['sum', 'function name'],
+    ['toward', 'function name'],
+    ['B9', 'cell address'],
+    ['z12', 'cell address'],
+  ];
+
+  it.each(failures)('refuses the name %s and says why (criterion 8)', (name, reason) => {
+    const errors = cellErrors([{ address: 'B3', raw: 'x', name }]);
+    const hit = errors.find((e) => e.code === 'bad-name');
+    expect(hit?.path).toBe('cells[0].name');
+    expect(hit?.message).toContain(reason);
+    expect(hit?.message).toContain(JSON.stringify(name));
+  });
+
+  it('names all four failed checks with different messages', () => {
+    const messages = ['1abc', 'HERO', 'SUM', 'B9'].map(
+      (name) => cellErrors([{ address: 'B3', raw: 'x', name }]).find((e) => e.code === 'bad-name')?.message,
+    );
+    expect(new Set(messages).size).toBe(4);
+  });
+
+  it('refuses a duplicate name under case-insensitive comparison (criterion 9)', () => {
+    const errors = cellErrors([
+      { address: 'B3', raw: 'x', name: 'Door' },
+      { address: 'C3', raw: 'y', name: 'DOOR' },
+    ]);
+    const hit = errors.find((e) => e.code === 'duplicate-name');
+    expect(hit?.path).toBe('cells[1].name');
+    expect(hit?.message).toContain('DOOR');
+    expect(hit?.message).toContain('B3');
+  });
+
+  it('keeps a name when the raw of the same cell failed', () => {
+    const doc = withCells([
+      { address: 'B3', raw: '=1+', name: 'Door' },
+      { address: 'C3', raw: 'y', name: 'door' },
+    ]);
+    const errors = errorsOf(loadLevel(doc, random));
+    expect(errors.map((e) => e.code)).toContain('formula-parse');
+    const dup = errors.find((e) => e.code === 'duplicate-name');
+    expect(dup?.path).toBe('cells[1].name');
+    expect(dup?.message).toContain('B3');
+  });
+
+  it('accepts a name in the map area without a label (criterion 13)', () => {
+    const codes = cellErrors([{ address: 'B3', raw: '.', name: 'Floor_Cell' }]).map((e) => e.code);
+    expect(codes).not.toContain('missing-label');
+    expect(codes).not.toContain('bad-name');
+  });
+});
+
+describe('loadLevel: Requirement 5 panel labels', () => {
+  it('accepts a named panel cell with a text label (criterion 11)', () => {
+    const codes = cellErrors([LABEL, { address: 'B14', raw: '3', name: 'DMG' }]).map((e) => e.code);
+    expect(codes).not.toContain('missing-label');
+    expect(codes).not.toContain('label-is-named');
+  });
+
+  it('refuses a missing or empty left cell', () => {
+    for (const cells of [
+      [{ address: 'B14', raw: '3', name: 'DMG' }],
+      [{ address: 'A14', raw: '' }, { address: 'B14', raw: '3', name: 'DMG' }],
+    ]) {
+      const hit = cellErrors(cells).find((e) => e.code === 'missing-label');
+      expect(hit?.path).toBe('cells[' + (cells.length - 1) + '].name');
+      expect(hit?.message).toContain('DMG');
+      expect(hit?.message).toContain('A14');
+    }
+  });
+
+  it('refuses a left cell that holds a formula', () => {
+    const hit = cellErrors([
+      { address: 'A14', raw: '=1' },
+      { address: 'B14', raw: '3', name: 'DMG' },
+    ]).find((e) => e.code === 'missing-label');
+    expect(hit?.path).toBe('cells[1].name');
+    expect(hit?.message).toContain('A14');
+  });
+
+  it('says column A has no label cell', () => {
+    const hit = cellErrors([{ address: 'A15', raw: '3', name: 'DMG' }]).find((e) => e.code === 'missing-label');
+    expect(hit?.path).toBe('cells[0].name');
+    expect(hit?.message).toContain('column A');
+    expect(hit?.message).toContain('no label');
+  });
+
+  it('refuses a label cell that is itself named (criterion 12)', () => {
+    const errors = cellErrors([
+      { address: 'A14', raw: 'Damage', name: 'LBL' },
+      { address: 'B14', raw: '3', name: 'DMG' },
+    ]);
+    const hit = errors.find((e) => e.code === 'label-is-named');
+    expect(hit?.path).toBe('cells[0].name');
+    expect(hit?.message).toContain('label');
+  });
+
+  it('checks the label with the effective raw of the left cell, row by row', () => {
+    const codes = cellErrors([
+      { address: 'A16', raw: 'Label' },
+      { address: 'B16', raw: '1', name: 'ONE' },
+      { address: 'A17', raw: 'Label' },
+      { address: 'C17', raw: '1', name: 'TWO' },
+    ]).map((e) => e.code);
+    expect(codes.filter((c) => c === 'missing-label')).toHaveLength(1);
+  });
+});
+
+describe('loadLevel: Requirement 5 raw is stored as written', () => {
+  it('keeps raw text exactly, with no trimming or case folding (criterion 10)', () => {
+    const errors = createErrorCollector();
+    const raws = ['  padded  ', '=sum(1,2)', '= 1 +   2', 'Mixed Case'];
+    const doc = withCells(raws.map((raw, i) => ({ address: `${'ABCD'.charAt(i)}1`, raw, name: `n${i}` })));
+    const info = checkCells(doc, errors);
+    expect(info.effective.get('A1')).toBe('  padded  ');
+    expect(info.effective.get('B1')).toBe('=sum(1,2)');
+    expect(info.effective.get('C1')).toBe('= 1 +   2');
+    expect(info.effective.get('D1')).toBe('Mixed Case');
+  });
+
+  it('stores addresses and names in upper case', () => {
+    const errors = createErrorCollector();
+    const info = checkCells(withCells([{ address: 'b3', raw: 'x', name: 'door' }]), errors);
+    expect(errors.count).toBe(0);
+    expect(info.names.get('DOOR')).toBe('B3');
+    expect(info.indexByAddress.get('B3')).toBe(0);
+  });
+
+  it('lets a spec raw replace the map character in the effective sheet', () => {
+    const errors = createErrorCollector();
+    const info = checkCells(withCells([{ address: 'B2', raw: 'X' }]), errors);
+    expect(info.effective.get('A1')).toBe('#');
+    expect(info.effective.get('B2')).toBe('X');
+  });
+
+  it('does not change the document', () => {
+    const doc = withCells([{ address: 'b3', raw: ' =1+ ', name: 'door' }, LABEL]);
+    const before = JSON.stringify(doc);
+    loadLevel(doc, random);
+    expect(JSON.stringify(doc)).toBe(before);
   });
 });

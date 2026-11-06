@@ -1,3 +1,5 @@
+import { parseAddress, parseFormula, validateCellName } from '../engine/index';
+import type { NameCheckFailure } from '../engine/index';
 import type { LoadError, LoadErrorCode, LoadResult, RandomSource } from './types';
 
 export const MAX_DEPTH = 100;
@@ -425,6 +427,173 @@ export function checkDocument(doc: unknown, errors: ErrorCollector): void {
   checkUnknown(errors, doc, ROOT_FIELDS, '');
 }
 
+// ---------------------------------------------------------------------------
+// Cell checks (task 3.2)
+// ---------------------------------------------------------------------------
+
+export const MAX_RAW_LENGTH = 500;
+export const RESERVED_ROW = 13;
+export const PANEL_FIRST_ROW = 14;
+
+export interface CellsInfo {
+  /** Effective raw text by upper-case address: map characters first, then spec raws as written. */
+  readonly effective: ReadonlyMap<string, string>;
+  /** Canonical (upper-case) name to the address that holds it. */
+  readonly names: ReadonlyMap<string, string>;
+  /** Address to the index of its Cell_Spec. */
+  readonly indexByAddress: ReadonlyMap<string, number>;
+}
+
+const NAME_FAILURES: Readonly<Record<NameCheckFailure, string>> = {
+  pattern: 'it must start with a letter or underscore and use only letters, digits and underscores',
+  reserved: 'it is a reserved name',
+  function: 'it is a function name',
+  'address-like': 'it looks like a cell address',
+};
+
+/**
+ * Checks Cell_Specs against the sheet layout. Reads the document only.
+ * Entries that failed their shape check are skipped; they already have an error.
+ */
+export function checkCells(doc: unknown, errors: ErrorCollector): CellsInfo {
+  const effective = new Map<string, string>();
+  const names = new Map<string, string>();
+  const indexByAddress = new Map<string, number>();
+  const info: CellsInfo = { effective, names, indexByAddress };
+  if (!isPlainRecord(doc)) return info;
+
+  const map = doc['map'];
+  if (Array.isArray(map)) {
+    const rows = map as unknown[];
+    for (let r = 0; r < Math.min(rows.length, MAP_ROWS); r += 1) {
+      const row = rows[r];
+      if (typeof row !== 'string') continue;
+      const chars = Array.from(row);
+      if (chars.length !== MAP_COLUMNS) continue;
+      for (let c = 0; c < MAP_COLUMNS; c += 1) {
+        effective.set(`${COLUMN_LETTERS.charAt(c)}${r + 1}`, chars[c] ?? '');
+      }
+    }
+  }
+
+  const cells = doc['cells'];
+  if (!Array.isArray(cells)) return info;
+  const list = cells as unknown[];
+  if (list.length > MAX_CELLS) return info;
+
+  const namedIndexes: { index: number; address: string; col: number; row: number; name: string }[] = [];
+
+  for (let i = 0; i < list.length; i += 1) {
+    const entry = list[i];
+    if (!isPlainRecord(entry)) continue;
+    const path = `cells[${i}]`;
+
+    const rawAddress = entry['address'];
+    let address: string | undefined;
+    let col = 0;
+    let row = 0;
+    if (typeof rawAddress === 'string') {
+      const parsed = parseAddress(rawAddress);
+      if (!parsed.ok) {
+        errors.push(
+          `${path}.address`,
+          'bad-address',
+          `Address ${quote(rawAddress)} is malformed or outside columns A to L and rows 1 to 20.`,
+        );
+      } else if (parsed.point.row === RESERVED_ROW) {
+        errors.push(
+          `${path}.address`,
+          'reserved-row',
+          `Address ${parsed.canonical} is in row 13, which is reserved between the map and the rules panel.`,
+        );
+      } else {
+        const earlier = indexByAddress.get(parsed.canonical);
+        if (earlier !== undefined) {
+          errors.push(
+            `${path}.address`,
+            'duplicate-address',
+            `Address ${parsed.canonical} is already used by cells[${earlier}].`,
+          );
+        } else {
+          address = parsed.canonical;
+          col = parsed.point.col;
+          row = parsed.point.row;
+          indexByAddress.set(address, i);
+        }
+      }
+    }
+
+    const raw = entry['raw'];
+    if (typeof raw === 'string') {
+      if (Array.from(raw).length > MAX_RAW_LENGTH) {
+        errors.push(
+          `${path}.raw`,
+          'bad-raw',
+          `raw has ${Array.from(raw).length} characters, but the maximum is ${MAX_RAW_LENGTH}.`,
+        );
+      } else if (raw.startsWith('=')) {
+        const parsed = parseFormula(raw);
+        if (!parsed.ok) {
+          const where = address === undefined ? '' : ` in ${address}`;
+          errors.push(`${path}.raw`, 'formula-parse', `${parsed.error.text}${where}`);
+        }
+      }
+      if (address !== undefined) effective.set(address, raw);
+    }
+
+    const name = entry['name'];
+    if (typeof name === 'string') {
+      const check = validateCellName(name);
+      if (!check.ok) {
+        errors.push(
+          `${path}.name`,
+          'bad-name',
+          `Name ${quote(name)} is not allowed: ${NAME_FAILURES[check.failed]}.`,
+        );
+      } else {
+        const earlier = names.get(check.canonical);
+        if (earlier !== undefined) {
+          errors.push(
+            `${path}.name`,
+            'duplicate-name',
+            `Name ${check.canonical} is already used by ${earlier}.`,
+          );
+        } else if (address !== undefined) {
+          names.set(check.canonical, address);
+          namedIndexes.push({ index: i, address, col, row, name: check.canonical });
+        }
+      }
+    }
+  }
+
+  const namedAddresses = new Set(namedIndexes.map((n) => n.address));
+  for (const n of namedIndexes) {
+    if (n.row < PANEL_FIRST_ROW) continue;
+    const path = `cells[${n.index}].name`;
+    if (n.col === 1) {
+      errors.push(path, 'missing-label', `Name ${n.name} is in column A, which has no label cell.`);
+      continue;
+    }
+    const labelAddress = `${COLUMN_LETTERS.charAt(n.col - 2)}${n.row}`;
+    const label = effective.get(labelAddress) ?? '';
+    if (label === '' || label.startsWith('=')) {
+      errors.push(
+        path,
+        'missing-label',
+        `Name ${n.name} needs a text label in ${labelAddress}, but that cell is ${label === '' ? 'empty' : 'a formula'}.`,
+      );
+    } else if (namedAddresses.has(labelAddress)) {
+      const labelIndex = indexByAddress.get(labelAddress) ?? n.index;
+      errors.push(
+        `cells[${labelIndex}].name`,
+        'label-is-named',
+        `${labelAddress} is the label of ${n.name}, so it cannot be a named rule cell.`,
+      );
+    }
+  }
+  return info;
+}
+
 /**
  * Validates a Level_Document. Never throws and never mutates the input.
  * Later tasks extend this with cell, entity and build stages.
@@ -438,6 +607,7 @@ export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
     }
     const errors = createErrorCollector();
     checkDocument(doc, errors);
+    checkCells(doc, errors);
     if (errors.count > 0) return { ok: false, errors: errors.finish() };
     return {
       ok: false,
