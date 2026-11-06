@@ -627,3 +627,11 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: the module scan's string stripping would mis-handle a regex literal containing a quote character. No current model file has one.
 - The sheet-model spec is closed with every task in the plan done. The next spec in the brief is `game-rules`.
 - Nothing was committed. The working tree holds the four edited model files, `testing/arbitraries.test.ts`, and the new `index.ts` and `module.test.ts`.
+
+## 2026-11-06 - game-rules Batch 4: property tests (Crew run)
+
+- Task 4.1: `src/game/determinism.prop.test.ts` (Property 1).
+- Task 4.2: `src/game/undo.prop.test.ts` (Properties 2 and 3).
+- Task 4.3: `src/game/invariants.prop.test.ts` (Properties 4 to 7).
+- Task 4 verification: `npm run verify` passes with 40 test files and 804 tests, typecheck and lint clean. The three property files pass twice with different FC_SEED values (3 files, 7 tests each).
+- Note: `turn.ts` and `turn.test.ts` were committed inside the step 2 commit (74c0125) by an earlier step, not in this task.

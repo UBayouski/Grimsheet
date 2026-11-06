@@ -92,15 +92,15 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.5, 5.5, 10.1, 10.2, 10.3, 10.4, 11.1_
 
-- [ ] 4. Property-based testing
-  - [ ] 4.1 [Batch 4] [Crew] Write the determinism property test
+- [x] 4. Property-based testing
+  - [x] 4.1 [Batch 4] [Crew] Write the determinism property test
     - Files: create `src/game/determinism.prop.test.ts`
     - **Property 1: Determinism**
     - One `assertProperty` of at least 100 runs (planned 200), comment `// Feature: game-rules, Property 1: Determinism`; run `startRun` and the Action list twice and compare each `ActionResult` (`ok` values, Refusal reasons and messages, Damage_Logs) and each Run_State with `stateDifference`; failure output includes the shrunk counterexample and the seed
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 12.1, 12.2, 2.1, 2.2, 11.2**
 
-  - [ ] 4.2 [Batch 4] [Crew] Write the undo property tests
+  - [x] 4.2 [Batch 4] [Crew] Write the undo property tests
     - Files: create `src/game/undo.prop.test.ts`
     - **Property 2: Accepted undo is the exact inverse of an accepted Turn_Action**
     - **Property 3: Undo refusals**
@@ -108,7 +108,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 13.1, 13.2, 13.3, 10.1, 10.2, 10.3, 6.6, 1.5, 4.4**
 
-  - [ ] 4.3 [Batch 4] [Crew] Write the invariant property tests
+  - [x] 4.3 [Batch 4] [Crew] Write the invariant property tests
     - Files: create `src/game/invariants.prop.test.ts`
     - **Property 4: Ink bounds**
     - **Property 5: HP accounting and the Damage_Log**
