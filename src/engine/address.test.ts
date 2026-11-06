@@ -57,3 +57,25 @@ describe('readingIndex', () => {
     expect(SHEET_CELL_COUNT).toBe(240);
   });
 });
+
+describe('formatAddress with input from plain JavaScript', () => {
+  it('returns an empty string instead of throwing', () => {
+    for (const bad of [undefined, null, 5, 'B9', {}, { col: 'B', row: 9 }, { col: 2, row: 'x' }, { col: 2, row: 1.5 }]) {
+      expect(formatAddress(bad as never)).toBe('');
+    }
+  });
+
+  it('refuses an object whose property getter throws', () => {
+    const hostile = {
+      get col(): never {
+        throw new Error('boom');
+      },
+      row: 1,
+    };
+    expect(formatAddress(hostile as never)).toBe('');
+  });
+
+  it('still formats a normal point', () => {
+    expect(formatAddress({ col: 2, row: 9 })).toBe('B9');
+  });
+});

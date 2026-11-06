@@ -26,6 +26,15 @@ export type Node =
 
 /** True when the AST contains a name node SELF or a call to TOWARD, anywhere (including untaken IF branches). */
 export function isRuleAst(root: Node): boolean {
+  // Never throws: a malformed tree from plain JavaScript is refused with `false`.
+  try {
+    return containsRuleNode(root);
+  } catch {
+    return false;
+  }
+}
+
+function containsRuleNode(root: Node): boolean {
   const stack: Node[] = [root];
   while (stack.length > 0) {
     const node = stack.pop() as Node;

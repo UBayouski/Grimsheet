@@ -249,3 +249,26 @@ describe('topologicalOrder', () => {
     expect(position('B1')).toBeLessThan(position('A1'));
   });
 });
+
+describe('HERO exemption needs a valid argument count', () => {
+  it('keeps the HERO edge when ROW, COL or DIST has the wrong number of arguments', () => {
+    expect(deps('=ROW(HERO, 1)')).toEqual([at('C3')]);
+    expect(deps('=ROW(HERO, HERO)')).toEqual([at('C3')]);
+    expect(deps('=COL(HERO, 1)')).toEqual([at('C3')]);
+    expect(deps('=ROW()')).toEqual([]);
+    expect(deps('=DIST(HERO)')).toEqual([at('C3')]);
+    expect(deps('=DIST(HERO, A1, A2)')).toEqual([at('A1'), at('A2'), at('C3')]);
+  });
+
+  it('still exempts HERO when the argument count is valid', () => {
+    expect(deps('=ROW(HERO)')).toEqual([]);
+    expect(deps('=COL(HERO)')).toEqual([]);
+    expect(deps('=DIST(HERO, HERO)')).toEqual([]);
+  });
+
+  it('forms a cycle through a wrong-count call on the hero Cell', () => {
+    const hero = at('C3');
+    expect(findCycleCells(buildGraph([cell('C3', '=ROW(HERO, 1)')], resolveName, hero))).toEqual([hero]);
+    expect(findCycleCells(buildGraph([cell('C3', '=DIST(HERO)')], resolveName, hero))).toEqual([hero]);
+  });
+});

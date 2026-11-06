@@ -1,5 +1,6 @@
 import { isInSheet, readingIndex, SHEET_CELL_COUNT } from './address';
 import type { CellNode, Node } from './ast';
+import { arityAccepts, lookupFunction } from './functions';
 
 export interface DependencyGraph {
   /** edges[i] = sorted, de-duplicated indices of the Cells that Cell i depends on. */
@@ -72,7 +73,13 @@ export function extractDependencies(
         stack.push({ node: node.left, positionOnly: false }, { node: node.right, positionOnly: false });
         break;
       case 'call': {
-        const exempt = POSITION_ONLY_FUNCTIONS.includes(node.name);
+        // The exemption holds only for a valid argument count. With a wrong count the evaluator
+        // reads every argument's Value, so HERO keeps its normal edge.
+        const spec = lookupFunction(node.name);
+        const exempt =
+          POSITION_ONLY_FUNCTIONS.includes(node.name) &&
+          spec !== undefined &&
+          arityAccepts(spec, node.args.length);
         for (const arg of node.args) stack.push({ node: arg, positionOnly: exempt });
         break;
       }

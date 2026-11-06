@@ -52,7 +52,7 @@ src/engine/
   functions.ts          function table: arity, argument modes, implementations
   evaluator.ts          evaluateAst over an EvalEnv
   context.ts            EvaluationContext type and validateContext
-  graph.ts              extractDependencies, findCycles (Tarjan), topologicalOrder (Kahn)
+  graph.ts              extractDependencies, buildGraph, findCycleCells and circularComponents (Tarjan), topologicalOrder (Kahn)
   sheet.ts              Sheet store, createSheet, setRawText, setCellName, reads
   recalculator.ts       recalculate
   evaluate-cell.ts      evaluateCell (Per_Monster_Evaluation), listCycleCells, describeError
@@ -172,7 +172,7 @@ export const SHEET_CELL_COUNT = 240;
 export function isInSheet(p: GridPoint): boolean;
 /** Strict Address parser for API input (Requirement 1, criteria 2 to 4). Returns the canonical form. */
 export function parseAddress(text: string): { ok: true; point: GridPoint; canonical: string } | { ok: false };
-export function formatAddress(p: GridPoint): string; // "B9"; col beyond 26 is not formattable
+export function formatAddress(p: GridPoint): string; // "B9"; col beyond 26, or any malformed input, gives "" and never throws
 /** Reading-order index 0..239: (row - 1) * 12 + (col - 1). Only defined for in-sheet points. */
 export function readingIndex(p: GridPoint): number;
 
@@ -244,7 +244,7 @@ export interface CellNode {
 }
 
 /** True when the AST contains a name node SELF or a call to TOWARD, anywhere (including untaken IF branches). */
-export function isRuleAst(root: Node): boolean;
+export function isRuleAst(root: Node): boolean; // never throws; a malformed tree from plain JavaScript gives false
 ```
 
 Rule_Cell detection runs on the AST. `SELF` or `TOWARD` inside a string literal is only a string node, so it never triggers it. The result is cached on the Cell when the Raw_Text is set.
@@ -268,6 +268,7 @@ export interface ParseError { readonly column: number; readonly message: string;
 
 /** Strict form (Requirement 2): either all tokens or one error and no tokens. */
 export function tokenize(rawText: string): { ok: true; tokens: readonly Token[] } | { ok: false; error: ParseError };
+// Never throws. A non-string from plain JavaScript gives `Col 1: formula could not be read.`, as in parseFormula.
 /** Internal form used by the parser: the tokens before the first lexical error, plus that error. */
 export function scan(rawText: string): { tokens: readonly Token[]; error: ParseError | null };
 ```
@@ -494,10 +495,30 @@ export function extractDependencies(
   options: { readonly heroIndex: number | undefined; readonly isRule: boolean },
 ): number[];
 
-export function buildGraph(sheet: SheetState, heroIndex: number | undefined): DependencyGraph;
+/** Plain per-Cell input, independent of the Sheet store. */
+export interface GraphCell {
+  readonly index: number; // reading-order index 0..239
+  readonly ast: Node | null; // null for literals and empty Cells
+  readonly isRule: boolean;
+}
+
+/** The result does not depend on the order of `cells`. */
+export function buildGraph(
+  cells: readonly GraphCell[],
+  resolveName: (upper: string) => number | undefined,
+  heroIndex: number | undefined,
+): DependencyGraph;
 
 /** Tarjan's algorithm (iterative). Returns the Cell indices on a circular reference, ascending. */
 export function findCycleCells(graph: DependencyGraph): number[];
+
+/**
+ * The circular strongly connected components from the same Tarjan pass: one ascending list of
+ * Cell indices per component that is a real circular reference (two or more Cells, or a Cell that
+ * depends on itself), ordered by smallest member. The recalculator uses it for the `#CYCLE!` cause
+ * text (`B2 is on a circular reference with C3, D4`), so naming the other members costs no extra graph walk.
+ */
+export function circularComponents(graph: DependencyGraph): number[][];
 
 /** Kahn's algorithm over the condensation; smallest reading-order key among ready components first. */
 export function topologicalOrder(graph: DependencyGraph): number[];
@@ -512,7 +533,7 @@ Edges (Requirement 11, criterion 1, and Requirement 13, criteria 7 and 8):
 
 All edges come from the text of the Formula, so a reference in the branch `IF` does not take still counts. A self-reference is an edge from a Cell to itself.
 
-One extra edge, stated in Requirement 11, criterion 1, is added. A non-Rule_Cell that uses `HERO` in value position (anywhere except as a direct argument of `ROW`, `COL` or `DIST`) gets an edge to the hero's Cell if `heroAddress` is in the Sheet. Without it, `=HERO` would read a Cell that may not be evaluated yet. Requirement 11, criterion 1 now includes this edge (Open Question 18, closed). Known limitation: `ROW(IF(c, HERO, B1))` also gets it.
+One extra edge, stated in Requirement 11, criterion 1, is added. A non-Rule_Cell that uses `HERO` in value position (anywhere except as a direct argument of `ROW`, `COL` or `DIST` called with a valid argument count) gets an edge to the hero's Cell if `heroAddress` is in the Sheet. With a wrong count (`ROW(HERO, 1)`, `DIST(HERO)`) the evaluator reads every argument's Value, so `HERO` keeps its normal edge and a `#CYCLE!` hero Cell still gives `#CYCLE!` (third formula-reviewer review, finding 1). Without it, `=HERO` would read a Cell that may not be evaluated yet. Requirement 11, criterion 1 now includes this edge (Open Question 18, closed). Known limitation: `ROW(IF(c, HERO, B1))` also gets it.
 
 `findCycleCells` marks a component as circular if it has two or more members, or one member with a self-edge. `topologicalOrder` condenses the SCCs. A component is ready when all components it depends on are done. Its key is the smallest reading index among its members. Each step takes the ready component with the smallest key. With at most 240 components, a linear scan for the minimum is enough. Members of a circular component are emitted together in ascending index order. The result is a function of the graph alone.
 

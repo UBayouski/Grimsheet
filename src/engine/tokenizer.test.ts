@@ -184,3 +184,29 @@ describe('scan', () => {
     expect(scan('')).toEqual({ tokens: [{ kind: 'eof', column: 1, text: '' }], error: null });
   });
 });
+
+describe('tokenize with input from plain JavaScript', () => {
+  it('refuses non-strings with a parse error instead of throwing', () => {
+    for (const bad of [undefined, null, 5, {}, [], Symbol('x')]) {
+      const result = tokenize(bad as unknown as string);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.column).toBe(1);
+        expect(result.error.text).toMatch(/^Col 1: .+\.$/);
+      }
+    }
+  });
+
+  it('refuses a string-like object whose length getter throws', () => {
+    const hostile = {
+      get length(): never {
+        throw new Error('boom');
+      },
+    };
+    expect(tokenize(hostile as unknown as string)).toMatchObject({ ok: false });
+  });
+
+  it('still tokenizes a normal string', () => {
+    expect(tokenize('=1+2').ok).toBe(true);
+  });
+});

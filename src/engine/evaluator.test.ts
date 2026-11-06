@@ -537,3 +537,59 @@ describe('error causes name the origin Cell', () => {
     expect(e.cause.startsWith('B9 (NNN')).toBe(true);
   });
 });
+
+describe('error order inside a Range', () => {
+  const err = (kind: '#REF!' | '#DIV/0!' | '#VALUE!', origin: string): CellView => ({
+    empty: false,
+    name: null,
+    value: errorValue(kind, `${origin} failed`, origin),
+  });
+
+  it('the first error in row-major order wins, not column-major', () => {
+    // A1:B2 in row-major order is A1, B1, A2, B2. Column-major would reach A2 before B1.
+    const refAtB1: Record<string, CellView> = { '2,1': err('#REF!', 'B1'), '1,2': err('#DIV/0!', 'A2') };
+    expect(errorOf(run('=SUM(A1:B2)', { cells: refAtB1 })).error).toBe('#REF!');
+    expect(errorOf(run('=MAX(A1:B2)', { cells: refAtB1 })).error).toBe('#REF!');
+    const divAtB1: Record<string, CellView> = { '2,1': err('#DIV/0!', 'B1'), '1,2': err('#REF!', 'A2') };
+    expect(errorOf(run('=SUM(A1:B2)', { cells: divAtB1 })).error).toBe('#DIV/0!');
+  });
+
+  it('a #CYCLE! member beats an earlier ordinary error', () => {
+    const cells: Record<string, CellView> = {
+      '1,1': err('#REF!', 'A1'),
+      '2,2': {
+        empty: false,
+        name: null,
+        value: errorValue('#CYCLE!', 'B2 is on a circular reference', 'B2'),
+      },
+    };
+    expect(errorOf(run('=SUM(A1:B2)', { cells })).error).toBe('#CYCLE!');
+    expect(errorOf(run('=MIN(A1:B2)', { cells })).error).toBe('#CYCLE!');
+  });
+});
+
+describe('a Rule_Cell read through a Range member or a Cell_Name', () => {
+  const options: EnvOptions = {
+    cells: {
+      '2,14': { empty: false, name: 'MOVE_M1', value: ruleValue('=TOWARD(HERO)') },
+      '2,15': { empty: false, name: null, value: numberValue(4) },
+    },
+    names: { MOVE_M1: { col: 2, row: 14 } },
+  };
+
+  it('gives #VALUE! through a Range member, with the rule wording', () => {
+    const result = errorOf(run('=SUM(B14:B15)', options));
+    expect(result.error).toBe('#VALUE!');
+    expect(result.cause).toContain('which is a rule');
+    expect(result.cause).toContain('B14');
+  });
+
+  it('gives #VALUE! through its Cell_Name, with the rule wording', () => {
+    for (const formula of ['=MOVE_M1', '=MOVE_M1+1']) {
+      const result = errorOf(run(formula, options));
+      expect(result.error).toBe('#VALUE!');
+      expect(result.cause).toContain('which is a rule');
+      expect(result.cause).toContain('MOVE_M1');
+    }
+  });
+});

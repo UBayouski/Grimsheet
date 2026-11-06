@@ -371,3 +371,22 @@ describe('#CYCLE! causes name a named origin', () => {
     expect(val(sheet, 'B1')).toMatchObject({ cause: 'B1 is on a circular reference with A1' });
   });
 });
+
+describe('HERO on a cycle, read through a function with the wrong argument count', () => {
+  const heroOnC3 = (): EvaluationContext => ctx({ heroAddress: { col: 3, row: 3 } });
+
+  for (const formula of ['=ROW(HERO, 1)', '=DIST(HERO)']) {
+    it(`${formula} gives #CYCLE! when the hero Cell is on a cycle`, () => {
+      // A1 comes before C3 in reading order, so it is evaluated first unless the HERO edge orders it.
+      const sheet = build({ A1: formula, C3: '=D3', D3: '=C3' });
+      recalculate(sheet, heroOnC3());
+      expect(val(sheet, 'A1')).toMatchObject({ kind: 'error', error: '#CYCLE!' });
+    });
+  }
+
+  it('a valid-count ROW(HERO) is unaffected by the cycle', () => {
+    const sheet = build({ A1: '=ROW(HERO)', C3: '=D3', D3: '=C3' });
+    recalculate(sheet, heroOnC3());
+    expect(val(sheet, 'A1')).toEqual({ kind: 'number', value: 3 });
+  });
+});

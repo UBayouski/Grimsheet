@@ -443,3 +443,38 @@ What changed because of it (time saved, bug caught, decision made):
 - The third review found a new bug in how the `HERO` edge is combined with the arity check. That edge is part of the decision in finding 2, so the new finding 1 is a follow-up to it.
 - Save hook, from the Kiro output log (`Kiro Logs.log` of this window) after my edits: there are no lines with a `[hooks]` tag at all (0 matches across all Kiro logs). The hook lines that exist are `hooks.reload.loaded` entries. They show `read:0, registered:0` until 19:34:16, then `read:2, registered:2` at 19:34:16 and again at 21:28:59, so both hooks were loaded. There is also an early line, `hooks.v2.executionDisabledUntrustedWorkspace` at 14:01:18, from before the hooks were loaded. After the 21:28 reload the log has no entry that says a hook ran, for any of my `str_replace`, `fs_write` or `fs_append` edits. The log only shows `acp.policy-eval.complete` lines for those edits. So the log shows the hooks were registered, and it does not show the `PostFileSave` hook firing. I cannot tell from the log whether it ran silently or did not run.
 - Nothing was committed.
+
+## 2026-11-05 — Final engine round (third formula-reviewer review)
+
+Surface: IDE
+
+Features: agent, spec, pbt
+
+What I asked for: Act on the six findings of the third formula-reviewer review, each code fix with a test that fails on the current code, and then freeze the engine for the jam with no fourth review. All edits through the IDE file-edit tools, nothing committed.
+
+What Kiro did:
+- Findings 1 and 6 (bug and test gap): in `graph.ts` the `HERO` position-only exemption now applies only when `ROW`, `COL` or `DIST` is called with its valid argument count. With a wrong count the evaluator reads every argument's Value, so `HERO` keeps its normal edge. Tests: the graph edges for `=ROW(HERO, 1)`, `=DIST(HERO)` and similar, the valid-count calls that stay exempt, and two recalculation tests where the hero's cell is on a cycle and `=ROW(HERO, 1)` and `=DIST(HERO)` give `#CYCLE!`. The formula sits at A1, before the hero's cell C3 in reading order, so it only gets the right answer if the edge orders it. Requirement 11.1 and the design text now say "valid argument count".
+- Finding 2 (low bug): `tokenize` refuses a non-string or a hostile object with `Col 1: formula could not be read.`, the same text as `parseFormula`. `formatAddress` returns `""` for malformed input, including a non-integer row. `isRuleAst` returns `false` for a malformed tree. None of them throws any more. No return type changed, so `index.test.ts` needed no edit. Tests use `undefined`, `null`, a number, an empty object, a malformed object and an object whose getter throws.
+- Finding 3 (spec drift): the dependency graph section of `design.md` has the real `buildGraph(cells, resolveName, heroIndex)` signature and the `GraphCell` type, and describes `circularComponents` (the circular components from the same Tarjan pass, used for the `#CYCLE!` cause text). The module list names the functions too.
+- Finding 4 (test gap): two different non-cycle errors placed so that row-major and column-major order disagree (`#REF!` at B1 and `#DIV/0!` at A2 in `A1:B2`, and the reverse): the row-major first wins. A `#CYCLE!` member behind an earlier ordinary error gives `#CYCLE!`, for `SUM` and `MIN`.
+- Finding 5 (test gap): a Rule_Cell read through a Range member (`=SUM(B14:B15)`) and through its Cell_Name (`=MOVE_M1`, `=MOVE_M1+1`) gives `#VALUE!`, and the cause contains `which is a rule`. The code already did this, so these two groups of tests (findings 4 and 5) pin existing behaviour and pass on the old code.
+- Counts: `npm run verify` gives 22 test files and 444 tests passing (425 before, so 19 new), with typecheck and lint clean.
+- Old-code check: I built a scratch copy of the project outside the repo, with the four changed source files (`graph.ts`, `tokenizer.ts`, `address.ts`, `ast.ts`) taken from the last commit. 10 tests failed there: the graph and recalculation tests for the wrong argument count, and the `tokenize`, `formatAddress` and `isRuleAst` tests. I deleted the copy. No repo file was swapped.
+
+What changed because of it (time saved, bug caught, decision made):
+- The formula-engine spec is closed after three review rounds. The rounds found 9, then 5, then 6 findings, and each round was smaller in scope. The first round found real defects in totality and in the spec. The second found a name-validation bug and spec gaps, and the third found one ordering bug in the `HERO` edge, a few unguarded helpers, and test gaps. The engine is frozen for the jam, and I did not run a fourth review.
+- The third round's bug came out of the second round's decision. The `HERO` edge was added to the spec in round two, and round three found the case where its exemption and the argument-count check disagree. Known limitation kept in the design: `ROW(IF(c, HERO, B1))` still gets the edge.
+- My tooling was flaky in this round: several scratch-copy attempts printed nothing, and one left a temporary folder that had to be removed. No repo file was lost. I checked the sources, `git status` and the test run afterwards.
+- Nothing was committed.
+
+## 2026-11-05 — BRIEF section 6a "Story and names" added outside Kiro
+
+Surface: none
+
+Features: none
+
+What I asked for: Nothing. No Kiro session.
+
+What Kiro did: Nothing. I drafted `docs/BRIEF.md` section 6a, "Story and names", by hand outside Kiro. It covers the Necronomicell rules panel, the sheet-tab level names, the death and win screen text, and one strings file. Kiro only noted in this log that the section exists.
+
+What changed because of it (time saved, bug caught, decision made): The later specs (grid-ui, levels, skin-and-sound) take their text from section 6a, so it is the single source for names and screen text. It did not change the formula engine.

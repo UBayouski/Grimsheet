@@ -180,7 +180,15 @@ export function scan(rawText: string): { tokens: readonly Token[]; error: ParseE
 export function tokenize(
   rawText: string,
 ): { ok: true; tokens: readonly Token[] } | { ok: false; error: ParseError } {
-  const result = scan(rawText);
-  if (result.error !== null) return { ok: false, error: result.error };
-  return { ok: true, tokens: result.tokens };
+  // Plain-JavaScript callers may pass anything: refuse it, like parseFormula. Never throws.
+  try {
+    if (typeof rawText !== 'string') {
+      return { ok: false, error: makeParseError(1, 'formula could not be read') };
+    }
+    const result = scan(rawText);
+    if (result.error !== null) return { ok: false, error: result.error };
+    return { ok: true, tokens: result.tokens };
+  } catch {
+    return { ok: false, error: makeParseError(1, 'formula could not be read') };
+  }
 }

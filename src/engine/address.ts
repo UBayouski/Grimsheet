@@ -36,8 +36,15 @@ export function parseAddress(
 
 /** "B9". A column beyond 26 cannot be formatted and yields an empty string. */
 export function formatAddress(p: GridPoint): string {
-  if (!Number.isInteger(p.col) || p.col < 1 || p.col > 26) return '';
-  return `${String.fromCharCode(64 + p.col)}${p.row}`;
+  // Never throws: malformed input from plain JavaScript also yields an empty string.
+  try {
+    if (typeof p !== 'object' || p === null) return '';
+    const { col, row } = p;
+    if (!Number.isInteger(col) || col < 1 || col > 26 || !Number.isInteger(row)) return '';
+    return `${String.fromCharCode(64 + col)}${row}`;
+  } catch {
+    return '';
+  }
 }
 
 /** Reading-order index 0..239: (row - 1) * 12 + (col - 1). Only defined for in-sheet points. */

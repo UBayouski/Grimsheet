@@ -48,3 +48,35 @@ describe('MAX_DEPTH', () => {
     expect(MAX_DEPTH).toBe(200);
   });
 });
+
+describe('isRuleAst with input from plain JavaScript', () => {
+  it('refuses malformed input with false instead of throwing', () => {
+    const malformed: unknown[] = [
+      undefined,
+      null,
+      5,
+      'SELF',
+      {},
+      { kind: 'call', name: 'SUM' }, // no args
+      { kind: 'call', name: 'SUM', args: [undefined] },
+      { kind: 'negate' },
+      { kind: 'binary', op: '+', left: undefined, right: null },
+    ];
+    for (const bad of malformed) {
+      expect(isRuleAst(bad as Node)).toBe(false);
+    }
+  });
+
+  it('refuses an object whose property getter throws', () => {
+    const hostile = {
+      get kind(): never {
+        throw new Error('boom');
+      },
+    };
+    expect(isRuleAst(hostile as unknown as Node)).toBe(false);
+  });
+
+  it('still recognizes a real Rule_Cell AST', () => {
+    expect(isRuleAst({ kind: 'name', name: 'SELF' })).toBe(true);
+  });
+});
