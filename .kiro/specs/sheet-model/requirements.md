@@ -126,7 +126,7 @@ Property-based testing with fast-check is enabled on exactly three requirements:
 11. WHERE a Cell_Spec in the Rules_Panel has a `name`, THE Loader SHALL require the Cell directly to its left (same row, previous column) to have an Effective_Raw that is non-empty and does not start with `=`, and SHALL otherwise return a Load_Error at path `cells[i].name` that names the Cell_Name and the Address where the label is expected, or, for a name in column A, states that column A has no label cell.
 12. IF a Panel_Label Cell has a `name`, THEN THE Loader SHALL return a Load_Error at the path of that `name` stating that a label cell cannot be a named rule cell.
 13. WHERE a Cell_Spec in the Map_Area has a `name`, THE Loader SHALL accept the name without requiring a Panel_Label.
-14. IF, after the first recalculation, the computed Value of the Panel_Label Cell of a named Rules_Panel Cell is a number, a boolean, an error or the empty string, THEN THE Loader SHALL return a Load_Error at path `cells[i].name` that names the Cell_Name, the Address of the label Cell and the Value found.
+14. IF the `raw` of the Panel_Label Cell of a named Rules_Panel Cell is a literal that reads as a number (for example `5` or `1e3`), THEN THE Loader SHALL, after the first recalculation and by checking the computed Value of that Cell, return a Load_Error at path `cells[i].name` that names the Cell_Name, the Address of the label Cell and the Value found. Labels are plain text, so a label whose text starts with `=` is never evaluated and is reported under criterion 11.
 
 ### Requirement 6: Sheet Construction
 
