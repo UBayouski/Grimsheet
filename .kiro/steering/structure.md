@@ -22,6 +22,8 @@ Unit and property tests sit next to the source as `*.test.ts` and `*.prop.test.t
 ## Dependency direction
 `ui` -> `game` -> `model` -> `engine`. Lower layers never import from higher ones. Only `src/ui/` touches the DOM,
 `localStorage` or Web Audio.
+A layer may import any lower layer's barrel (`index.ts`), never a deeper path. For example `src/ui/` may import
+`src/game/index.ts`, `src/model/index.ts` and `src/engine/index.ts`, but not `src/engine/names.ts`.
 
 ## Naming
 - Files: `kebab-case.ts`. Types and classes: `PascalCase`. Functions and variables: `camelCase`.
