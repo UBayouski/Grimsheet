@@ -108,6 +108,18 @@ Each error has a look and a game effect, so the spooky layer does a job:
 
 Hovering an error cell names its cause in plain English, such as "B9 refers to M30, which does not exist".
 
+## 6a. Story and names
+
+- Premise: you opened GRIMSHEET.XLS, a workbook found on a dead accountant's floppy disk. Its formulas are alive.
+  The workbook's hidden rules sheet is the **Necronomicell**: the book of formulas that animates every monster.
+- The rules panel (rows 14 to 20) is titled "NECRONOMICELL". Editing it is reading from the forbidden book.
+- Each level is a sheet tab: "Sheet1: The Corridor" through "Sheet5: The Lich".
+- Death screen: the dialog title is "#REF! of the Dead", the body reads "GRIMSHEET.XLS has stopped responding",
+  and the button is Recover.
+- Win screen: "Workbook saved. Your soul was not." on the last level; "Changes saved." on the others.
+- Flavor text is short and dry, in the voice of a cursed office tool: status-bar tips, tooltips and error
+  causes. No long cutscenes. All text lives in one strings file so tone can be tuned in one place.
+
 ## 7. Levels
 
 Five hand-written levels as JSON, each teaching one idea:
