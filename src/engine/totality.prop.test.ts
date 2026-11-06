@@ -142,5 +142,6 @@ describe('Property 3: evaluation is total and terminates', () => {
       }),
       300,
     );
-  });
+    // The spec's 5,000 ms limit is per case and is still asserted inside the property.
+  }, 120_000);
 });

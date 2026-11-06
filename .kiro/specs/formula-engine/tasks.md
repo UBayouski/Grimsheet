@@ -164,21 +164,21 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `arbitraries.test.ts`; `npm run check` passes
     - _Requirements: 5.3, 11.7, 12.4_
 
-  - [ ] 5.2 [Batch 9] Write property test for parse-print-parse stability
+  - [x] 5.2 [Batch 9] Write property test for parse-print-parse stability
     - Files: create `src/engine/print-parse.prop.test.ts`
     - **Property 1: Parse-print-parse is stable**
     - One `fc.assert(fc.property(...))`, 500 runs, `// Feature: formula-engine, Property 1: Parse-print-parse is stable`; asserts the printed text parses, the AST is structurally equal, and the second print is identical; failure output includes the AST, the printed text, the seed and the shrunk counterexample
     - Acceptance: `npm test` passes including `print-parse.prop.test.ts`; `npm run check` passes
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-  - [ ] 5.3 [Batch 9] Write property test for order-independent recalculation
+  - [x] 5.3 [Batch 9] Write property test for order-independent recalculation
     - Files: create `src/engine/recalc-order.prop.test.ts`
     - **Property 2: Recalculation is independent of definition order and edit order**
     - One `fc.assert(fc.property(...))`, 200 runs, comment `// Feature: formula-engine, Property 2: ...`; builds three Sheets (baseline, shuffled definition order, edit-script replay with intermediate recalculations), recalculates with fresh seeded sources, asserts all 240 Values deeply equal, equal `random()` call counts, equal `listCycleCells`, and that Rule_Cells draw nothing
     - Acceptance: `npm test` passes including `recalc-order.prop.test.ts`; `npm run check` passes
     - **Validates: Requirements 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9, 11.10, 11.11**
 
-  - [ ] 5.4 [Batch 9] Write property test for total evaluation
+  - [x] 5.4 [Batch 9] Write property test for total evaluation
     - Files: create `src/engine/totality.prop.test.ts`
     - **Property 3: Evaluation is total and terminates**
     - One `fc.assert(fc.property(...))`, 300 runs, comment `// Feature: formula-engine, Property 3: ...`; covers the `text`, `sheet` and `chain` scenarios; asserts nothing throws, `parseFormula` returns exactly one outcome, an invalid context is refused or all 240 Cells hold a valid Value, every Cell in `listCycleCells` holds `#CYCLE!`, no cause contains `internal error`, error causes are 1 to 200 characters, and each case takes under 5000 ms (`performance.now()`)

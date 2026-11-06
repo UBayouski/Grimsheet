@@ -12,6 +12,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "test": "vitest --run",
+    "test:fast": "vitest --run --exclude \"**/*.prop.test.ts\"",
+    "verify": "npm test && npm run check",
     "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

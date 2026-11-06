@@ -301,6 +301,34 @@ describe('function calls', () => {
     expect(errorOf(run('=TOWARD(B2)')).error).toBe('#REF!');
   });
 
+  describe('RAND with a bad Random_Source', () => {
+    const CAUSE = 'RAND() got an invalid number from the random source';
+    const badSources: Array<[string, () => unknown]> = [
+      [
+        'throws',
+        () => {
+          throw new Error('random source failed');
+        },
+      ],
+      ['returns a non-number', () => '0.5'],
+      ['returns NaN', () => Number.NaN],
+      ['returns Infinity', () => Number.POSITIVE_INFINITY],
+      ['returns a number below 0', () => -0.1],
+      ['returns 1', () => 1],
+      ['returns a number above 1', () => 1.5],
+    ];
+
+    it.each(badSources)('source that %s gives #VALUE!', (_name, random) => {
+      const parsed = parseFormula('=RAND() * 2');
+      if (!parsed.ok) throw new Error('parse failed');
+      const env: EvalEnv = { ...makeEnv(), random: random as () => number };
+      const e = errorOf(evaluateAst(parsed.ast, env));
+      expect(e.error).toBe('#VALUE!');
+      expect(e.cause).toContain(CAUSE);
+      expect(e.cause).not.toMatch(/internal error/i);
+    });
+  });
+
   it('RAND uses the supplied generator', () => {
     expect(run('=RAND()')).toEqual(numberValue(0.5));
   });

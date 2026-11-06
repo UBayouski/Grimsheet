@@ -4,11 +4,11 @@
     {
       "name": "Run tests on save under src/",
       "trigger": "PostFileSave",
-      "description": "Runs npm test (vitest --run) whenever a file under src/ is saved.",
+      "description": "Runs npm run test:fast (vitest --run without the *.prop.test.ts property tests) whenever a file under src/ is saved.",
       "matcher": "(^|[\\\\/])src[\\\\/]",
       "action": {
         "type": "command",
-        "command": "npm test",
+        "command": "npm run test:fast",
         "timeout": 120
       }
     }

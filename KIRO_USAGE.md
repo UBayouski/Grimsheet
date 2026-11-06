@@ -269,3 +269,53 @@ What Kiro did:
 What changed because of it (time saved, bug caught, decision made):
 - Decision: I mapped "before you finish a task" to the `Stop` trigger. The `Stop` hook can only run the check and report. It cannot block the finish.
 - Not verified: the hooks are active from the next session start, so neither has been seen firing. The matcher regex has not been tested against a real save event.
+
+## 2026-11-05 — formula-engine Batch 9 property tests run in Kiro Crew's Task Runner
+
+Surface: Crew
+
+Features: spec, pbt
+
+What I asked for: Run Batch 9 of the formula-engine spec as a Kiro Crew Task Runner task: tasks 5.2, 5.3 and 5.4, the three property tests (parse-print-parse stability, order-independent recalculation, totality of evaluation), all written against the generators in `testing/arbitraries.ts`. The instruction was to write tests only and make no engine edits.
+
+What Kiro did:
+- The run used branch `kirocrew/task/plan_1793935577112043700`. The three tests were written in parallel, with one step commit each. The commit order was 5.4 (`totality.prop.test.ts`), then 5.2 (`print-parse.prop.test.ts`), then 5.3 (`recalc-order.prop.test.ts`).
+- The branch diff against `main` touches only those three new files, 343 lines in total. No engine file changed, as instructed.
+- Properties 1 and 2 pass.
+- Property 3 (totality) fails. fast-check seed `-52737584` shrinks to a sheet where J6 is `=RAND() * G13` and the Random_Source throws. J6 became `#VALUE!` with the cause `J6 internal error: random source failed`. The evaluator called `this.env.random()` in the `RAND` case with no guard, so the exception reached the catch-all in `evaluateAst`. The property forbids any cause containing `internal error`.
+- I merged the branch into `main` to fix the engine there.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: design open question 26 says a Random_Source that breaks its contract makes that `RAND()` call `#VALUE!`. The evaluator never implemented it, and no example test used a bad source. The property test's misbehaving-`random` generator found it.
+- Decision: the test was right and the engine was wrong, so the fix goes in the engine and the test is not changed. The fix is the next entry.
+
+## 2026-11-05 — RAND() guard fix and property-test timeout, in the IDE
+
+Surface: IDE
+
+Features: pbt
+
+What I asked for: Fix the engine, not the test, for the totality failure from Batch 9: implement design open question 26 in the `RAND` case, add example tests for bad Random_Sources, and rerun the property with seed `-52737584` and with fresh seeds. Then, once the remaining timeout was diagnosed, give the totality test a per-test timeout and split the hook test runs.
+
+What Kiro did:
+- `evaluator.ts`: the `RAND` case now calls the Random_Source inside a `try`. If the call throws, or the result is not a finite number in [0, 1), that call gives `#VALUE!` with a plain cause such as `J6 RAND() got an invalid number from the random source`. It never gives the internal-error wording.
+- `evaluator.test.ts`: seven new bad-source example tests. The sources throw, return a non-number, NaN, Infinity, a number below 0, exactly 1, or a number above 1. Each test checks for `#VALUE!` and that the cause does not say "internal error".
+- With the defect fixed, the property no longer stopped early at a counterexample. Its 300 cases then went past Vitest's 5-second default timeout for a single test.
+- The spec's 5,000 ms limit is per case, and the engine meets it. Kiro measured the slowest case at 785 ms. The `long-range-formulas` scenario took almost all the time: 240 cells, each a `SUM` of 1,427 copies of `A1:C4`, at about 660 ms per run, drawn about 20 times in 300 runs.
+- The totality `it()` now has a 120,000 ms timeout, with a comment that the per-case 5,000 ms check is still asserted inside the property.
+- Hooks split:
+  - New npm script `test:fast` runs `vitest --run` excluding `**/*.prop.test.ts`. The `PostFileSave` hook now runs `npm run test:fast`, which takes about 1.4 s for 17 files.
+  - New npm script `verify` runs `npm test` then `npm run check`. The `Stop` hook now runs `npm run verify`, with its timeout raised from 120 s to 300 s.
+  - `npm test` still runs everything.
+- Results:
+  - Seed `-52737584` passes (about 15 s), and three fresh-seed runs pass (12 to 16 s each).
+  - `npm test`: 20 test files, 359 tests passing.
+  - `npm run check` and `npm run verify` are clean.
+  - I ticked task 5.4 in `tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: property-based testing found the unguarded `RAND()` call that the 341 example tests had missed. No example test used a misbehaving Random_Source. The property generator includes one by design.
+- Second finding: the fix uncovered a test-harness limit that the earlier failure had hidden. It was settled with a per-test timeout, not by weakening the property, because the spec limit is per case.
+- Decision: a faster engine was considered and not chosen. Function calls collect every error across every range cell to decide which one wins, and stopping early there would risk changing error precedence. Parsing and graph building alone would still use most of a 5-second budget.
+- Decision: saves run the fast suite, so the save hook stays quick. Finishing runs everything, including the property tests.
+- Not verified: the changed hooks take effect from the next session start, so neither has been seen firing yet.

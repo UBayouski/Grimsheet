@@ -296,8 +296,19 @@ class Evaluation {
         }
         return val(stringFinal(towardOf(self, t)));
       }
-      case 'RAND':
-        return this.numberResult(this.env.random());
+      case 'RAND': {
+        // The Random_Source is untrusted: it may throw or return anything.
+        let r: unknown;
+        try {
+          r = this.env.random();
+        } catch {
+          r = undefined;
+        }
+        if (typeof r !== 'number' || !Number.isFinite(r) || r < 0 || r >= 1) {
+          return val(this.err('#VALUE!', 'RAND() got an invalid number from the random source'));
+        }
+        return this.numberResult(r);
+      }
       default:
         return val(this.err('#NAME?', `calls ${fn}, which is not a function`));
     }
