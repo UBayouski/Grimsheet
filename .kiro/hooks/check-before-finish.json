@@ -7,7 +7,7 @@
       "description": "Runs npm run verify (npm test, including property tests, then npm run check) before the agent finishes a task.",
       "action": {
         "type": "command",
-        "command": "npm run verify",
+        "command": "node scripts/canonical-cwd.mjs npm run verify",
         "timeout": 300
       }
     }

@@ -268,7 +268,12 @@ What Kiro did:
 
 What changed because of it (time saved, bug caught, decision made):
 - Decision: I mapped "before you finish a task" to the `Stop` trigger. The `Stop` hook can only run the check and report. It cannot block the finish.
-- Not verified: the hooks are active from the next session start, so neither has been seen firing. The matcher regex has not been tested against a real save event.
+- Hooks status (updated): both hooks are confirmed running. The IDE shows "Run Command Hook: Full tests, type-check and lint before finishing" when a turn ends, and test-on-save output was attached after a save.
+- Failure found: one run reported 22 failed suites, all with "Cannot read properties of undefined (reading 'config')". It came from the Stop hook, not the save hook: 
+pm test has 22 files and 	est:fast has 19. The cause was the IDE starting hook commands from a lowercase drive path (d:\Projects\...). On Windows, Vitest run from a cwd whose drive letter case differs from the real path loads two copies of itself. --root did not fix it, and from D:\... the run passes.
+- Fix: scripts/canonical-cwd.mjs resets the cwd to its real path, then runs the rest of its arguments. Both hook commands now start with 
+ode scripts/canonical-cwd.mjs.
+- The save hook's src/ matcher was never at fault.
 
 ## 2026-11-05 — formula-engine Batch 9 property tests run in Kiro Crew's Task Runner
 

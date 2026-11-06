@@ -8,7 +8,7 @@
       "matcher": "(^|[\\\\/])src[\\\\/]",
       "action": {
         "type": "command",
-        "command": "npm run test:fast",
+        "command": "node scripts/canonical-cwd.mjs npm run test:fast",
         "timeout": 120
       },
       "enabled": true
