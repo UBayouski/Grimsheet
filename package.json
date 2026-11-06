@@ -11,6 +11,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:play": "vite build --config vite.play.config.ts",
+    "play": "node scripts/play.mjs",
     "check:dist": "node scripts/check-dist.mjs",
     "test": "vitest --run",
     "test:fast": "vitest --run --exclude \"**/*.prop.test.ts\"",

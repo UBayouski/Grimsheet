@@ -933,3 +933,62 @@ What changed because of it (time saved, bug caught, decision made):
 - The deployed game now shows the five real levels. The gap I noted in the hosting entry (the page still showed the stub) is closed.
 - Not verified: the e2e tests do not play the real levels. They use the fixture page, and the real levels are proven only by the replay tests and the build check.
 - Nothing was committed.
+
+## 2026-11-06 — first live playthrough of all five levels
+
+Surface: IDE
+
+Features: mcp
+
+What I asked for: Use the Playwright MCP server to play all five real levels on the live site (https://grimsheet.onrender.com), following each stored solution in `tests/solutions/` step by step: arrow keys for moves, Space for waits, and select-the-cell-then-type for edits. Screenshot each level's start and win. Report won or not, end HP and ink against the solution's expected values, and anything that looked wrong. Fix nothing.
+
+What Kiro did:
+- Setup: the live site loaded with title GRIMSHEET.XLS and all five level tabs (only Sheet1 enabled). `localStorage` was empty; I cleared it and reloaded to start at level 1. Progress persisted across tab switches, and each win enabled the next tab, as expected.
+- Expected end values. The solutions store `minimalInk` but no end HP. I took the expected values from `src/levels/solutions.test.ts` and `level-05.test.ts`: starting HP `[3,3,3,5,6]`, starting ink `[0,2,2,1,2]`, and each edit costs 1 ink. Levels 1 to 4 take no damage, so their expected end HP equals starting HP. Level 5 is designed to take exactly one haunting turn (`level-05.test.ts` asserts the haunting steps have length 1, and the levels requirement sets `startingHp` 6 to cover that one turn), so its expected end HP is 5. Expected end ink is start minus edits.
+- Results per level (start, then end against expected):
+
+| Level | Won | End HP | Expected HP | End ink | Expected ink |
+| --- | --- | --- | --- | --- | --- |
+| 1 The Corridor | yes | 3/3 | 3 | 0/0 | 0 |
+| 2 The Chaser | yes | 3/3 | 3 | 1/2 | 1 |
+| 3 The Locked Crypt | yes | 3/3 | 3 | 0/2 | 0 |
+| 4 The Trap Row | yes | 5/5 | 5 | 0/1 | 0 |
+| 5 The Lich | yes | 5/6 | 5 | 0/2 | 0 |
+
+- Screenshots (ignored, in `.playwright-mcp/`): `live-01-start.png` and `live-01-win.png` through `live-05-start.png` and `live-05-win.png`.
+- All five levels matched their expected HP and ink. The 6 in the HP field for level 5 is the starting HP (`5/6`), not the end value; the end HP is 5, as the solution and tests expect.
+- What looked wrong or notable:
+  - Level 5 behaves exactly as designed. The Lich sheet starts with a `#CYCLE!` (HEX_A and HEX_B) that haunts for 1 HP per turn. The stored solution takes one haunting turn on purpose: after the first edit (B16=0, LICH_HP) the cycle is still live and the haunt takes 1 HP, and the second edit (B19=0, HEX_B) breaks it. Starting HP 6 minus that one haunt gives the expected end HP 5, which the live run matched. No discrepancy.
+  - Win messages match section 6a: levels 1 to 4 show "Changes saved." in the message area (no banner), and level 5 shows "Workbook saved. Your soul was not." The lost-screen banner was never triggered, since no run was lost.
+  - On the level 5 win screen the hero `@` is on K4 with the Lich `M` on J4 next to it, and no `X` glyph is visible under the hero. Winning means the hero reached the exit, so the exit glyph is probably hidden under the entity glyph (the design overlays `.entity-glyph` and hides `.cell-text`). Not a confirmed bug, but the exit is not visible at the win.
+  - The real levels show the full NECRONOMICELL rules panel the stub lacked: row labels (Lich..., Phyl..., Hex...) in column A and locked cells with padlock markers. Every map cell also shows a padlock marker. This is not a bug: Decision 7 of the levels spec locks all 144 map cells (so a player cannot type over a wall or a door for one ink), and the UI draws a padlock on every locked cell. It is a display concern for skin-and-sound, which should show padlocks only in the rules panel, not on the map.
+  - The status bar still runs its fields together with no separators ("HP 5/6 Ink 0/2 Turn 13"), the same reading issue noted in earlier sessions.
+  - One console error on load: a 404 for the favicon, as before.
+  - The site responded immediately (a static host, no cold start).
+
+What changed because of it (time saved, bug caught, decision made):
+- Confirmed on the deployed build that all five levels are completable through the real UI with keyboard and mouse, not only in the headless solver, and that every level ended on its expected HP and ink.
+- Reused the existing `tests/solutions/*.json` as the script and `solutions.test.ts` (and `level-05.test.ts` for the one haunting turn) as the source of expected values, so the playthrough checked the live site against the same numbers the unit tests use.
+- Display note for skin-and-sound: padlocks render on every map cell because all map cells are locked by Decision 7; padlocks should be confined to the rules panel.
+- Not committed.
+
+## 2026-11-06 — headless play command for the playtester app
+
+Surface: IDE
+
+Features: none
+
+What I asked for: A headless play command for automated playtesting, to be driven later by a separate Kiro Crew app. It takes a level id and a JSON action list (the `tests/solutions/*.json` format), plays the level through the real game rules with no DOM, and prints JSON: a per-action report and a final state with a sheet dump. A `--level-info` mode prints a level without playing. It must run with plain `node`, and exit non-zero only for bad input.
+
+What Kiro did:
+- Core module `src/play/headless.ts`, using only the public APIs of `src/levels/index.ts` and `src/game/index.ts` (`LEVELS`, `startRun`, `applyAction`, `cellValue`, `cellRawText`, `isCellLocked`, `cellName`). No DOM, no clock, no `Math.random`. It exports `play(id, actions)`, `levelInfo(id)`, `levelIds()`, `dumpSheet`, the action parsers, and a `PlayInputError` class for bad input. `play` never throws for a refused action: each step reports `accepted`, and a refusal carries its `reason` and `message`. It throws `PlayInputError` only when the level id is unknown or the document will not start. The sheet dump lists every non-empty cell as address, raw text, value, value kind, locked and name.
+- Script `scripts/play.mjs`: a plain-node CLI over the core. It reads actions from a positional JSON argument, `--actions-file <path>`, or stdin, and supports `--level-info` and `--list`. The action list may be a bare array or a whole solution object. It writes JSON to stdout, exits 0 when it ran, and exits 2 with a message on stderr for bad input (unknown level, bad JSON, missing file, no level id).
+- Running with plain node: node cannot run the TypeScript and its JSON imports directly, so a small Vite library build (`vite.play.config.ts`) bundles `headless.ts` and everything it imports into `dist-play/headless.js`, which the script imports. New npm scripts: `build:play` (the bundle) and `play` (runs the script). `dist-play/` is git-ignored. The README documents `npm run build:play` then `node scripts/play.mjs ...`.
+- Tests `src/play/headless.test.ts` (17): each of the five stored solutions replayed through `play` ends `won` with the expected hp and final ink (starting ink minus the edits spent), with no refusal; a blocked move, a locked-cell edit and a no-ink second edit are each reported with their reason and do not throw; the sheet dump, the start and final views, `levelInfo`, `levelIds` and the input validators are covered.
+- I ran the built CLI by hand in every mode: `--list`, `--level-info`, a solution file, stdin, a positional JSON array, and the three bad-input cases (unknown level, bad JSON, no args) all exit 2.
+
+What changed because of it (time saved, bug caught, decision made):
+- Caught in my own test: I first expected the final `ink` to equal the starting ink. The engine reports the final ink after the edits are spent (level 2 ends at 1, levels 3 to 5 end at 0). I fixed the test's expected table to starting-minus-spent, which is what the level and solution tests already assert.
+- Decision: a Vite library bundle, not a `tsc` emit, because the module imports level JSON and the game barrel, and one bundled ESM file is the simplest thing `node` can run with no loader or flag. It is tooling only and never enters the site build or `dist/`.
+- `npm run verify` did not pass cleanly, for a reason outside this task: `src/ui/module.test.ts` asserts the exact set of `src/ui` files, and two untracked files from error-monsters work in progress (`src/ui/error-look.ts` and its test) are present, so that one layout test fails. With those set aside the run is 66 files and 1573 tests passing; my `src/play` tests pass on their own (17). I did not touch `src/ui` except to drop the already-deleted `stub-levels.ts` from a file list in a previous task. I left the error-monsters files alone.
+- Nothing was committed.
