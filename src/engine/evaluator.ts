@@ -2,6 +2,24 @@ import { formatAddress, isInSheet, type GridPoint } from './address';
 import type { BinaryOperator, CellNode, Node } from './ast';
 import { makeError, pickError } from './errors';
 import {
+  absOf,
+  andOf,
+  argModeAt,
+  arityAccepts,
+  colOf,
+  distOf,
+  lookupFunction,
+  maxOf,
+  minOf,
+  modOf,
+  notOf,
+  orOf,
+  rowOf,
+  sumOf,
+  towardOf,
+  type ArgMode,
+} from './functions';
+import {
   booleanValue,
   formatNumber,
   numberValue,
@@ -68,6 +86,15 @@ function cellText(node: CellNode): string {
   return formatAddress({ col: node.col, row: node.row }) || `col ${node.col} row ${node.row}`;
 }
 
+/** Points of a normalized range in row-major order. */
+function rangePoints(from: GridPoint, to: GridPoint): GridPoint[] {
+  const out: GridPoint[] = [];
+  for (let row = from.row; row <= to.row; row++) {
+    for (let col = from.col; col <= to.col; col++) out.push({ col, row });
+  }
+  return out;
+}
+
 class Evaluation {
   private readonly originText: string;
 
@@ -98,13 +125,182 @@ class Evaluation {
       case 'binary':
         return this.evalBinary(node.op, node.left, node.right);
       case 'call':
-        return this.evaluateCall(node.name);
+        return this.evaluateCall(node.name, node.args);
     }
   }
 
-  /** Task 3.3 replaces this stub with the call pipeline. Every call is `#NAME?` for now. */
-  evaluateCall(name: string): Operand {
-    return val(this.err('#NAME?', `calls ${name}, which is not a function`));
+  /**
+   * The call pipeline. Order of checks:
+   * 1. `#CYCLE!` in any evaluated argument, 2. unknown function (`#NAME?`),
+   * 3. wrong argument count (`#VALUE!`), 4. leftmost argument error, 5. type errors.
+   * `IF` is lazy: only the condition and the taken branch are evaluated.
+   */
+  evaluateCall(name: string, args: readonly Node[]): Operand {
+    const spec = lookupFunction(name);
+    if (spec !== undefined && spec.name === 'IF' && args.length === 3) {
+      return this.evalIf(args as readonly [Node, Node, Node]);
+    }
+    const known = spec !== undefined && arityAccepts(spec, args.length);
+    const operands = args.map((a) => this.evaluate(a));
+    const errors: (ErrorValue | undefined)[] = operands.map((op, i) => {
+      const mode: ArgMode | 'scan' =
+        known && spec !== undefined ? (argModeAt(spec, i) ?? 'scan') : 'scan';
+      return this.argError(op, mode);
+    });
+
+    // 1. #CYCLE! anywhere in the arguments wins.
+    const cycles = errors.filter((e): e is ErrorValue => e !== undefined && e.error === '#CYCLE!');
+    const [firstCycle, ...otherCycles] = cycles;
+    if (firstCycle !== undefined) return val(pickError([firstCycle, ...otherCycles]));
+
+    // 2. Unknown function.
+    if (spec === undefined) {
+      return val(this.err('#NAME?', `calls ${name}, which is not a function`));
+    }
+    // 3. Wrong argument count.
+    if (!arityAccepts(spec, args.length)) {
+      return val(
+        this.err('#VALUE!', `calls ${spec.name} with ${args.length} argument(s), which it does not accept`),
+      );
+    }
+    // 4. Leftmost argument error.
+    for (const e of errors) if (e !== undefined) return val(e);
+
+    // 5. Types and result.
+    return this.applyFunction(spec.name, operands);
+  }
+
+  private evalIf(args: readonly [Node, Node, Node]): Operand {
+    const cond = this.deref(this.evaluate(args[0]));
+    if (isError(cond)) return val(cond);
+    if (cond.kind !== 'boolean') {
+      return val(this.err('#VALUE!', 'uses a condition in IF that is not TRUE or FALSE'));
+    }
+    return this.evaluate(cond.value ? args[1] : args[2]);
+  }
+
+  /** The error an argument carries (before any type check), or undefined. */
+  private argError(op: Operand, mode: ArgMode | 'scan'): ErrorValue | undefined {
+    if (mode === 'ref') {
+      if (op.t === 'ref') return undefined;
+      if (op.t === 'val') return op.v.kind === 'error' ? op.v : undefined;
+      return this.deref(op) as ErrorValue; // a range: #REF!
+    }
+    if (op.t === 'range' && (mode === 'rangeOrValue' || mode === 'scan')) {
+      const found: ErrorValue[] = [];
+      for (const point of rangePoints(op.from, op.to)) {
+        const s = this.deref({ t: 'ref', point });
+        if (isError(s)) found.push(s);
+      }
+      const [first, ...rest] = found;
+      return first === undefined ? undefined : pickError([first, ...rest]);
+    }
+    const s = this.deref(op);
+    return isError(s) ? s : undefined;
+  }
+
+  private applyFunction(fn: string, operands: readonly Operand[]): Operand {
+    const nums = (): number[] | ErrorValue => {
+      const out: number[] = [];
+      for (const op of operands) {
+        if (op.t === 'range') {
+          for (const point of rangePoints(op.from, op.to)) {
+            const s = this.deref({ t: 'ref', point });
+            if (s.kind === 'number') out.push(s.value);
+          }
+        } else {
+          const s = this.deref(op);
+          if (s.kind === 'empty') continue;
+          const n = this.toNumber(s);
+          if (typeof n !== 'number') return n;
+          out.push(n);
+        }
+      }
+      return out;
+    };
+    const num = (i: number): number | ErrorValue => {
+      const s = this.deref(operands[i] as Operand);
+      return this.toNumber(s);
+    };
+    const bools = (): boolean[] | ErrorValue => {
+      const out: boolean[] = [];
+      for (const op of operands) {
+        const s = this.deref(op);
+        if (s.kind !== 'boolean') {
+          return this.err('#VALUE!', `uses a value that is not TRUE or FALSE in ${fn}`);
+        }
+        out.push(s.value);
+      }
+      return out;
+    };
+    const point = (i: number): GridPoint | ErrorValue => {
+      const op = operands[i] as Operand;
+      if (op.t === 'ref') return op.point;
+      return this.err('#VALUE!', `uses a value in ${fn} where a cell reference is needed`);
+    };
+
+    switch (fn) {
+      case 'SUM':
+      case 'MIN':
+      case 'MAX': {
+        const xs = nums();
+        if (!Array.isArray(xs)) return val(xs as ErrorValue);
+        if (fn === 'SUM') return this.numberResult(sumOf(xs));
+        const r = fn === 'MIN' ? minOf(xs) : maxOf(xs);
+        if (r === undefined) return val(this.err('#VALUE!', `calls ${fn} with no numbers`));
+        return this.numberResult(r);
+      }
+      case 'ABS': {
+        const x = num(0);
+        return typeof x === 'number' ? this.numberResult(absOf(x)) : val(x);
+      }
+      case 'MOD': {
+        const a = num(0);
+        if (typeof a !== 'number') return val(a);
+        const b = num(1);
+        if (typeof b !== 'number') return val(b);
+        const r = modOf(a, b);
+        if (!r.ok) return val(this.err(r.error, 'divides by zero in MOD'));
+        return this.numberResult(r.value);
+      }
+      case 'AND':
+      case 'OR': {
+        const bs = bools();
+        if (!Array.isArray(bs)) return val(bs as ErrorValue);
+        return val(booleanFinal(fn === 'AND' ? andOf(bs) : orOf(bs)));
+      }
+      case 'NOT': {
+        const bs = bools();
+        if (!Array.isArray(bs)) return val(bs as ErrorValue);
+        return val(booleanFinal(notOf(bs[0] as boolean)));
+      }
+      case 'ROW':
+      case 'COL': {
+        const p = point(0);
+        if ('kind' in p) return val(p);
+        return val(numberFinal(fn === 'ROW' ? rowOf(p) : colOf(p)));
+      }
+      case 'DIST': {
+        const a = point(0);
+        if ('kind' in a) return val(a);
+        const b = point(1);
+        if ('kind' in b) return val(b);
+        return val(numberFinal(distOf(a, b)));
+      }
+      case 'TOWARD': {
+        const t = point(0);
+        if ('kind' in t) return val(t);
+        const self = this.env.self;
+        if (self === undefined || !isInSheet(self)) {
+          return val(this.err('#REF!', 'calls TOWARD, but no monster is being evaluated'));
+        }
+        return val(stringFinal(towardOf(self, t)));
+      }
+      case 'RAND':
+        return this.numberResult(this.env.random());
+      default:
+        return val(this.err('#NAME?', `calls ${fn}, which is not a function`));
+    }
   }
 
   private evalCell(node: CellNode): Operand {
