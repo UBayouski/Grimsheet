@@ -31,6 +31,18 @@
         "chatSessionId": "sess_82763630-1740-4783-854e-199bebf5736a",
         "timestamp": 1793934805993
       }
+    ],
+    "5.1 [Batch 8] Create `testing/arbitraries.ts` with a smoke test": [
+      {
+        "executionId": "57ebad73-4a40-45e0-bb31-45c7f27b9b25",
+        "chatSessionId": "sess_bc2f44d6-89ac-4319-b455-964199b81cb6",
+        "timestamp": 1793935202052
+      },
+      {
+        "executionId": "57ebad73-4a40-45e0-bb31-45c7f27b9b25",
+        "chatSessionId": "sess_bc2f44d6-89ac-4319-b455-964199b81cb6",
+        "timestamp": 1793935435925
+      }
     ]
   }
 }

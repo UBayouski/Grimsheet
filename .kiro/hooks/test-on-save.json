@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Run tests on save under src/",
+      "trigger": "PostFileSave",
+      "description": "Runs npm test (vitest --run) whenever a file under src/ is saved.",
+      "matcher": "(^|[\\\\/])src[\\\\/]",
+      "action": {
+        "type": "command",
+        "command": "npm test",
+        "timeout": 120
+      }
+    }
+  ]
+}

@@ -157,7 +157,7 @@ Rules that apply to every task:
     - _Requirements: 8.2, 8.3, 8.16, 8.18, 8.19, 10.10, 10.11, 10.12, 13.5, 13.6, 13.9, 14.2, 14.3_
 
 - [ ] 5. Property-based testing
-  - [ ] 5.1 [Batch 8] Create `testing/arbitraries.ts` with a smoke test
+  - [x] 5.1 [Batch 8] Create `testing/arbitraries.ts` with a smoke test
     - Files: create `src/engine/testing/arbitraries.ts`, `src/engine/testing/arbitraries.test.ts`
     - Single owner of all fast-check generators: `mulberry32` seeded Random_Source (counts calls); valid-AST arbitrary via `fc.letrec` (all node kinds and 11 operators, depth 0 to 8, strings of 0 to 50 characters with embedded quotes, Ranges only as direct call arguments); random Sheet definition list (1 to 50 Cells, Ranges, names, `RAND()`, `IF`, Rule_Cells, self-references and cycles, forward and backward references) with seed, Hero_Address, permutation seed, edit script (including invalid Formulas); arbitrary Evaluation_Context (valid and invalid forms, misbehaving `random`); totality scenarios (`text`, `sheet`, `chain`); deterministic shuffle helper; `FC_SEED`-aware `assertProperty` helper
     - Smoke test: each arbitrary produces values with `fc.sample`; generated ASTs print and parse; a hand-built depth 6 AST prints; no use of `Math.random`

@@ -251,3 +251,21 @@ What changed because of it (time saved, bug caught, decision made):
 - Follow-up on the missing-record fallback: every Sheet from `createSheet` has exactly 240 Cell records, and the evaluator only asks for in-sheet points (it returns `#REF!` itself for anything else), so the path cannot run through the public API. It can only run if the sheet state is corrupted. I replaced the fallback with a `#REF!` whose cause names the missing Address (for example `refers to B1, which has no cell record`), marked in the code as defensive. A new test deletes the B1 record from the sheet state and checks that `=B1+ROW(SELF)` gives `#REF!` with `B1` in the cause. The old fallback would have returned a different error there.
 - I re-ran `npm test` and `npm run check` myself after that change: 16 test files, 341 tests passing, typecheck and lint clean. The 340 count above is the sub-agent's earlier report.
 - As with task 4.3, Kiro committed nothing, so this entry is the record of what Kiro did.
+
+## 2026-11-05 — Agent hooks: tests on save, check before finishing
+
+Surface: IDE
+
+Features: hook
+
+What I asked for: Add two agent hooks from section 13 of `docs/BRIEF.md`. One runs `npm test` whenever a file under `src/` is saved. The other runs `npm run check` before the agent finishes a task. Both use the Windows-safe form: npm scripts only, with no `&&` chains in the hook command.
+
+What Kiro did:
+- Created `.kiro/hooks/test-on-save.json`: trigger `PostFileSave`, matcher `(^|[\\/])src[\\/]` (accepts both slash styles in Windows paths), command `npm test`.
+- Created `.kiro/hooks/check-before-finish.json`: trigger `Stop`, command `npm run check`.
+- Both commands are single npm scripts. `npm test` maps to `vitest --run`, so it is a single run and not watch mode. The typecheck-plus-lint chaining lives in the `check` script in `package.json`, not in the hook.
+- Not done: the third hook in section 13, rerunning the level solver when a level file changes. It has to wait until the levels and the solver test exist.
+
+What changed because of it (time saved, bug caught, decision made):
+- Decision: I mapped "before you finish a task" to the `Stop` trigger. The `Stop` hook can only run the check and report. It cannot block the finish.
+- Not verified: the hooks are active from the next session start, so neither has been seen firing. The matcher regex has not been tested against a real save event.
