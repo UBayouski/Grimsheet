@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkCells, createErrorCollector, loadLevel, loadLevelText, quote } from './loader';
+import { checkCells, checkEntities, createErrorCollector, loadLevel, loadLevelText, quote } from './loader';
 import type { LoadError, LoadErrorCode, LoadResult } from './types';
 
 const random = (): number => 0.5;
@@ -682,3 +682,188 @@ describe('loadLevel: Requirement 5 raw is stored as written', () => {
     expect(JSON.stringify(doc)).toBe(before);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Requirement 7: hero and monster placement
+// ---------------------------------------------------------------------------
+
+const RULE_CELLS = [
+  { address: 'A14', raw: 'Move' },
+  { address: 'B14', raw: '="N"', name: 'MOVE_M1' },
+  { address: 'A15', raw: 'Attack' },
+  { address: 'B15', raw: '1', name: 'ATK_M1' },
+];
+
+function monster(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return { id: 'M1', at: 'C3', move: 'MOVE_M1', atk: 'ATK_M1', ...overrides };
+}
+
+function entityDoc(monsters: unknown[], extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return { ...baseDoc(), cells: RULE_CELLS, monsters, ...extra };
+}
+
+/** Runs the cell stage, then only the entity stage, and returns the entity errors. */
+function entityErrors(doc: Record<string, unknown>): readonly LoadError[] {
+  const cellStage = createErrorCollector();
+  const info = checkCells(doc, cellStage);
+  const entityStage = createErrorCollector();
+  checkEntities(doc, entityStage, info);
+  return entityStage.finish();
+}
+
+describe('loadLevel: Requirement 7 monster ids', () => {
+  it('accepts well-formed ids up to 8 characters (criterion 4)', () => {
+    expect(entityErrors(entityDoc([monster({ id: 'M1' })]))).toEqual([]);
+    expect(entityErrors(entityDoc([monster({ id: 'M1234567' })]))).toEqual([]);
+  });
+
+  it('refuses bad ids at monsters[i].id (criterion 4)', () => {
+    for (const id of ['', 'M', 'M0', 'M01', 'm1', 'X1', 'M1a', 'M12345678']) {
+      const errors = entityErrors(entityDoc([monster({ id })]));
+      expect(errors).toContainEqual(expect.objectContaining({ code: 'bad-monster-id', path: 'monsters[0].id' }));
+    }
+  });
+
+  it('refuses a duplicate id at the later monster and names the id (criterion 5)', () => {
+    const errors = entityErrors(entityDoc([monster(), monster({ at: 'D3' })]));
+    const dupes = errors.filter((e) => e.code === 'duplicate-monster-id');
+    expect(dupes).toHaveLength(1);
+    expect(dupes[0]?.path).toBe('monsters[1].id');
+    expect(dupes[0]?.message).toContain('M1');
+  });
+});
+
+describe('loadLevel: Requirement 7 positions', () => {
+  it('refuses a hero outside the map area (criterion 1)', () => {
+    const errors = entityErrors(entityDoc([], { hero: { at: 'B14' } }));
+    const hit = errors.find((e) => e.path === 'hero.at');
+    expect(hit?.code).toBe('bad-address');
+    expect(hit?.message).toContain('rows 1 to 12');
+  });
+
+  it('refuses a monster outside the map area at monsters[i].at (criterion 6)', () => {
+    for (const at of ['B14', 'Z9', 'A13', 'nope']) {
+      const errors = entityErrors(entityDoc([monster({ at })]));
+      expect(errors).toContainEqual(expect.objectContaining({ code: 'bad-address', path: 'monsters[0].at' }));
+    }
+  });
+
+  it('refuses a monster on the hero and names the hero (criterion 8)', () => {
+    const errors = entityErrors(entityDoc([monster({ at: 'B2' })]));
+    const hit = errors.find((e) => e.code === 'entity-overlap');
+    expect(hit?.path).toBe('monsters[0].at');
+    expect(hit?.message).toContain('hero');
+    expect(hit?.message).toContain('B2');
+  });
+
+  it('refuses a monster on an earlier monster at the later path (criterion 8)', () => {
+    const errors = entityErrors(entityDoc([monster(), monster({ id: 'M2', at: 'c3' })]));
+    const hit = errors.find((e) => e.code === 'entity-overlap');
+    expect(hit?.path).toBe('monsters[1].at');
+    expect(hit?.message).toContain('M1');
+  });
+
+  it('skips overlap checks for an at that failed (criterion 8)', () => {
+    const errors = entityErrors(
+      entityDoc([monster({ at: 'Z99' }), monster({ id: 'M2', at: 'Z99' })], { hero: { at: 'Z99' } }),
+    );
+    expect(errors.some((e) => e.code === 'entity-overlap')).toBe(false);
+    expect(errors.filter((e) => e.code === 'bad-address').map((e) => e.path)).toEqual([
+      'hero.at',
+      'monsters[0].at',
+      'monsters[1].at',
+    ]);
+  });
+});
+
+describe('loadLevel: Requirement 7 rule names', () => {
+  it('uses the form "monster M1: move rule MOVE_X is not a named cell" (criterion 9)', () => {
+    const errors = entityErrors(entityDoc([monster({ move: 'MOVE_X' })]));
+    const hit = errors.find((e) => e.code === 'unknown-rule');
+    expect(hit?.path).toBe('monsters[0].move');
+    expect(hit?.message).toBe('monster M1: move rule MOVE_X is not a named cell');
+  });
+
+  it('reports atk at monsters[i].atk (criterion 9)', () => {
+    const errors = entityErrors(entityDoc([monster({ atk: 'ATK_X' })]));
+    const hit = errors.find((e) => e.code === 'unknown-rule');
+    expect(hit?.path).toBe('monsters[0].atk');
+    expect(hit?.message).toBe('monster M1: atk rule ATK_X is not a named cell');
+  });
+
+  it('adds no unknown-rule when the named cell has a failed raw (criterion 9)', () => {
+    const cells = [...RULE_CELLS, { address: 'A16', raw: 'Bad' }, { address: 'B16', raw: '=1+', name: 'MOVE_B' }];
+    const doc = entityDoc([monster({ move: 'MOVE_B' })], { cells });
+    expect(cellErrorsOf(doc).map((e) => e.code)).toContain('formula-parse');
+    expect(entityErrors(doc).some((e) => e.code === 'unknown-rule')).toBe(false);
+  });
+
+  it('adds no unknown-rule when the named cell failed its address or name check (criterion 9)', () => {
+    const badAddress = [...RULE_CELLS, { address: 'Z99', raw: '1', name: 'MOVE_C' }];
+    expect(entityErrors(entityDoc([monster({ move: 'MOVE_C' })], { cells: badAddress }))).toEqual([]);
+    const missingLabel = [...RULE_CELLS, { address: 'B17', raw: '1', name: 'MOVE_D' }];
+    expect(entityErrors(entityDoc([monster({ move: 'move_d' })], { cells: missingLabel }))).toEqual([]);
+  });
+
+  it('compares rule names without regard to case (criterion 9)', () => {
+    expect(entityErrors(entityDoc([monster({ move: 'move_m1', atk: 'Atk_M1' })]))).toEqual([]);
+  });
+
+  it('refuses a rule cell outside the rules panel (criterion 10)', () => {
+    const cells = [...RULE_CELLS, { address: 'B3', raw: '="N"', name: 'MOVE_MAP' }];
+    const errors = entityErrors(entityDoc([monster({ move: 'MOVE_MAP' })], { cells }));
+    const hit = errors.find((e) => e.code === 'bad-rule-cell');
+    expect(hit?.path).toBe('monsters[0].move');
+    expect(hit?.message).toContain('B3');
+    expect(hit?.message).toContain('rows 14 to 20');
+  });
+
+  it('refuses a panel rule cell whose raw is empty (criterion 10)', () => {
+    const cells = [{ address: 'A14', raw: 'Move' }, { address: 'B14', raw: '', name: 'MOVE_M1' }, ...RULE_CELLS.slice(2)];
+    const errors = entityErrors(entityDoc([monster()], { cells }));
+    const hit = errors.find((e) => e.code === 'bad-rule-cell');
+    expect(hit?.path).toBe('monsters[0].move');
+    expect(hit?.message).toContain('B14');
+    expect(hit?.message).toContain('rows 14 to 20');
+  });
+
+  it('writes a lower-case rule name in upper case (criterion 11)', () => {
+    const cells = lowerNamedCells();
+    const errors = entityErrors(entityDoc([monster({ move: 'move_low' })], { cells }));
+    const hit = errors.find((e) => e.code === 'bad-rule-cell');
+    expect(hit?.message).toContain('MOVE_LOW');
+    expect(hit?.message).not.toContain('move_low');
+    const info = checkCells(entityDoc([], { cells }), createErrorCollector());
+    expect(info.names.get('MOVE_LOW')).toBe('B3');
+  });
+
+  it('keeps the monsters in author order (criterion 11)', () => {
+    const errors = entityErrors(entityDoc([monster({ id: 'M2', at: 'C3' }), monster({ id: 'M1', at: 'C3' })]));
+    expect(errors.find((e) => e.code === 'entity-overlap')?.path).toBe('monsters[1].at');
+  });
+});
+
+describe('loadLevel: Requirement 7 empty monsters', () => {
+  it('accepts an empty monsters list (criterion 12)', () => {
+    expect(entityErrors(entityDoc([]))).toEqual([]);
+    expect(codesOf(entityDoc([]))).not.toContain('missing-field');
+  });
+
+  it('does not change the document', () => {
+    const doc = entityDoc([monster({ move: 'move_m1' }), monster({ id: 'M2', at: 'B2' })]);
+    const before = JSON.stringify(doc);
+    loadLevel(doc, random);
+    expect(JSON.stringify(doc)).toBe(before);
+  });
+});
+
+function cellErrorsOf(doc: Record<string, unknown>): readonly LoadError[] {
+  const collector = createErrorCollector();
+  checkCells(doc, collector);
+  return collector.finish();
+}
+
+/** A lower-case named cell outside the panel, so the rule is refused with its upper-case name. */
+function lowerNamedCells(): unknown[] {
+  return [...RULE_CELLS, { address: 'B3', raw: '1', name: 'move_low' }];
+}
