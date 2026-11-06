@@ -1,4 +1,5 @@
 import type { ErrorKind } from '../engine/index';
+import type { RunState } from '../game/index';
 
 /** Same literal unions the game uses, defined here so this file imports nothing from src/game/. */
 export type Direction = 'N' | 'S' | 'E' | 'W';
@@ -71,6 +72,24 @@ export interface Pending {
 
 export interface Env {
   readonly entries: readonly LevelEntry[];
+}
+
+export interface AppState {
+  /** Index into `env.entries`. */
+  readonly levelIndex: number;
+  /** `undefined` when no level could be started. */
+  readonly run: RunState | undefined;
+  /** Canonical address, never in row 13. */
+  readonly selection: string;
+  /** Edit_Mode and its pending text. */
+  readonly edit: { readonly text: string } | undefined;
+  readonly pending: Pending | undefined;
+  readonly message: string;
+  /** Parse-error text shown beside the formula bar. */
+  readonly alert: string;
+  /** Changed_Marker addresses. */
+  readonly changed: ReadonlySet<string>;
+  readonly progress: Progress;
 }
 
 export type UiEvent =
