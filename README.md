@@ -26,7 +26,7 @@ Select a cell with the mouse or arrow keys, read its formula in the formula bar,
 
 | Key | Action |
 |---|---|
-| Arrow keys | Move the hero one cell (or move the selection when not playing) |
+| Arrow keys | Move the hero one cell |
 | Space | Wait one turn |
 | `F2` or Enter | Start editing the selected cell |
 | Enter | Commit the edit in the formula bar |
@@ -156,12 +156,12 @@ TypeScript (strict) and Vite, no UI framework. The grid is a DOM table and CSS; 
 | Engine | `src/engine/` | Tokenizer, parser, AST, printer, evaluator, dependency graph, cycle detection, errors. DOM-free, no `eval`, no `new Function`. |
 | Model | `src/model/` | Cell and level types, the level JSON schema, the loader, lossless round-trip. |
 | Game | `src/game/` | Turns, movement, monsters, damage, traps, haunting, win and loss, ink, one-step undo, seeded RNG. DOM-free. |
-| UI | `src/ui/` | The grid table, formula bar, status bar, screens, keyboard handling, audio. |
+| UI | `src/ui/` | The grid table, formula bar, status bar, screens, keyboard handling. |
 | Levels | `src/levels/` | The five hand-written level JSON files and their barrel. |
 
 Correctness is proven several ways:
 
-- **Property tests** (fast-check): parse-print-parse is stable, recalculation is independent of definition order, evaluation is total (never throws), the same seed gives the same game, the hero never stands on a blocking cell, and level JSON round-trips exactly.
+- **Property tests** (fast-check): parse-print-parse is stable, recalculation is independent of definition order, evaluation is total (never throws), the same seed gives the same game, level JSON round-trips exactly, no two entities share a cell, ink never goes negative, undo restores the previous state exactly, and every loaded level starts the hero on a walkable cell.
 - **Stored solutions replayed in tests:** each level has a solution in `tests/solutions/` that is replayed through the public game API and must end in a win within its ink and HP.
 - **An exhaustive no-edit search per level:** for levels 2 to 5, a breadth-first search over moves and waits proves the level cannot be won by walking alone — you must edit.
 - **A live playthrough in a real browser:** all five levels have been played through on the deployed site, driven by the Playwright MCP server, and ended on the HP and ink the tests expect.
@@ -170,9 +170,9 @@ Correctness is proven several ways:
 
 Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that Kiro turned into steering, specs and code. The running log of how Kiro was used, session by session, is in [`KIRO_USAGE.md`](KIRO_USAGE.md).
 
-**Surfaces.** The Kiro IDE was used to write and review every spec and diff. The Kiro Crew Task Runner ran independent task batches in parallel on their own branches, merged after review. Kiro Web opened documentation pull requests. The Kiro CLI ran the read-only reviewer agent on engine changes.
+**Surfaces.** The Kiro IDE was used to write and review every spec and diff. The Kiro Crew Task Runner ran independent task batches in parallel on their own branches, merged after review. Kiro Web opened pull requests for spec documentation, the hosting spec with the Render static-site setup, and this README. The Kiro CLI ran the read-only reviewer agent on engine changes.
 
-**Specs.** Eight specs in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`, in the order of the brief: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels`, `skin-and-sound` and `hosting`. The core six (formula engine, sheet model, game rules, grid UI, levels) and hosting are in place; `error-monsters` and `skin-and-sound` are in progress, so the live build still shows an unskinned grid.
+**Specs.** Seven spec folders in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels` and `hosting`, in the order of the brief. Five are complete — `formula-engine`, `sheet-model`, `game-rules`, `grid-ui` and `levels` — along with `hosting`; `error-monsters` is being implemented. The eighth spec from the brief, `skin-and-sound`, is planned but not yet written, so the live build still shows an unskinned grid.
 
 **Steering.** Five files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md` and `structure.md` always on, with `formulas.md` scoped to `src/engine/**` and `sheet-ui.md` scoped to the UI and CSS.
 
