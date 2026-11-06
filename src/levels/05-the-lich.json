@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "05-the-lich",
+  "title": "The Lich",
+  "hint": "LICH_HP is just a number. Change it while he is far. HEX_A and HEX_B haunt the sheet.",
+  "startingHp": 6,
+  "ink": 2,
+  "seed": 5,
+  "hero": {
+    "at": "B6"
+  },
+  "monsters": [
+    {
+      "id": "M1",
+      "at": "I6",
+      "move": "MOVE_M1",
+      "atk": "ATK_M1"
+    }
+  ],
+  "map": [
+    "############",
+    "############",
+    "############",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "############",
+    "############",
+    "############",
+    "############"
+  ],
+  "cells": [
+    {
+      "address": "K4",
+      "raw": "=IF(LICH_HP<=0,\"X\",\"#\")",
+      "locked": true
+    },
+    {
+      "address": "A14",
+      "raw": "Lich movement",
+      "locked": true
+    },
+    {
+      "address": "B14",
+      "raw": "=IF(DIST(HERO,SELF)<4,TOWARD(HERO),\"-\")",
+      "locked": true,
+      "name": "MOVE_M1"
+    },
+    {
+      "address": "A15",
+      "raw": "Lich attack",
+      "locked": true
+    },
+    {
+      "address": "B15",
+      "raw": "=IF(DIST(HERO,SELF)<=2,LICH_HP,0)",
+      "locked": true,
+      "name": "ATK_M1"
+    },
+    {
+      "address": "A16",
+      "raw": "Lich life",
+      "locked": true
+    },
+    {
+      "address": "B16",
+      "raw": "=MAX(1,PHYLACTERY)",
+      "name": "LICH_HP"
+    },
+    {
+      "address": "A17",
+      "raw": "Phylactery",
+      "locked": true
+    },
+    {
+      "address": "B17",
+      "raw": "4",
+      "locked": true,
+      "name": "PHYLACTERY"
+    },
+    {
+      "address": "A18",
+      "raw": "Hex one",
+      "locked": true
+    },
+    {
+      "address": "B18",
+      "raw": "=HEX_B+1",
+      "name": "HEX_A"
+    },
+    {
+      "address": "A19",
+      "raw": "Hex two",
+      "locked": true
+    },
+    {
+      "address": "B19",
+      "raw": "=HEX_A+1",
+      "name": "HEX_B"
+    }
+  ]
+}

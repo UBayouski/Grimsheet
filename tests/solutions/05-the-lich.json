@@ -1,0 +1,60 @@
+{
+  "levelId": "05-the-lich",
+  "minimalInk": 2,
+  "actions": [
+    {
+      "kind": "edit",
+      "address": "B16",
+      "raw": "0"
+    },
+    {
+      "kind": "edit",
+      "address": "B19",
+      "raw": "0"
+    },
+    {
+      "kind": "move",
+      "dir": "N"
+    },
+    {
+      "kind": "move",
+      "dir": "N"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    },
+    {
+      "kind": "move",
+      "dir": "E"
+    }
+  ]
+}
