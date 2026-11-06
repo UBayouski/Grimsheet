@@ -185,15 +185,15 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `totality.prop.test.ts`; `npm run check` passes
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7**
 
-- [ ] 6. Public API and constraints
-  - [ ] 6.1 [Batch 10] Create `index.ts` barrel with API-surface test
+- [x] 6. Public API and constraints
+  - [x] 6.1 [Batch 10] Create `index.ts` barrel with API-surface test
     - Files: create `src/engine/index.ts`, `src/engine/index.test.ts`
     - Single owner of `index.ts`: named exports only, no default export. Export the 11 operations (`parseFormula`, `printFormula`, `createSheet`, `setRawText`, `setCellName`, `recalculate`, `getValueByAddress`, `getValueByName`, `evaluateCell`, `listCycleCells`, `describeError`) plus the supporting exports and types listed in the design (`tokenize`, `formatValue`, `formatNumber`, `parseAddress`, `formatAddress`, `isRuleAst`, `MAX_DEPTH`, result and context types) using `export type` for types
     - Test: imports `* as engine from './index'`; asserts the exact set of runtime export names, no `default`, and a short end-to-end flow (create Sheet, set Cells, recalculate, read Values, evaluate a Rule_Cell)
     - Acceptance: `npm test` passes including `index.test.ts`; `npm run check` passes
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.8_
 
-  - [ ] 6.2 [Batch 10] Create source-constraint scan test
+  - [x] 6.2 [Batch 10] Create source-constraint scan test
     - Files: create `src/engine/constraints.test.ts`
     - Reads every non-test `.ts` file under `src/engine/` (excluding `*.test.ts` and `*.prop.test.ts`), strips comments and string literals, and asserts no `eval`, `new Function`, `Math.random`, `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch` or `XMLHttpRequest` (word-boundary match), and no import path containing `src/model`, `src/game` or `src/ui` (or relative paths reaching them); asserts the scanner finds at least the expected module files; includes a self-check that the scanner flags a sample bad snippet
     - Acceptance: `npm test` passes including `constraints.test.ts`; `npm run check` passes

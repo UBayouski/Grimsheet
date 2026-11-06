@@ -319,3 +319,29 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: a faster engine was considered and not chosen. Function calls collect every error across every range cell to decide which one wins, and stopping early there would risk changing error precedence. Parsing and graph building alone would still use most of a 5-second budget.
 - Decision: saves run the fast suite, so the save hook stays quick. Finishing runs everything, including the property tests.
 - Not verified: the changed hooks take effect from the next session start, so neither has been seen firing yet.
+
+## 2026-11-05 — Formula engine Batch 10: public API and constraint scan
+
+Surface: Crew, then IDE
+
+Features: spec
+
+What I asked for: Do tasks 6.1 and 6.2 of the formula-engine spec in a Kiro Crew chat session, with a fixed three-step plan: the `index.ts` barrel and its test, the source-constraint scan test, then a verification step that only runs checks. No branches, no edits to existing files under `src/`, and no edits to `tasks.md` or this log. Then review the result in the Kiro IDE and fix what the review found.
+
+What Kiro did:
+- Kiro Crew (chat session, main checkout, no worktree, no commits) created three files:
+  - `src/engine/index.ts`: the public API. It has named exports only, no default export, and `export type` for types. It exports the 11 operations plus `tokenize`, `formatValue`, `formatNumber`, `parseAddress`, `formatAddress`, `isRuleAst` and `MAX_DEPTH`, and the result, value, AST, address and context types that the modules define. Kiro Crew reported no disagreement between `design.md` and the real modules.
+  - `src/engine/index.test.ts`: checks the exact set of runtime export names and that there is no `default`. It also runs an end-to-end flow: set cells, name one, recalculate, read by address and by name, evaluate a rule cell (`"N"`), list a self-referencing cycle cell and describe its `#CYCLE!`.
+  - `src/engine/constraints.test.ts`: reads every non-test `.ts` file under `src/engine/` with `node:fs` and `node:path`, strips comments and string literals, and checks with word-boundary matches for `eval`, `new Function`, `Math.random`, `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch` and `XMLHttpRequest`, and for imports reaching `src/model`, `src/game` or `src/ui`. It checks that the 16 expected modules are found and includes self-checks on sample snippets.
+- Kiro Crew's verification step reported 22 test files and 382 tests passing, with typecheck and lint clean, and it edited no code.
+- The IDE review found two gaps in the comment and string stripper. Both caused missed hits, never false failures, and neither hid anything in the current engine sources:
+  - Template literals were blanked whole, including code inside `${...}`, so `` `${window.x}` `` was not caught. Fix: the stripper now blanks only the literal text and scans the code in each substitution, including nested braces and nested templates.
+  - Regex literals were not recognized, so a quote inside one, such as `/"/`, started a "string" that hid the code after it. Fix: a `/` now starts a regex when the previous meaningful token is not an identifier, number, `)` or `]` (keywords such as `return` and `typeof` still allow a regex). Regex bodies, character classes and flags are blanked.
+- Two new self-check tests cover the fixes. They check that banned names inside `${...}` are flagged (simple, nested template, nested braces) while template text is not. They check that code after a regex containing a quote is still scanned, that a banned word inside a regex is not flagged, and that division is not mistaken for a regex. The existing self-checks still pass. Only `constraints.test.ts` changed in the IDE session.
+- Final result from `npm run verify`: 22 test files, 384 tests passing, typecheck and lint clean.
+- I ticked tasks 6.1, 6.2 and parent task 6 in `tasks.md`. All implementation tasks of the formula-engine spec are now complete. Task 7, the final checkpoint, is a verification task and is still unticked. Its checks pass: `npm test` and `npm run check` are green, and the only file under `src/engine/` that imports `index.ts` is `index.test.ts`, the API test from task 6.1.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the review of Kiro Crew's scanner found two ways a banned construct could slip past it. The scan is what keeps the engine DOM-free (the `tsconfig` `lib` includes DOM types), so a blind spot there would weaken that constraint without any test failing.
+- Hooks: this was the first session with the split hooks. The IDE file-edit tools were not available in this session, so the edits were made through the terminal, and no `PostFileSave` hook fired. No hook output appeared during the session. Whether the `Stop` hook (`npm run verify`) ran at the end could not be observed from inside the session.
+- Nothing was committed.
