@@ -20,6 +20,7 @@ const EXPECTED_EXPORTS = [
   'setCellName',
   'setRawText',
   'tokenize',
+  'validateCellName',
 ];
 
 describe('engine public API', () => {

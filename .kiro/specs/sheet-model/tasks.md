@@ -26,15 +26,15 @@ Rules that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Engine export and model types
-  - [ ] 1.1 [Batch 1] [IDE] Export `validateCellName` from the engine barrel
+- [x] 1. Engine export and model types
+  - [x] 1.1 [Batch 1] [IDE] Export `validateCellName` from the engine barrel
     - Files: edit `src/engine/index.ts`, edit `src/engine/index.test.ts` (no other engine file)
     - Add `export { validateCellName } from './names';` and `export type { NameCheckFailure } from './names';` to `src/engine/index.ts`
     - Test: add `'validateCellName'` to `EXPECTED_EXPORTS` in `src/engine/index.test.ts`; the exact-export-set assertion stays green
     - Acceptance: `npm run verify` passes
     - _Requirements: 14.1, 14.2_
 
-  - [ ] 1.2 [Batch 1] [Crew] Create `types.ts` with tests
+  - [x] 1.2 [Batch 1] [Crew] Create `types.ts` with tests
     - Files: create `src/model/types.ts`, `src/model/types.test.ts`
     - Export `RandomSource`, `CellSpec`, `MonsterSpec`, `LevelDocument` (all fields `readonly`, `schemaVersion: 1`), `Level` as an alias of `LevelDocument`, `LOAD_ERROR_CODES` (every code in the design table, including `bad-label-value` and `too-many-errors`), `LoadErrorCode`, `LoadError`, `LoadResult`; `Sheet` is imported as a type from `../engine/index`
     - Test: the codes are unique, the list equals the design table exactly (hard-coded expected array), every code is a non-empty kebab-case string; a type-level sample `Level` literal compiles

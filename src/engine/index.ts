@@ -19,3 +19,5 @@ export type { GridPoint } from './address';
 export { isRuleAst, MAX_DEPTH } from './ast';
 export type { Node } from './ast';
 export type { EvaluationContext } from './context';
+export { validateCellName } from './names';
+export type { NameCheckFailure } from './names';
