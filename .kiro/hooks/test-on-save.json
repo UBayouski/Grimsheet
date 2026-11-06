@@ -10,7 +10,8 @@
         "type": "command",
         "command": "npm run test:fast",
         "timeout": 120
-      }
+      },
+      "enabled": true
     }
   ]
 }
