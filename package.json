@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "check:dist": "node scripts/check-dist.mjs",
     "test": "vitest --run",
     "test:fast": "vitest --run --exclude \"**/*.prop.test.ts\"",
     "verify": "npm test && npm run check",

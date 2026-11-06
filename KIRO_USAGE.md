@@ -754,3 +754,25 @@ What changed because of it (time saved, bug caught, decision made):
 - Gap: a Crew step can finish with no commit and no error in the summary. 4.2 is only known to be missing because the files are not there, so I check for the files, not for a step status.
 - The suite is now heavy enough (51 files, much of it property tests) that default per-test timeouts are too tight under parallel load. Every property test file now carries an explicit timeout.
 - Nothing was committed by me.
+
+## 2026-11-06 — hosting spec and Render static site (Web surface)
+
+Surface: Web
+
+Features: spec
+
+What I asked for: Spec 8 of 8 in `docs/BRIEF.md` section 12, `hosting`: a short spec (under 20 acceptance criteria) and its implementation in one pull request. A free Render static site from a `render.yaml` at the repo root, build command `npm ci && npm run verify && npm run build`, publish directory `dist`, auto-deploy on push to `main`, no rewrite rule unless the design found one. A failing verify must stop the deploy, the site must make no request to another domain, and `tests/fixtures/` must not be in the build. No change to `vite.config.ts` or `src/` unless the build strictly needs it.
+
+What Kiro did:
+- Read BRIEF sections 9 and 12 and the five steering files first. The brief and `tech.md` already fix the shape: static site, no backend, no keys, no AI calls, self-hosted fonts.
+- Checked what ships by reading the code. `vite.config.ts` has only a `test` block, so `vite build` takes the root `index.html` as its one input. `tests/fixtures/index.html` is a second page that nothing links to, and no non-test file under `src/` imports from `tests/`. Shipped code has no `fetch`, `XMLHttpRequest`, absolute URL or web font (the font is a system stack), and no `pushState` or `location` use, so there are no client routes and no rewrite rule is needed.
+- Wrote `.kiro/specs/hosting/` (requirements with 17 criteria, design, tasks) and `render.yaml` (one `type: web`, `runtime: static` service named `grimsheet`, `branch: main`, `autoDeployTrigger: commit`, `NODE_VERSION` 22, no routes, no secret). I read the file back through a YAML parser and checked every field.
+- Added `scripts/check-dist.mjs` and one npm script, `check:dist`. It scans `dist/` for fixture paths and text, absolute URLs (the `www.w3.org` XML namespace is allowed) and protocol-relative references. I tested it against hand-made folders: one clean (exit 0) and six broken in one way each (exit 1). No dependency added; `vite.config.ts` and `src/` are untouched.
+- Wrote the one-time Render dashboard steps into the design and into the pull request description.
+
+What changed because of it (time saved, bug caught, decision made):
+- Limit of this session: the network was repository-only and `npm ci` failed with a 403 from the registry. So `npm run verify`, `npm run build` and `npm run check:dist` were not run on this change. The script has never seen a real Vite output, and it has not been through lint. Task 1.2 is therefore not ticked, and task 2.1 (run all four commands on the PR branch) is the first thing to do. Only task 1.1 (the blueprint) and 4.1 (this entry) are ticked.
+- Render's Blueprint reference page returned 403 here. The key names come from Render's published examples and API reference through search results, so the Blueprint preview in the dashboard is the real check.
+- Decision: `check:dist` is not part of the build command. The build command was given, and a false positive in a real bundle would block every deploy, so it runs by hand first. Task 2.2 puts it in the build once it has passed on a real build.
+- Gap found, not changed: `src/main.ts` still passes `STUB_LEVELS` (one stub level) to `mountApp`. Until the `levels` spec's task 5.1 swaps in the five real levels, the deployed game shows the stub.
+- Decision: no rewrite rule. A catch-all rewrite to `/index.html` would only matter for client routes, and the game has none; Requirement 5.2 says to add one if a route is ever added.

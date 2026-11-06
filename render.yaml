@@ -1,0 +1,15 @@
+# Render Blueprint: Grimsheet is a free static site. No backend, no API keys, no AI calls at run time.
+# Design and the one-time dashboard steps: .kiro/specs/hosting/design.md
+services:
+  - type: web
+    name: grimsheet
+    runtime: static
+    branch: main
+    autoDeployTrigger: commit
+    # `&&` chain: if tests, type-check or lint fail, the build fails and Render keeps the previous version live.
+    buildCommand: npm ci && npm run verify && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    # No `routes`: the game is one page with no client routes, so nothing needs a rewrite to /index.html.
