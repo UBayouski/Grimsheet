@@ -527,7 +527,7 @@ What changed because of it (time saved, bug caught, decision made):
 - `buildSheet` and `checkPlacement` are exported from `loader.ts` for testing. They are not part of the public barrel, which task 5.1 will define.
 - Nothing was committed.
 
-## 2026-11-05 — sheet-model label rule settled (Web surface)
+## 2026-11-06 — sheet-model label rule settled (Web surface)
 
 Surface: Web
 
