@@ -29,6 +29,19 @@ export interface EvalEnv {
 /** A value that is never 'rule'. */
 type FinalValue = Exclude<Value, { kind: 'rule' }>;
 
+// Typed wrappers: the values.ts builders return the wider Value type.
+function numberFinal(n: number): FinalValue {
+  return numberValue(n) as FinalValue;
+}
+
+function stringFinal(s: string): FinalValue {
+  return stringValue(s) as FinalValue;
+}
+
+function booleanFinal(b: boolean): FinalValue {
+  return booleanValue(b) as FinalValue;
+}
+
 type Operand =
   | { readonly t: 'val'; readonly v: FinalValue }
   | { readonly t: 'ref'; readonly point: GridPoint }
@@ -69,11 +82,11 @@ class Evaluation {
   evaluate(node: Node): Operand {
     switch (node.kind) {
       case 'number':
-        return val(numberValue(node.value));
+        return val(numberFinal(node.value));
       case 'string':
-        return val(stringValue(node.value));
+        return val(stringFinal(node.value));
       case 'boolean':
-        return val(booleanValue(node.value));
+        return val(booleanFinal(node.value));
       case 'cell':
         return this.evalCell(node);
       case 'range':
@@ -168,7 +181,7 @@ class Evaluation {
     const s = this.deref(this.evaluate(operandNode));
     if (isError(s)) return val(s);
     const n = this.toNumber(s);
-    if (isError(n)) return val(n);
+    if (typeof n !== 'number') return val(n);
     return this.numberResult(-n);
   }
 
@@ -191,7 +204,7 @@ class Evaluation {
       return val(this.err('#VALUE!', 'produced a number that is too large'));
     }
     // Normalize -0 to 0 so results print and compare uniformly.
-    return val(numberValue(n === 0 ? 0 : n));
+    return val(numberFinal(n === 0 ? 0 : n));
   }
 
   private evalBinary(op: BinaryOperator, leftNode: Node, rightNode: Node): Operand {
@@ -211,7 +224,7 @@ class Evaluation {
       case '/':
         return this.arithmetic(op, left, right);
       case '&':
-        return val(stringValue(this.toText(left) + this.toText(right)));
+        return val(stringFinal(this.toText(left) + this.toText(right)));
       case '=':
       case '<>':
       case '<':
@@ -278,17 +291,17 @@ class Evaluation {
     }
     switch (op) {
       case '=':
-        return val(booleanValue(order === 0));
+        return val(booleanFinal(order === 0));
       case '<>':
-        return val(booleanValue(order !== 0));
+        return val(booleanFinal(order !== 0));
       case '<':
-        return val(booleanValue(order < 0));
+        return val(booleanFinal(order < 0));
       case '>':
-        return val(booleanValue(order > 0));
+        return val(booleanFinal(order > 0));
       case '<=':
-        return val(booleanValue(order <= 0));
+        return val(booleanFinal(order <= 0));
       case '>=':
-        return val(booleanValue(order >= 0));
+        return val(booleanFinal(order >= 0));
     }
   }
 }
