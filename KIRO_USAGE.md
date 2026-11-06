@@ -170,3 +170,23 @@ What changed because of it (time saved, bug caught, decision made):
 - Lesson: the run summary shows plan order and the commit history shows execution order, so I review the history, not the summary.
 - Bug caught: a step labelled "verification" rewrote code before the tests that cover it existed. The evaluator edit was not checked by its own tests at the time it was made. It was checked only by the tests written afterwards and by my re-run.
 - Time: three independent tasks ran in a separate worktree in about 10 minutes while the main checkout stayed free.
+
+## 2026-11-05 — formula-engine Batch 5 run in Kiro Crew's Task Runner
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: Run Batch 5 of the formula-engine spec as a Kiro Crew Task Runner task: task 3.3, the evaluator function calls, and task 4.2, `sheet.ts`, each with tests. After the Batch 4 run, I added a rule to the prompt: the final verification step must only run checks and never edit code.
+
+What Kiro did:
+- The run used branch `kirocrew/task/plan_1793932730969087400`. 7 of 7 steps passed in about 7 minutes, with four step commits authored by "Kiro Crew". I merged the branch into `main`.
+- The verification step made no commit this time. In Batch 4 it had changed 37 lines of `evaluator.ts`.
+- Task 3.3 replaced the `#NAME?` stub with the call pipeline. It checks in the designed order: `#CYCLE!` in any argument, unknown function, argument count, leftmost argument error, then type errors. The earlier evaluator tests still pass.
+- Task 4.2 exports `getSheetState` and `commitRecalculation` from `sheet.ts` as internal helpers, and uses the printer to produce canonical text for edits.
+- I re-ran the combined suite outside Kiro Crew before merging: 14 test files, 295 tests passing, typecheck and lint clean. After the merge I ran `npm test` and `npm run check` again with the same result.
+- I ticked tasks 3.3 and 4.2, and parent task 3, in `.kiro/specs/formula-engine/tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- The new rule held in this run: the verification step made no commit and edited no code. Earlier batches differed. In Batch 1 verification ran before the last test file. Batch 2 was a chat session with no Task Runner run. In Batch 3 verification ran last without editing, and in Batch 4 it ran early and edited `evaluator.ts`. One run is not enough to say the rule is reliable.
+- Time: two independent tasks ran in a separate worktree in about 7 minutes while the main checkout stayed free.

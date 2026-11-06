@@ -100,7 +100,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `printer.test.ts`; `npm run check` passes
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
 
-- [ ] 3. Functions and evaluator
+- [x] 3. Functions and evaluator
   - [x] 3.1 [Batch 3] Create `functions.ts` with tests
     - Files: create `src/engine/functions.ts`, `src/engine/functions.test.ts`
     - Export the function table: name, arity (`min`, `max`), argument modes, and pure helpers on checked arguments (`SUM`/`MIN`/`MAX` aggregation with empty-argument results, `ABS`, `MOD` with divisor sign and rounding guard, `TOWARD` direction with vertical tie rule, `ROW`, `COL`, `DIST`, `AND`, `OR`, `NOT`)
@@ -117,7 +117,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `evaluator.test.ts`; `npm run check` passes
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 8.5, 8.6, 8.7, 8.8, 8.10, 8.12, 9.1, 9.2, 9.3, 9.4, 9.21, 9.22, 9.25, 10.1, 10.3, 10.4, 10.12, 12.5_
 
-  - [ ] 3.3 [Batch 5] Complete `evaluator.ts` function calls with tests
+  - [x] 3.3 [Batch 5] Complete `evaluator.ts` function calls with tests
     - Files: edit `src/engine/evaluator.ts`, edit `src/engine/evaluator.test.ts` (no other files)
     - Replace the `evaluateCall` stub with the call pipeline: evaluate arguments in source order, `#CYCLE!` precedence, unknown function `#NAME?`, arity `#VALUE!`, leftmost argument error, type checks, then compute through the `functions.ts` table
     - Lazy `IF` (only the chosen branch evaluated; error condition returned at once; Range operand passed through), `SUM`/`MIN`/`MAX` over Ranges in row-major order (skip empty, string and boolean members; Rule_Cell member `#VALUE!`), `ROW`/`COL`/`DIST`/`TOWARD` on `ref` operands (names resolve to Addresses, absent `SELF` gives `#REF!`), `RAND()` once per call with a guard for a bad Random_Source
@@ -134,7 +134,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `graph.test.ts`; `npm run check` passes
     - _Requirements: 11.1, 11.2, 13.1, 13.2, 13.5, 13.6, 13.7, 13.8_
 
-  - [ ] 4.2 [Batch 5] Create `sheet.ts` with tests
+  - [x] 4.2 [Batch 5] Create `sheet.ts` with tests
     - Files: create `src/engine/sheet.ts`, `src/engine/sheet.test.ts`
     - Export `Sheet`, `createSheet`, `CellTarget`, `setRawText`, `setCellName`, `getValueByAddress`, `getValueByName`, result types, plus the internal helpers `getSheetState` and `commitRecalculation`
     - 240 Cells; Literals stored without parsing; a Formula is parsed first and a failed parse changes nothing (Raw_Text, AST, name, Value); successful edits cache the AST and `isRule`, set `dirty`, and return `canonicalText` from the printer; names unique case-insensitively with the failing check or the conflicting name reported; reads return the last Value with `stale`
