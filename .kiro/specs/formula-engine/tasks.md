@@ -31,15 +31,15 @@ Rules that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Foundations: addresses, values, AST, names, errors, context
-  - [ ] 1.1 [Batch 1] Create `address.ts` with tests
+- [x] 1. Foundations: addresses, values, AST, names, errors, context
+  - [x] 1.1 [Batch 1] Create `address.ts` with tests
     - Files: create `src/engine/address.ts`, `src/engine/address.test.ts`
     - Export `GridPoint`, `SHEET_COLUMNS`, `SHEET_ROWS`, `SHEET_CELL_COUNT`, `isInSheet`, `parseAddress` (strict `^[A-La-l]([1-9]|1[0-9]|20)$`, canonical upper case), `formatAddress`, `readingIndex`
     - Tests: `A1`, `L20`, `b7` becomes `B7`; reject `M1`, `A0`, `A21`, `A01`, `+A1`, `A1.0`, ` A1`, empty; reading order indices 0 and 239
     - Acceptance: `npm test` passes including `address.test.ts`; `npm run check` passes
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 1.2 [Batch 1] Create `values.ts` with tests
+  - [x] 1.2 [Batch 1] Create `values.ts` with tests
     - Files: create `src/engine/values.ts`, `src/engine/values.test.ts`
     - Export `ErrorKind`, `Value` (number, string, boolean, error with `cause` and `origin`, rule), value constructors, `formatValue`, `formatNumber` (shortest round-trip via `toExponential`, no exponent, `-0` prints `0`)
     - No imports from other engine files
@@ -47,28 +47,28 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `values.test.ts`; `npm run check` passes
     - _Requirements: 4.7, 9.3, 10.9_
 
-  - [ ] 1.3 [Batch 1] Create `ast.ts` with tests
+  - [x] 1.3 [Batch 1] Create `ast.ts` with tests
     - Files: create `src/engine/ast.ts`, `src/engine/ast.test.ts`
     - Export `MAX_DEPTH = 200`, `BinaryOperator`, `CellNode`, `Node` and `isRuleAst` (true for a `SELF` name node or a `TOWARD` call anywhere, including untaken `IF` branches; strings do not count)
     - Tests build ASTs by hand: `SELF` found nested in `IF`, `TOWARD` in an argument, string `"SELF"` is not a rule, plain formula is not a rule
     - Acceptance: `npm test` passes including `ast.test.ts`; `npm run check` passes
     - _Requirements: 3.1, 8.14_
 
-  - [ ] 1.4 [Batch 2] Create `names.ts` with tests
+  - [x] 1.4 [Batch 2] Create `names.ts` with tests
     - Files: create `src/engine/names.ts`, `src/engine/names.test.ts`
     - Export `FUNCTION_NAMES`, `RESERVED_NAMES`, `NameCheckFailure`, `validateCellName` (checks in order: pattern, reserved, function, address-like; case-insensitive; canonical upper case)
     - Tests: accept `HP`, `_X`, `move_m1`; reject `1HP`, `HERO`, `self`, `SUM`, `A1`, `l20`, bad characters; each failure names the right check
     - Acceptance: `npm test` passes including `names.test.ts`; `npm run check` passes
     - _Requirements: 1.5, 1.6_
 
-  - [ ] 1.5 [Batch 2] Create `errors.ts` with tests
+  - [x] 1.5 [Batch 2] Create `errors.ts` with tests
     - Files: create `src/engine/errors.ts`, `src/engine/errors.test.ts`
     - Export `makeError` (cause starts with origin), `pickError` (`#CYCLE!` with lowest origin reading index wins, else first in source order), `truncateCause` (at most 200 code points, keeps the start, never splits a surrogate pair)
     - Tests: leftmost error wins; `#CYCLE!` beats other errors; tie on origin; truncation keeps the origin; surrogate pairs intact; cause length 1 to 200
     - Acceptance: `npm test` passes including `errors.test.ts`; `npm run check` passes
     - _Requirements: 10.3, 10.4, 10.10, 10.11, 10.13, 13.9_
 
-  - [ ] 1.6 [Batch 2] Create `context.ts` with tests
+  - [x] 1.6 [Batch 2] Create `context.ts` with tests
     - Files: create `src/engine/context.ts`, `src/engine/context.test.ts`
     - Export `EvaluationContext`, `ContextField`, `validateContext` (`heroAddress` needs safe-integer `col` and `row`; `random` must be a function; malformed `selfAddress` counts as absent; out-of-sheet addresses are kept)
     - Tests: valid context; missing or malformed hero; non-function random; non-object input; malformed and out-of-sheet self
@@ -76,7 +76,7 @@ Rules that apply to every task:
     - _Requirements: 8.1, 8.2, 8.3_
 
 - [ ] 2. Tokenizer, parser and printer
-  - [ ] 2.1 [Batch 2] Create `tokenizer.ts` with tests
+  - [x] 2.1 [Batch 2] Create `tokenizer.ts` with tests
     - Files: create `src/engine/tokenizer.ts`, `src/engine/tokenizer.test.ts`
     - Export `TokenKind`, `Token`, `ParseError`, `tokenize` (strict) and `scan` (partial tokens plus first error)
     - Longest-match operators, 1-based UTF-16 columns with `=` as column 1, only U+0020 skipped, doubled quotes, `address` tokens for letter-plus-digits words, `TRUE`/`FALSE` case-insensitive, `$` error, number errors, unterminated string at the opening quote, unknown character (tab, newline) errors
