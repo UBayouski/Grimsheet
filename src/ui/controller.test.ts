@@ -3,7 +3,7 @@ import type * as GameModule from '../game/index';
 import { applyAction, startRun } from '../game/index';
 import type { Direction as GameDirection, RunState, Status as GameStatus } from '../game/index';
 import type { LevelDocument } from '../model/index';
-import { createInitialState, keyContext, step } from './controller';
+import { KEEP_EDIT, createInitialState, keyContext, step } from './controller';
 import { describeLevels, isTabEnabled } from './progress';
 import { STRINGS } from './strings';
 import type {
@@ -586,10 +586,10 @@ describe('next-level', () => {
 });
 
 describe('edit fields', () => {
-  it('part A leaves edit fields untouched', () => {
+  it('a selection move leaves Edit_Mode', () => {
     const base: AppState = { ...fresh(), edit: { text: 'abc' } };
-    const after = go(base, command({ type: 'select-move', dir: 'E' }), WAIT);
-    expect(after.edit).toEqual({ text: 'abc' });
+    const after = go(base, command({ type: 'select-move', dir: 'E' }));
+    expect(after.edit).toBeUndefined();
   });
 });
 
@@ -666,5 +666,224 @@ describe('purity', () => {
     expect(runOf(start)).toBe(run);
     expect(start.selection).toBe('B2');
     expect(start.changed.size).toBe(0);
+  });
+});
+
+describe('Edit_Mode', () => {
+  const FOCUS_BAR: Effect = { type: 'focus', target: 'formula-bar' };
+  const SELECT_TEXT: Effect = { type: 'select-formula-text' };
+  const FOCUS_GRID: Effect = { type: 'focus', target: 'grid' };
+  const EDIT_START = command({ type: 'edit-start' });
+  const EDIT_COMMIT = command({ type: 'edit-commit' });
+  const EDIT_CANCEL = command({ type: 'edit-cancel' });
+  const click = (address: string): UiEvent => ({ type: 'cell-click', address });
+  const input = (text: string): UiEvent => ({ type: 'formula-input', text });
+  const FOCUS: UiEvent = { type: 'formula-focus' };
+  const BLUR: UiEvent = { type: 'formula-blur' };
+
+  function editing(text?: string, env: Env = ENV): AppState {
+    let state = createInitialState(env, NO_PROGRESS);
+    state = step(state, click('B16'), env).state;
+    state = step(state, EDIT_START, env).state;
+    return text === undefined ? state : step(state, input(text), env).state;
+  }
+
+  it('edit-start on an unlocked cell enters Edit_Mode with the Raw_Text and emits effects in order', () => {
+    const selected = go(fresh(), click('B16'));
+    const result = step(selected, EDIT_START, ENV);
+    expect(result.state.edit).toEqual({ text: '=ROW(HERO)' });
+    expect(result.effects).toEqual([FOCUS_BAR, SELECT_TEXT]);
+    expect(selected.edit).toBeUndefined();
+  });
+
+  it('edit-start on a locked cell shows the locked text and stays out of Edit_Mode', () => {
+    const selected = go(fresh(), click('B18'));
+    const result = step(selected, EDIT_START, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).toBe(STRINGS.lockedText);
+    expect(result.effects).toEqual([]);
+  });
+
+  it('edit-start does nothing on the lost screen', () => {
+    const lost = lostState();
+    const result = step(lost, EDIT_START, trapEnv(1));
+    expect(result.state).toBe(lost);
+  });
+
+  it('cell-dblclick selects the cell, then starts the edit', () => {
+    const result = step(fresh(), { type: 'cell-dblclick', address: 'B16' }, ENV);
+    expect(result.state.selection).toBe('B16');
+    expect(result.state.edit).toEqual({ text: '=ROW(HERO)' });
+    expect(result.effects).toEqual([FOCUS_BAR, SELECT_TEXT]);
+  });
+
+  it('cell-dblclick on a locked cell selects it and shows the locked text', () => {
+    const result = step(fresh(), { type: 'cell-dblclick', address: 'B18' }, ENV);
+    expect(result.state.selection).toBe('B18');
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).toBe(STRINGS.lockedText);
+  });
+
+  it('formula-focus enters Edit_Mode with only select-formula-text', () => {
+    const selected = go(fresh(), click('B16'));
+    const result = step(selected, FOCUS, ENV);
+    expect(result.state.edit).toEqual({ text: '=ROW(HERO)' });
+    expect(result.effects).toEqual([SELECT_TEXT]);
+  });
+
+  it('formula-focus is idempotent while editing and keeps the typed text', () => {
+    const state = editing('=9');
+    const result = step(state, FOCUS, ENV);
+    expect(result.state).toBe(state);
+    expect(result.effects).toEqual([]);
+  });
+
+  it('formula-focus on a locked cell shows the locked text', () => {
+    const selected = go(fresh(), click('B18'));
+    const result = step(selected, FOCUS, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).toBe(STRINGS.lockedText);
+  });
+
+  it('formula-focus does nothing when the level is not playing', () => {
+    const lost = lostState();
+    expect(step(lost, FOCUS, trapEnv(1)).state).toBe(lost);
+  });
+
+  it('formula-input updates the text and clears alert; no edit means no change', () => {
+    const state = { ...editing('=1'), alert: 'Col 1: oops.' };
+    const next = step(state, input('=2'), ENV).state;
+    expect(next.edit).toEqual({ text: '=2' });
+    expect(next.alert).toBe('');
+    const idle = fresh();
+    expect(step(idle, input('=2'), ENV).state).toBe(idle);
+  });
+
+  it('edit-commit accepted leaves Edit_Mode, spends ink, says Edited. and focuses the grid', () => {
+    const state = editing('=ROW(HERO)+1');
+    const inkBefore = runOf(state).ink;
+    const result = step(state, EDIT_COMMIT, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.alert).toBe('');
+    expect(result.state.message).toBe(STRINGS.edited);
+    expect(runOf(result.state).ink).toBe(inkBefore - 1);
+    expect(result.effects).toEqual([FOCUS_GRID]);
+  });
+
+  it('parse-error goes only to alert and leaves Message and Edit_Mode untouched', () => {
+    const state = editing('=1+');
+    const result = step(state, EDIT_COMMIT, ENV);
+    expect(result.state.alert).toMatch(/^Col \d+:/);
+    expect(result.state.message).toBe(state.message);
+    expect(result.state.edit).toEqual({ text: '=1+' });
+    expect(runOf(result.state).ink).toBe(runOf(state).ink);
+    expect(result.effects).toEqual([]);
+  });
+
+  it('no-ink keeps Edit_Mode and the text and sets the Message', () => {
+    const env: Env = { entries: describeLevels([makeDoc({ ink: 0 })]) };
+    const state = editing('=5', env);
+    const result = step(state, EDIT_COMMIT, env);
+    expect(result.state.edit).toEqual({ text: '=5' });
+    expect(result.state.message).not.toBe(state.message);
+    expect(result.state.message).not.toBe('');
+    expect(result.state.alert).toBe('');
+    expect(result.effects).toEqual([]);
+  });
+
+  it('unchanged leaves Edit_Mode, sets the Message and focuses the grid', () => {
+    const state = editing('=ROW(HERO)');
+    const result = step(state, EDIT_COMMIT, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).not.toBe(state.message);
+    expect(result.state.alert).toBe('');
+    expect(runOf(result.state).ink).toBe(runOf(state).ink);
+    expect(result.effects).toEqual([FOCUS_GRID]);
+  });
+
+  it('locked leaves Edit_Mode and sets the locked text', () => {
+    const state: AppState = { ...editing('=5'), selection: 'B18' };
+    const result = step(state, EDIT_COMMIT, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).toBe(STRINGS.lockedText);
+    expect(result.effects).toEqual([FOCUS_GRID]);
+  });
+
+  it('not-playing leaves Edit_Mode and sets the Message', () => {
+    const lost = lostState();
+    const state: AppState = { ...lost, selection: 'B16', edit: { text: '=5' } };
+    const result = step(state, EDIT_COMMIT, trapEnv(1));
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.message).not.toBe('');
+    expect(result.effects).toEqual([FOCUS_GRID]);
+  });
+
+  it('KEEP_EDIT lists exactly parse-error, no-ink and bad-address', () => {
+    expect([...KEEP_EDIT]).toEqual(['parse-error', 'no-ink', 'bad-address']);
+  });
+
+  it('edit-commit without Edit_Mode does nothing', () => {
+    const idle = fresh();
+    expect(step(idle, EDIT_COMMIT, ENV).state).toBe(idle);
+  });
+
+  it('edit-cancel leaves Edit_Mode with no ink spent and focuses the grid', () => {
+    const state: AppState = { ...editing('=9'), alert: 'Col 1: oops.' };
+    const result = step(state, EDIT_CANCEL, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.alert).toBe('');
+    expect(result.state.run).toBe(state.run);
+    expect(result.effects).toEqual([FOCUS_GRID]);
+  });
+
+  it('formula-blur while editing is a click-away cancel with no effects and no ink', () => {
+    const state = editing('=9');
+    const result = step(state, BLUR, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.run).toBe(state.run);
+    expect(result.effects).toEqual([]);
+  });
+
+  it('formula-blur without an edit returns the same state and keeps a pending confirmation', () => {
+    const pendingState = go(fresh(), WAIT, RESTART);
+    expect(pendingState.pending).toBeDefined();
+    const result = step(pendingState, BLUR, ENV);
+    expect(result.state).toBe(pendingState);
+    expect(result.state.pending).toBeDefined();
+    const idle = fresh();
+    expect(step(idle, BLUR, ENV).state).toBe(idle);
+  });
+
+  it('formula-blur with both pending and edit cancels the edit and keeps the confirmation', () => {
+    const pendingState = go(fresh(), WAIT, RESTART);
+    const state: AppState = { ...pendingState, edit: { text: '=9' }, alert: 'Col 1: oops.' };
+    const result = step(state, BLUR, ENV);
+    expect(result.state.edit).toBeUndefined();
+    expect(result.state.alert).toBe('');
+    expect(result.state.pending).toBe(state.pending);
+    expect(result.state.message).toBe(state.message);
+    expect(result.state.run).toBe(state.run);
+    expect(result.effects).toEqual([]);
+  });
+
+  it('blur then cell-click cancels, then selects, with no Action', () => {
+    const state = editing('=9');
+    const after = go(state, BLUR, click('C3'));
+    expect(after.edit).toBeUndefined();
+    expect(after.selection).toBe('C3');
+    expect(after.run).toBe(state.run);
+  });
+
+  it('selection moves and cell clicks clear alert', () => {
+    const base: AppState = { ...fresh(), alert: 'Col 1: oops.' };
+    expect(go(base, click('C3')).alert).toBe('');
+    expect(go(base, command({ type: 'select-move', dir: 'E' })).alert).toBe('');
+  });
+
+  it('step does not mutate the state it receives', () => {
+    const state = editing('=ROW(HERO)+1');
+    const snapshot = { ...state };
+    step(state, EDIT_COMMIT, ENV);
+    expect(state).toEqual(snapshot);
   });
 });

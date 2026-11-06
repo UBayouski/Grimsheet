@@ -1,6 +1,12 @@
 import { formatAddress, parseAddress } from '../engine/index';
-import { applyAction, startRun } from '../game/index';
-import type { Action, ActionResult, RunState, StartRunResult } from '../game/index';
+import { applyAction, cellRawText, isCellLocked, isPlaying, startRun } from '../game/index';
+import type {
+  Action,
+  ActionResult,
+  RefusalReason,
+  RunState,
+  StartRunResult,
+} from '../game/index';
 import { decide, promptFor } from './confirmation';
 import type { Wanted } from './confirmation';
 import { damageSummary, endMessage, refusalMessage } from './messages';
@@ -26,6 +32,15 @@ export interface StepResult {
 const NO_EFFECTS: readonly Effect[] = [];
 const SEPARATOR_ROW = 13;
 const EMPTY_CHANGED: ReadonlySet<string> = new Set<string>();
+const SELECT_TEXT: readonly Effect[] = [{ type: 'select-formula-text' }];
+const EDIT_START_EFFECTS: readonly Effect[] = [
+  { type: 'focus', target: 'formula-bar' },
+  { type: 'select-formula-text' },
+];
+const FOCUS_GRID: readonly Effect[] = [{ type: 'focus', target: 'grid' }];
+
+/** Edit refusals that keep Edit_Mode and the typed text. */
+export const KEEP_EDIT: readonly RefusalReason[] = ['parse-error', 'no-ink', 'bad-address'];
 
 function unchanged(state: AppState): StepResult {
   return { state, effects: NO_EFFECTS };
@@ -155,7 +170,12 @@ function turn(state: AppState, action: Action, env: Env): StepResult {
 function select(state: AppState, address: string): StepResult {
   const parsed = parseAddress(address);
   if (!parsed.ok || parsed.point.row === SEPARATOR_ROW) return unchanged(state);
-  return unchanged({ ...state, selection: formatAddress(parsed.point), alert: '' });
+  return unchanged({
+    ...state,
+    selection: formatAddress(parsed.point),
+    edit: undefined,
+    alert: '',
+  });
 }
 
 /** Restart or switch: prompt, execute at once, or (cannot happen without a pending) cancel. */
@@ -216,6 +236,41 @@ function handlePending(
   return unchanged(clearPending(state, pending));
 }
 
+/** Enters Edit_Mode on the Selection, or shows the locked text. Only while playing. */
+function startEdit(state: AppState, effects: readonly Effect[]): StepResult {
+  const run = state.run;
+  if (run === undefined || !isPlaying(run)) return unchanged(state);
+  if (isCellLocked(run, state.selection) === true) {
+    return unchanged({ ...state, message: STRINGS.lockedText });
+  }
+  const text = cellRawText(run, state.selection) ?? '';
+  return { state: { ...state, edit: { text }, alert: '' }, effects };
+}
+
+function cancelEdit(state: AppState, effects: readonly Effect[]): StepResult {
+  if (state.edit === undefined) return unchanged(state);
+  return { state: { ...state, edit: undefined, alert: '' }, effects };
+}
+
+function commitEdit(state: AppState, env: Env): StepResult {
+  const run = state.run;
+  const edit = state.edit;
+  if (run === undefined || edit === undefined) return unchanged(state);
+  const result = applyAction(run, { kind: 'edit', address: state.selection, raw: edit.text });
+  if (result.ok) {
+    const accepted = accept({ ...state, edit: undefined }, run, result, STRINGS.edited, env);
+    return { state: accepted.state, effects: [...accepted.effects, ...FOCUS_GRID] };
+  }
+  if (result.reason === 'parse-error') {
+    return unchanged({ ...state, alert: result.message });
+  }
+  const message = refusalMessage(result) ?? result.message;
+  if (KEEP_EDIT.includes(result.reason)) {
+    return unchanged({ ...state, message, alert: '' });
+  }
+  return { state: { ...state, edit: undefined, message, alert: '' }, effects: FOCUS_GRID };
+}
+
 function handleEvent(state: AppState, event: UiEvent, env: Env): StepResult {
   switch (event.type) {
     case 'cell-click':
@@ -226,10 +281,22 @@ function handleEvent(state: AppState, event: UiEvent, env: Env): StepResult {
       const kind = index === state.levelIndex ? 'restart' : 'switch';
       return request(state, { kind, levelIndex: index }, env);
     }
+    case 'cell-dblclick': {
+      const selected = select(state, event.address).state;
+      if (selected === state) return unchanged(state);
+      return startEdit(selected, EDIT_START_EFFECTS);
+    }
+    case 'formula-focus':
+      if (state.edit !== undefined) return unchanged(state);
+      return startEdit(state, SELECT_TEXT);
+    case 'formula-input':
+      if (state.edit === undefined) return unchanged(state);
+      return unchanged({ ...state, edit: { text: event.text }, alert: '' });
+    case 'formula-blur':
+      return cancelEdit(state, NO_EFFECTS);
     case 'command':
       break;
     default:
-      // Edit events belong to part B.
       return unchanged(state);
   }
   const command = event.command;
@@ -245,6 +312,7 @@ function handleEvent(state: AppState, event: UiEvent, env: Env): StepResult {
       return unchanged({
         ...state,
         selection: moveSelection(state.selection, command.dir),
+        edit: undefined,
         alert: '',
       });
     case 'restart':
@@ -253,15 +321,22 @@ function handleEvent(state: AppState, event: UiEvent, env: Env): StepResult {
     case 'next-level':
       if (state.run === undefined || state.run.status !== 'won') return unchanged(state);
       return startLevel(state, state.levelIndex + 1, env);
+    case 'edit-start':
+      return startEdit(state, EDIT_START_EFFECTS);
+    case 'edit-commit':
+      return commitEdit(state, env);
+    case 'edit-cancel':
+      return cancelEdit(state, FOCUS_GRID);
     default:
-      // Edit commands belong to part B; confirm and cancel need a pending prompt.
+      // Confirm and cancel need a pending prompt.
       return unchanged(state);
   }
 }
 
 /** One pure transition. Calls `startRun` and `applyAction`, never mutates a received state. */
 export function step(state: AppState, event: UiEvent, env: Env): StepResult {
-  if (event.type === 'formula-blur' && state.edit === undefined) return unchanged(state);
+  // A blur never touches a pending confirmation: cancel the edit (if any) and keep the rest.
+  if (event.type === 'formula-blur') return cancelEdit(state, NO_EFFECTS);
   const pending = state.pending;
   if (pending !== undefined) {
     const handled = handlePending(state, pending, event, env);
