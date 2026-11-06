@@ -1,0 +1,36 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 [Batch 1] [IDE] [can start before game-rules Batch 5] Add the DOM test tool and the lint globals": [
+      {
+        "executionId": "b633fa8c-d115-4eac-b1f4-20c0ed0c38fb",
+        "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
+        "timestamp": 1793993945024
+      },
+      {
+        "executionId": "b633fa8c-d115-4eac-b1f4-20c0ed0c38fb",
+        "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
+        "timestamp": 1793994080358
+      }
+    ],
+    "1.2 [Batch 1] [IDE] [can start before game-rules Batch 5] Create `types.ts` and `strings.ts` with the strings test": [
+      {
+        "executionId": "b633fa8c-d115-4eac-b1f4-20c0ed0c38fb",
+        "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
+        "timestamp": 1793994083500
+      },
+      {
+        "executionId": "b633fa8c-d115-4eac-b1f4-20c0ed0c38fb",
+        "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
+        "timestamp": 1793994163063
+      }
+    ],
+    "1. Tooling, types and strings": [
+      {
+        "executionId": "b633fa8c-d115-4eac-b1f4-20c0ed0c38fb",
+        "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
+        "timestamp": 1793994163189
+      }
+    ]
+  }
+}

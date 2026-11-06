@@ -31,8 +31,8 @@ Rules that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Tooling, types and strings
-  - [ ] 1.1 [Batch 1] [IDE] [can start before game-rules Batch 5] Add the DOM test tool and the lint globals
+- [x] 1. Tooling, types and strings
+  - [x] 1.1 [Batch 1] [IDE] [can start before game-rules Batch 5] Add the DOM test tool and the lint globals
     - Files: edit `package.json`, `package-lock.json`, `eslint.config.js`; create `src/ui/happy-dom-smoke.test.ts`, `src/ui/node-env-smoke.test.ts`
     - Run `npm install --save-exact --save-dev happy-dom@21.0.4`; check `package.json` lists `"happy-dom": "21.0.4"` with no `^` or `~`. Add one eslint block that gives `tests/e2e/**` and `tests/fixtures/**` both Node and browser globals (`src/**` already has browser globals). No change to `vite.config.ts`, `tsconfig.json` or `playwright.config.ts`
     - Tests: `happy-dom-smoke.test.ts` starts with `// @vitest-environment happy-dom` and proves `document` exists and can create an element and set `textContent`; `node-env-smoke.test.ts` has no docblock and asserts `typeof document === 'undefined'`, so the engine, model, game and pure UI tests stay in Node
@@ -40,7 +40,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 15.1, 1.1, 1.4_
 
-  - [ ] 1.2 [Batch 1] [IDE] [can start before game-rules Batch 5] Create `types.ts` and `strings.ts` with the strings test
+  - [x] 1.2 [Batch 1] [IDE] [can start before game-rules Batch 5] Create `types.ts` and `strings.ts` with the strings test
     - Files: create `src/ui/types.ts`, `src/ui/strings.ts`, `src/ui/strings.test.ts`
     - `types.ts` imports nothing from `src/game/`. It holds only types, no logic: `StorageLike`, `MountOptions`, `AppHandle`, `Progress`, `LevelEntry`, `KeyInput`, `FocusKind`, `KeyContext`, `KeyCommand`, `Pending`, `Env`, `UiEvent`, `Effect`, `CellView`, `TabView`, `ViewModel`; all fields `readonly`. It defines locally `Direction = 'N' | 'S' | 'E' | 'W'` and `Status = 'playing' | 'won' | 'lost'`, the same literal unions the game uses, so values are assignable both ways (3.2 adds a compile-time check of this). The only import is the type `ErrorKind` from `../engine/index`. `AppState` is not defined here: it holds a `RunState`, so task 3.2 adds it to this file. None of the other types needs `RunState` (`Env` holds `LevelEntry` only, `Effect` holds `Progress`, `UiEvent` holds `KeyCommand`, `CellView` holds `ErrorKind`, `ViewModel` holds plain fields), so nothing else moves. It is exercised by every later test
     - `strings.ts` exports `STRINGS` with every player-visible text of the design table: `titleBar`, `panelTitle`, `tabBarLabel`, `gridLabel`, `nameBoxLabel`, `formulaBarLabel`, `lockedText`, `padlock` (U+1F512), `buttons`, `status`, `edited`, `undone`, `loadFailed`, `somethingWrong`, `won`, `wonLast`, `lostTitle`, `lostBody`, `confirmRestart`, `confirmSwitch(label)`, `damage`, `entity`, `terrain`, `unreadableLevel`
