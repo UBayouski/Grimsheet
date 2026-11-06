@@ -708,3 +708,27 @@ What Kiro did: Nothing during the incident. At 11:51 on 2026-11-06 the main chec
 What changed because of it (time saved, bug caught, decision made):
 - The cause is not confirmed. Two candidates: a worktree cleanup that touched the shared `node_modules`, or the `happy-dom` install interacting with the parallel runs. I have not tested either.
 - Watch for it after the next Crew run: check that `node_modules` still has its contents before and after the run, and after the worktree is cleaned up.
+- Update after the next Crew run (game-rules Batch 5 and grid-ui 4.1): after its worktree cleanup `node_modules` was intact (108 packages), so Crew cleanup is not confirmed as the cause.
+
+## 2026-11-06 — game-rules Batch 5 and grid-ui 4.1 in one Crew run; game-rules spec complete
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: One Kiro Crew Task Runner run for three tasks from two specs: game-rules 5.1 (the `src/game/index.ts` barrel, the module scan and generator sanity checks), game-rules 5.2 (the final checkpoint) and grid-ui 4.1 (`render.ts`, its CSS and tests). The tasks touch disjoint files, so one run could hold them.
+
+What Kiro did:
+- The run had 3 steps, merged as `3cbd1de`. The step commits are out of task order: grid-ui 4.1 at 12:04:48 (step 3), game-rules 5.1 at 12:06:31 (step 1) and game-rules 5.2 at 12:07:31 (step 2).
+- game-rules 5.1: `src/game/index.ts` (23 lines, named exports only, no default), `src/game/module.test.ts` (284 lines: the exact set of runtime export names, no `default`, and a scan of the non-test game sources for banned constructs and layering), and 59 lines added to `src/game/testing/arbitraries.test.ts` for checks that need `run.ts` and `turn.ts`.
+- game-rules 5.2: the final checkpoint, which edits no source. It ticks the task boxes.
+- grid-ui 4.1: `src/ui/render.ts` (287 lines, with `ERROR_CLASS`), `src/styles/grid-ui.css` (127 lines) and `src/ui/render.test.ts` (304 lines, run in the `happy-dom` environment).
+- Branch diff against `main`: 9 files, 1,142 lines added. A "Kiro usage update" commit (`1e1955a`) in the run also carried the grid-ui tick edits and earlier log entries.
+- Combined result after the merge: `npm run verify` passes with 48 test files and 1076 tests (46 files and 1040 tests before, so 2 new files and 36 new tests), typecheck and lint clean. I ran it myself.
+- I changed the labels on game-rules 5.1 and 5.2 from `[IDE]` to `[Crew]` (and the Batch 5 row of the batch table), and ticked grid-ui 4.1. No task in any spec shows `[~]`.
+
+What changed because of it (time saved, bug caught, decision made):
+- The game-rules spec is closed. Its five batches ran as IDE (Batch 1), Crew (Batch 2), IDE (Batch 3), Crew (Batch 4) and Crew (Batch 5), and the Batch 5 run also did grid-ui work. Every game-rules task is ticked.
+- Time: pairing a closing checkpoint with an unrelated spec's renderer in one run used the same worktree for both, and neither blocked the other.
+- Not verified: I did not diff the checkpoint step's changes beyond the file list, and did not read `render.ts` or the CSS line by line. I only know they pass the suite and the checks.
+- Nothing was committed by me.
