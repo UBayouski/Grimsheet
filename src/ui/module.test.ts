@@ -252,7 +252,6 @@ describe('no AI tool names and no remote references', () => {
     ...listFiles(UI_DIR, (n) => n.endsWith('.ts')),
     join(SRC, 'styles', 'grid-ui.css'),
     join(SRC, 'main.ts'),
-    join(SRC, 'stub-levels.ts'),
     ...listFiles(join(ROOT, 'tests', 'fixtures'), () => true),
     ...listFiles(join(ROOT, '.kiro', 'specs', 'grid-ui'), () => true),
   ];

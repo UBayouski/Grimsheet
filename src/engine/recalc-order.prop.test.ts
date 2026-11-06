@@ -142,5 +142,5 @@ describe('Property 2: recalculation order independence', () => {
       }),
       200,
     );
-  });
+  }, 60_000);
 });

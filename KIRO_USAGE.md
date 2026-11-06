@@ -893,3 +893,43 @@ What changed because of it (time saved, bug caught, decision made):
 - Lesson: check the file list of a Crew merge against the plan, not the step summary. A step with no commit looks the same as a step that did nothing.
 - Not done: the Batch 3 cross-level tests (files, solutions, search, scan) are still ahead, and they include a lock check across all levels (`files.test.ts`). The per-level lock test added here does not replace it.
 - Nothing was committed.
+
+## 2026-11-06 — levels Batch 3: Crew run, all six files present
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: Run Batch 3 of the levels spec as one Kiro Crew Task Runner run: 3.1 (the `src/levels/index.ts` barrel with its test), 3.2 (the files test), 3.3 (the solutions test), 3.4 (the edit-free search test) and 3.5 (the scan test). All five tasks add files, and none edits an existing one.
+
+What Kiro did:
+- Crew made 5 step commits between 14:21:24 and 14:25:28, merged as `94fa7c0` at 14:36:50. The commit order was step 1 (barrel), step 5 (scan), step 2 (files), step 3 (solutions) and step 4 (search). Six files arrived: `index.ts`, `index.test.ts`, `files.test.ts`, `solutions.test.ts`, `search.test.ts` and `scan.test.ts`. This time I checked the merge against the plan file by file, because two earlier Crew steps (grid-ui 4.2 and levels 2.1) had finished with no commit. Nothing was missing.
+- The new cross-level tests ran at once against all five levels and found a real defect. The solutions test failed for `tests/solutions/02-the-chaser.json` and `tests/solutions/04-the-trap-row.json` ("is stored as JSON.stringify(parsed, null, 2) plus a newline"). Crew's level steps had hand-formatted those two Solution_Files, with actions folded onto fewer lines. The other three were canonical. I rewrote both in canonical form with `JSON.stringify(parsed, null, 2) + '\n'`, and checked in the same script that the parsed data before and after is deep-equal (14 actions and 10 actions, `minimalInk` 1 for both). The files went from 655 to 863 characters and from 451 to 617. No data changed.
+- Result: the levels tests are 11 files and 216 tests, all passing.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the byte-exact format of the stored solutions is a rule (Requirement 9.1), and no per-level test checked it. The cross-level solutions test did, on the first run. This is the same kind of finding as the unlocked maps: a rule that only a test across all five levels enforces.
+- Time: the five tests were written side by side in a separate worktree while the IDE was free.
+- Nothing was committed by me.
+
+## 2026-11-06 — levels 4.1 and 5.1: final checkpoint, real levels in main.ts, global timeout
+
+Surface: IDE
+
+Features: spec
+
+What I asked for: Tick Batch 3, run task 4.1 (the final checkpoint) and task 5.1 (`src/main.ts` loads the five real levels instead of `STUB_LEVELS`), and end the load-induced test timeouts with a global default. Run `npm run verify` twice and `npm run e2e`.
+
+What Kiro did:
+- Global timeout: `vite.config.ts` now has `testTimeout: 30_000` in the `test` block. The explicit per-test timeouts stay: 60,000 ms on the 15 tests in the six game and model property files and on the search tests, and 120,000 ms on the engine totality property. A test that sets its own timeout keeps it. Reason: earlier timeouts were each a test failing on Vitest's 5,000 ms default while the machine was loaded (a property test at 5.4 s, a worst-case recalculation near the limit). One default for every test is simpler than finding the next one after it fails. The 5,000 ms engine limit of Requirement 12.3 is not affected: it is asserted inside the one worst-case test, not by the test timeout.
+- Task 4.1, checks: no `author-*.scratch.test.ts` file exists. All 10 JSON files (five levels, five solutions) have no `\r`, no byte order mark and end in a newline, checked at byte level. `git ls-files --eol` reports `attr/text eol=lf` and `i/lf w/lf` for the files I checked in the index. No AI tool name other than Kiro appears under `src/levels/`, `tests/solutions/` or the levels spec. `git status` showed files outside the allowed set, so I did not pretend the working tree was clean: two engine property test files (`print-parse.prop.test.ts`, `recalc-order.prop.test.ts`) and the new `.kiro/specs/error-monsters/` folder were changed by other work and are not mine, and the rest are the edits of 5.1 and the timeout.
+- A mistake of mine, caught: my first byte check reported "10 of 10 files have a CR or BOM". That was my check, not the files: a culture-sensitive `StartsWith` on the BOM character matches every string. A byte-level check showed 0 CR and 0 BOM.
+- Task 5.1: `src/main.ts` now imports `LEVELS` from `./levels/index` and passes it to `mountApp`, and nothing else changed. `src/stub-levels.ts` is deleted. The stub assertions are removed from `src/ui/fixture-levels.test.ts` (5 tests remain, all about `tests/fixtures/levels.ts`). `tests/fixtures/levels.ts` stays. The grid-ui module scan listed `src/stub-levels.ts` by name in its AI-tool-name file list, so I removed that entry too, or the test would have failed on a missing file.
+- Production build: `npm run build` succeeds. The five level ids (`01-the-corridor` to `05-the-lich`) are in `dist/`. `01-fixture-corridor`, `02-fixture-lab`, `tests/fixtures` and `01-stub` are not. `npm run check:dist` passes (3 files, no fixtures, no external URLs).
+- Counts: `npm run verify` twice: 65 test files and 1524 tests passing both times, typecheck and lint clean. `npm run e2e`: 5 tests passing (smoke, edit-and-fix, win-and-persist and two grid-layout flows). The e2e flows still use the fixture page, and the smoke test uses the real entry point.
+- Ticks: tasks 3.1 to 3.5 and parent 3, 4.1 and parent 4, 5.1 and parent 5 in `levels/tasks.md`. The levels spec is complete.
+
+What changed because of it (time saved, bug caught, decision made):
+- The deployed game now shows the five real levels. The gap I noted in the hosting entry (the page still showed the stub) is closed.
+- Not verified: the e2e tests do not play the real levels. They use the fixture page, and the real levels are proven only by the replay tests and the build check.
+- Nothing was committed.

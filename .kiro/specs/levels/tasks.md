@@ -90,40 +90,40 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 2.1, 2.2, 2.5, 3.1, 3.3, 9.1, 9.3, 10.1, 10.2, 10.3, 11.4, 13.1, 13.2_
 
-- [ ] 3. Cross-level files
-  - [ ] 3.1 [Batch 3] [Crew] Create the `index.ts` barrel with its test
+- [x] 3. Cross-level files
+  - [x] 3.1 [Batch 3] [Crew] Create the `index.ts` barrel with its test
     - Files: create `src/levels/index.ts`, `src/levels/index.test.ts`
     - `index.ts` holds exactly the five JSON imports (`./01-the-corridor.json` to `./05-the-lich.json`) and `export const LEVELS: readonly unknown[] = [level01, level02, level03, level04, level05];`. No call, no default export, no browser global, no other import
     - Tests: the non-test entries of `src/levels/` (read with `node:fs`) are exactly the five Level_Files, `index.ts` and `helpers.ts`, with no subdirectory; `LEVELS` has 5 entries and `Object.keys` of the module is `['LEVELS']` with no `default`; each element deep-equals `JSON.parse` of the file text at the same position; the source of `index.ts` has exactly five imports of the five JSON files, one export, no `(` call and no `default`
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 15.3, Decision 1_
 
-  - [ ] 3.2 [Batch 3] [Crew] Create the files test (all five levels)
+  - [x] 3.2 [Batch 3] [Crew] Create the files test (all five levels)
     - Files: create `src/levels/files.test.ts`
     - Tests across all five levels, driven by `LEVEL_IDS`: `loadLevelFile` is ok and `startRun` is ok with Status `playing`, `hp` equal to `startingHp` and `ink` equal to the document `ink`; the file text equals `serializeLevelText` of the loaded Level, contains no `\r` and no byte order mark (the first difference is reported as an index and a kind); `.gitattributes` (read with `node:fs`) holds both required lines; each `id` equals the file name without `.json`, the two-digit prefix equals the position in `LEVELS` counted from 1, the five ids are unique; `tabLabel` equals `Sheet1: The Corridor`, `Sheet2: The Chaser`, `Sheet3: The Locked Crypt`, `Sheet4: The Trap Row`, `Sheet5: The Lich` and the five are distinct; each hint is one line of 1 to 120 characters with the substrings of Requirement 2.5; every Panel_Label (the spec to the left of each named cell in rows 14 to 20) is 1 to 24 characters; every Map_Area cell and every Panel_Label cell is locked, and the Cell_Names of the unlocked cells are exactly the Editable_Cells of each level; no raw text contains `rand` (case-insensitive); the `seed` of level N is N; monster counts are 0, 1, 0, 0, 1 with the ids and rule names `M1`, `MOVE_M1`, `ATK_M1`; levels 1 to 4 each have a Map_Area cell with the Value `X` after `startRun`, and level 5 has the gate raw text `=IF(LICH_HP<=0,"X","#")` at `K4` with the Value `#` at load
     - Acceptance: `npm run verify` passes
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3_
 
-  - [ ] 3.3 [Batch 3] [Crew] Create the solutions test (all five levels)
+  - [x] 3.3 [Batch 3] [Crew] Create the solutions test (all five levels)
     - Files: create `src/levels/solutions.test.ts`
     - Tests across all five levels, driven by `LEVEL_IDS`: `readSolution` shape (kinds `move`, `wait`, `edit`, no `undo`, no extra key, `dir` in `N S E W`, a non-empty `actions` array), `levelId` equals the level id, the edit count equals `minimalInk`, level 1 has `minimalInk` 0 and no `edit`, and the Solution_File text equals `JSON.stringify(parsed, null, 2) + '\n'` with no `\r`; replay of each solution: every Action accepted with no Refusal (a refusal fails with `describeStep`), after every Action but the last `hp` above 0, `ink` at 0 or above and Status `playing`, after the last Action Status `won`, `hp` above 0 and the hero standing on a cell whose Value is `X`; determinism: two replays from two `startRun` calls give `finalSnapshot` values that are `toEqual`; ink table: `ink` 0, 2, 2, 1, 2 with `minimalInk` 0, 1, 2, 1, 2 and `startingHp` 3, 3, 3, 5, 6, and `ink` is `minimalInk` or `minimalInk` plus 1; for levels with `minimalInk` of 1 or more, the replay on a copy of the document with `ink` one lower stops at the last `edit` Action with the reason `no-ink`
     - Acceptance: `npm run verify` passes
     - _Requirements: 9.1, 9.2, 9.3, 10.1, 10.2, 10.3, 12.1, 13.1, 13.2_
 
-  - [ ] 3.4 [Batch 3] [Crew] Create the edit-free search test
+  - [x] 3.4 [Batch 3] [Crew] Create the edit-free search test
     - Files: create `src/levels/search.test.ts`
     - Tests: `searchEditFree` on level 1 returns the outcome `won`; on levels 2 to 5 it returns the outcome `exhausted` with `states` above 1 (a `won` result fails and prints the depth and `boardText`); a `limit` outcome fails the test as inconclusive with the text of `describeLimit`; the default limits are 100 turns and 1,000 states. Each test is written `it('...', () => { ... }, 60_000)`. No clock, no elapsed-time assertion
     - Acceptance: `npm run verify` passes
     - _Requirements: 11.1, 11.2, 11.3, 11.4, Decisions 8, 14 and 15_
 
-  - [ ] 3.5 [Batch 3] [Crew] Create the scan test
+  - [x] 3.5 [Batch 3] [Crew] Create the scan test
     - Files: create `src/levels/scan.test.ts`
     - Tests: the Deny_List is assembled from string fragments inside the test, so no test file contains an entry as a whole word, and every file under `src/levels/` and `tests/solutions/` is scanned case-insensitively for each entry with none found; the forbidden strings `Math.random`, `Date.now`, `new Date`, `eval`, `new Function` and `performance.now` are also built from fragments and found in none of the `*.test.ts` files of `src/levels/` and not in `helpers.ts`; the import lists: each test file imports, besides `vitest` and `node:` modules, only `./helpers`, sibling files and the barrels `../game/index`, `../model/index` and `../engine/index`; `helpers.ts` imports exactly `node:fs`, `../game/index`, `../model/index` and `../engine/index`; `index.ts` imports exactly the five JSON files, contains no `(` call and no browser global (`window`, `document`, `localStorage`, `navigator`); no non-test `.ts` file under `src/` imports `levels/helpers` or a `./helpers` that resolves to it (the scan walks `src/` with `node:fs`); a self-check proves that the scanner flags a sample bad snippet
     - Acceptance: `npm run verify` passes
     - _Requirements: 15.1, 15.2, 15.3, Decision 16_
 
-- [ ] 4. Final check
-  - [ ] 4.1 [Batch 4] [IDE] Final checkpoint
+- [x] 4. Final check
+  - [x] 4.1 [Batch 4] [IDE] Final checkpoint
     - Files: edit `.kiro/specs/levels/tasks.md` to tick the checkboxes; no source edits unless a defect is found
     - Run `npm run verify`; confirm it reports zero failures under Node 22 or later
     - Confirm with `git status` that only files under `src/levels/` and `tests/solutions/`, `.gitattributes` and the levels spec files are new or changed (plus `eslint.config.js` only if the fallback of 1.1 was needed), that no `author-*.scratch.test.ts` file exists, and that nothing is committed
@@ -134,8 +134,8 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 2.2, 2.3, 15.1, 15.2, 15.3_
 
-- [ ] 5. Entry point and stub removal
-  - [ ] 5.1 [Batch 5] [IDE] [needs grid-ui 4.2 and 5.2] Swap the stub list for the real levels
+- [x] 5. Entry point and stub removal
+  - [x] 5.1 [Batch 5] [IDE] [needs grid-ui 4.2 and 5.2] Swap the stub list for the real levels
     - Files: edit `src/main.ts`, `src/ui/fixture-levels.test.ts`; delete `src/stub-levels.ts`; keep `tests/fixtures/levels.ts`
     - In `src/main.ts` replace the `STUB_LEVELS` import from `./stub-levels` by `import { LEVELS } from './levels/index'` and pass `LEVELS` to `mountApp`; nothing else changes. Remove the assertions about `src/stub-levels.ts` from `src/ui/fixture-levels.test.ts` and keep the ones about `tests/fixtures/levels.ts`
     - Tests: the remaining `fixture-levels.test.ts` assertions still pass; the scan of 3.5 still passes (no non-test file imports the helper)

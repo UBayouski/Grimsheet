@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { FIXTURE_LEVELS } from '../../tests/fixtures/levels';
 import { applyAction, cellRawText, startRun } from '../game/index';
 import type { RunState } from '../game/index';
-import { STUB_LEVELS } from '../stub-levels';
 
 function start(doc: unknown): RunState {
   const result = startRun(doc);
@@ -10,22 +9,17 @@ function start(doc: unknown): RunState {
   return result.state;
 }
 
-describe('fixture and stub levels', () => {
-  it('every fixture level and stub level starts', () => {
+describe('fixture levels', () => {
+  it('every fixture level starts', () => {
     expect(FIXTURE_LEVELS).toHaveLength(2);
-    expect(STUB_LEVELS.length).toBeGreaterThan(0);
-    for (const doc of [...FIXTURE_LEVELS, ...STUB_LEVELS]) {
+    for (const doc of FIXTURE_LEVELS) {
       expect(startRun(doc).ok).toBe(true);
     }
   });
 
   it('has unique ids', () => {
-    const ids = [...FIXTURE_LEVELS, ...STUB_LEVELS].map((doc) => (doc as { id: string }).id);
-    const fixtureIds = FIXTURE_LEVELS.map((doc) => (doc as { id: string }).id);
-    expect(new Set(fixtureIds).size).toBe(fixtureIds.length);
-    const stubIds = STUB_LEVELS.map((doc) => (doc as { id: string }).id);
-    expect(new Set(stubIds).size).toBe(stubIds.length);
-    expect(ids.length).toBe(fixtureIds.length + stubIds.length);
+    const ids = FIXTURE_LEVELS.map((doc) => (doc as { id: string }).id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('first fixture has no monsters and an exit two steps east of the hero', () => {
