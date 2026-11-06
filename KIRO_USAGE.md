@@ -627,3 +627,25 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: the module scan's string stripping would mis-handle a regex literal containing a quote character. No current model file has one.
 - The sheet-model spec is closed with every task in the plan done. The next spec in the brief is `game-rules`.
 - Nothing was committed. The working tree holds the four edited model files, `testing/arbitraries.test.ts`, and the new `index.ts` and `module.test.ts`.
+
+## 2026-11-06 — game-rules Batches 1 and 2
+
+Surface: IDE, Crew
+
+Features: spec
+
+What I asked for: Build Batches 1 and 2 of the game-rules spec. Batch 1 (tasks 1.1 `types.ts`, 1.2 `random.ts`, 1.3 `state.ts`, each with tests) ran in the IDE. Batch 2 (tasks 2.1 `run.ts`, 2.2 `monsters.ts`, 2.3 `testing/arbitraries.ts`, each with tests) ran in Kiro Crew.
+
+What Kiro did:
+- Batch 1 in the IDE: the three tasks ran one after another in the main checkout. Each passed `npm run verify` before the next started. Batch 1 was committed afterwards.
+- Batch 2 in Crew: the three tasks ran in parallel steps in a separate worktree, and the branch was merged afterwards.
+- Crew copied the then-uncommitted Batch 1 files into its worktree unchanged.
+- Crew's final step also committed `monsters.ts` and the tasks.md ticks.
+- The merge reset the ticks for 1.1, 1.2, 1.3 and parent 1, so I ticked them again by hand.
+- Combined result: `npm run verify` passes with 36 test files and 731 tests, typecheck and lint clean.
+
+What changed because of it (time saved, bug caught, decision made):
+- Lesson: commit Batch 1 before starting a Crew run that depends on it.
+- Lesson: read the branch history before merging, since the final step committed `monsters.ts` and the tasks.md ticks.
+- Time: three independent tasks ran side by side in a separate worktree while the main checkout stayed free.
+- Not verified: I did not diff the copied Batch 1 files against the IDE versions myself.

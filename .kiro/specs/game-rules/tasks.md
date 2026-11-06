@@ -26,22 +26,22 @@ Rules that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Foundations: types, random generator, state helpers
-  - [ ] 1.1 [Batch 1] [IDE] Create `types.ts` with tests
+- [x] 1. Foundations: types, random generator, state helpers
+  - [x] 1.1 [Batch 1] [IDE] Create `types.ts` with tests
     - Files: create `src/game/types.ts`, `src/game/types.test.ts`
     - Export every public type of the design (`Direction`, `Status`, `Action`, `EditRecordEntry`, `MonsterState`, `UndoSnapshot`, `RunState`, `RefusalReason`, `DamageSource`, `DamageEntry`, `DamageLog`, `Refusal`, `ActionResult`, `StartRunResult`, `RandomGenerator`), all fields `readonly`; export `REFUSAL_REASONS` with exactly the twelve codes of the design and `MAX_DAMAGE = 1_000_000_000`; `Value`, `Level` and `LoadError` are imported as types from `../engine/index` and `../model/index`
     - Tests: `REFUSAL_REASONS` equals the hard-coded expected array, has no duplicates, and every code is non-empty kebab-case; `MAX_DAMAGE` equals `1e9`; a type-level sample `RunState` and `ActionResult` literal compiles
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.3, 1.4, 1.6, 3.1, 8.1_
 
-  - [ ] 1.2 [Batch 1] [IDE] Create `random.ts` with tests
+  - [x] 1.2 [Batch 1] [IDE] Create `random.ts` with tests
     - Files: create `src/game/random.ts`, `src/game/random.test.ts`
     - Export `createRandom(seed, state?)` (mulberry32, one unsigned 32-bit state, `state` read through a getter, `seed` ignored when `state` is given) and `seedOf(doc)` (own property `seed` of a plain object, an integer from 0 to 4294967295, otherwise 0)
     - Tests: same seed gives the same sequence; 10,000 draws all in [0, 1); resuming with `createRandom(0, g.state)` continues the same sequence; seeds 0 and 4294967295 work; `seedOf` returns the seed for valid values and 0 for `-1`, `1.5`, `4294967296`, a string, `NaN`, a missing field, `null` and a non-object
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.2, 2.1, 2.2, 15.4_
 
-  - [ ] 1.3 [Batch 1] [IDE] Create `state.ts` with tests
+  - [x] 1.3 [Batch 1] [IDE] Create `state.ts` with tests
     - Files: create `src/game/state.ts`, `src/game/state.test.ts`
     - Internal module (not exported by the barrel): the module-private `WeakMap<RunState, Sheet>` registry with `sheetOf`; `makeSheet(level, edits)` that mirrors the model loader (`createSheet`, `setRawText` for the 144 map characters, then every Cell_Spec, then `setCellName`, then the Edit_Record in order) and returns `undefined` on any refused call; `recalc(sheet, heroAddress, generator)` calling `recalculate` with `random: () => gen.next()`; `makeState(fields, sheet)` that deep-freezes the state, its arrays and its snapshot and registers the Sheet; `levelIndex(level)` cached in a `WeakMap` (raw, locked, name per Address); `effectiveRaw`, `currentRaw`, `isLocked`; `wholeDamage(n)` with the `MAX_DAMAGE` cap; address helpers (`neighbour`, in-map test for rows 1 to 12 and columns A to L, `point` conversion) and Reading_Order sorting of monster indices
     - Tests: `wholeDamage` for `0.9` (0), `1.5` (1), `2` (2), `-1` (0), `0` (0), `1e9` (`1e9`), `1e300` (`MAX_DAMAGE`), `NaN` (0), `Infinity` (`MAX_DAMAGE`), `-Infinity` (0); `makeSheet` gives the same 240 Values as the model loader for a small level; applying an Edit_Record changes the edited Cell; two `makeSheet` calls share nothing; `makeState` output is frozen at every depth and registered; `currentRaw` prefers the last edit and falls back to the Level; `levelIndex` merges map characters and specs; `neighbour` off the map and on the map edge; Reading_Order sorts by row then column
@@ -70,22 +70,22 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 12.2, 13.3, 14.5, 15.2, 15.4_
 
-- [ ] 3. Turn algorithm
-  - [ ] 3.1 [Batch 3] [IDE] Create `turn.ts`: action shell, moves, waits and the turn sequence
+- [x] 3. Turn algorithm
+  - [x] 3.1 [Batch 3] [IDE] Create `turn.ts`: action shell, moves, waits and the turn sequence
     - Files: create `src/game/turn.ts`, `src/game/turn.test.ts`
     - Implement `parseAction` (copies fields, `invalid-action` for any malformed value), `applyAction` with the registry check (`internal-error` for a forged state), the `not-playing` check, the fixed refusal message templates of the design, and one outer `try/catch` that ignores the thrown value and returns the fixed `internal-error` Refusal; the move path (`blocked` for a target outside rows 1 to 12 or columns A to L or not `.`, `X` or `^`, checked before `occupied`) and the wait path; `runTurn` for steps 3 to 7: fresh Sheet and recalculation, `stepMonsters`, the trap (hero Cell is `^`, `TRAP` number through `wholeDamage`), haunting once when `listCycleCells` is non-empty on the step 3 Sheet, the second recalculation with `valuesRngState` taken just before it, the outcome (loss before win, a hero on a non-walkable Cell stays alive), `turn + 1`, `undoSnapshot` of the previous state, results and Damage_Logs frozen. Edit and undo actions return a placeholder `internal-error` Refusal until 3.2 and 3.3
     - Tests: `REFUSAL_REASONS` all have messages of 1 to 200 characters; each malformed Action gives `invalid-action`; a throwing getter gives `internal-error`; a forged state gives `internal-error`; one move per direction; wall, error Cell, map edge and row 13 neighbour give `blocked`; a monster on a walkable Cell gives `occupied`; a refused move leaves `turn`, `ink` and `rngState` of the caller alone and returns no state; `turn` rises by exactly 1 on an accepted Action; step order with scripted rules (trap damage is logged before haunting damage; a monster that moves is seen by the next monster); `TRAP` absent, `0`, `0.5`, `1.5` (damage 1), `2`, text, a positive number; trap damage again on every turn spent on `^`; haunting once for several cycle Cells; loss beats win on `X` with `hp` 0; a hero on an error Cell lives and can walk out; `not-playing` for move and wait after a win and after a loss; whole-number damage examples: `atk` `0.9` logs nothing, `1.5` logs 1, `1e300` logs exactly `MAX_DAMAGE` with `hp` equal to old `hp - 1e9`, a safe integer and Status `lost`, the same for `TRAP` `1e300`, several monsters with `1e300` give `hp` equal to the old `hp` minus the logged sum and still a safe integer, and `startingHp` of `Number.MAX_SAFE_INTEGER` with damage 1 gives `Number.MAX_SAFE_INTEGER - 1`; a `RAND()` turn stores the advanced `rngState`
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.5, 1.6, 1.7, 3.1, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 5.4, 5.5, 7.1, 8.1, 8.2, 8.3, 9.1, 9.2, 9.3, 9.4, 11.1_
 
-  - [ ] 3.2 [Batch 3] [IDE] Add the edit action to `turn.ts`
+  - [x] 3.2 [Batch 3] [IDE] Add the edit action to `turn.ts`
     - Files: edit `src/game/turn.ts`, edit `src/game/turn.test.ts` (no other files)
     - Replace the edit placeholder: the checks in the Requirement 6.1 order (`not-playing`, `bad-address` via `parseAddress`, `reserved-row` for row 13, `locked`, `unchanged` against `currentRaw`, `no-ink`, `parse-error`), where the last check refuses text over 500 characters with `Text is longer than 500 characters.` and refuses a leading `=` text that `parseFormula` rejects with the engine's `Col N: <message>.` text unchanged; validate before anything is stored; on success append the canonical `{ address, raw }` to the Edit_Record, subtract 1 from `ink`, run `runTurn`; no check against the Cell under the hero or a monster; a `setRawText` refusal after validation gives `internal-error`
     - Tests: each refusal reason in the Requirement 6.1 order (a case that fails two checks reports the earlier one); a Cell without a Cell_Spec is editable; lower-case address accepted and stored canonical; a `Col N:` message equals the engine text; a 500-character literal is accepted and a 501-character one is `parse-error` with the fixed message and no ink spent; refused edits leave `turn`, `ink`, `rngState` and the Edit_Record alone; an accepted edit spends 1 ink, appends one entry and runs the full turn (monsters act, haunting applies); an edit that makes the Cell under the hero or a monster a wall is accepted and the entity stays; an edit that removes the last cycle causes no haunting that turn; an edit that turns a wall into floor opens a move that was refused before; a move onto a Cell where a monster stands, after an edit turned that Cell into a wall, is refused as `blocked` and not `occupied`; an edit that breaks a monster's `atk` stops its damage
     - Acceptance: `npm run verify` passes
     - _Requirements: 4.1, 4.4, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 7.7, 8.3_
 
-  - [ ] 3.3 [Batch 3] [IDE] Add undo and isolation to `turn.ts`
+  - [x] 3.3 [Batch 3] [IDE] Add undo and isolation to `turn.ts`
     - Files: edit `src/game/turn.ts`, edit `src/game/turn.test.ts` (no other files)
     - Replace the undo placeholder: `not-playing` once the Status is `won` or `lost`, `nothing-to-undo` when `undoSnapshot` is `null`, otherwise `restore`: `makeSheet(level, snapshot.edits)`, `recalc` at `valuesHero` with `createRandom(0, valuesRngState)`, the snapshot fields restored exactly (`hp`, `ink`, `turn`, `rngState` and the rest, no clamp), `undoSnapshot` set to `null`, `damage` an empty Damage_Log; one level of undo only
     - Tests: undo after a move; undo after an edit refunds the ink and restores the Raw_Text; undo after a turn that took damage restores `hp` exactly; undo after a `RAND()` turn restores the Values of `RAND()` Cells and the next draw equals the next draw before the undone turn; a second undo is `nothing-to-undo`; undo at start is `nothing-to-undo`; undo after a win and after a loss is `not-playing`; a refused Action does not change what an undo does; the old state passed in keeps every readable value after later Actions and after an undo (no shared Sheet); no snapshot chain deeper than one
