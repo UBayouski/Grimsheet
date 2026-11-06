@@ -501,3 +501,39 @@ describe('a single empty Cell argument to SUM, MIN and MAX is skipped', () => {
     expect(errorOf(run('=MAX(A1)')).error).toBe('#VALUE!');
   });
 });
+
+describe('error causes name the origin Cell', () => {
+  const named: Record<string, CellView> = {
+    '2,9': { empty: false, name: 'MOVE_M1', value: stringValue('') },
+  };
+  const cases: Array<[string, string, string]> = [
+    ['#DIV/0!', '=1/0', 'divides by zero'],
+    ['#VALUE!', '="a"+1', 'used text where a number is needed'],
+    ['#REF!', '=M1', 'refers to M1, which does not exist'],
+  ];
+
+  for (const [kind, formula, tail] of cases) {
+    it(`${kind}: a named origin starts the cause with the address and the name`, () => {
+      const e = run(formula, { cells: named });
+      if (e.kind !== 'error') throw new Error('expected an error');
+      expect(e.error).toBe(kind);
+      expect(e.cause).toBe(`B9 (MOVE_M1) ${tail}`);
+      expect(e.origin).toBe('B9'); // the origin field stays the bare Address
+    });
+
+    it(`${kind}: an unnamed origin starts the cause with the address only`, () => {
+      const e = run(formula);
+      if (e.kind !== 'error') throw new Error('expected an error');
+      expect(e.cause).toBe(`B9 ${tail}`);
+      expect(e.origin).toBe('B9');
+    });
+  }
+
+  it('keeps the 200 character cap with a name in the prefix', () => {
+    const longName = 'N'.repeat(250);
+    const e = run('=1/0', { cells: { '2,9': { empty: false, name: longName, value: stringValue('') } } });
+    if (e.kind !== 'error') throw new Error('expected an error');
+    expect(Array.from(e.cause)).toHaveLength(200);
+    expect(e.cause.startsWith('B9 (NNN')).toBe(true);
+  });
+});

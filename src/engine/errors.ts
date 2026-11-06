@@ -13,9 +13,17 @@ export function truncateCause(text: string): string {
 /**
  * Build an error Value. The cause is the origin Address, a space, then the text
  * (for example origin `B9` and text `refers to M30, which does not exist`), cut to 200 characters.
+ * When the origin Cell has a name, the cause starts with `B9 (NAME)` instead. The `origin` field of
+ * the Value stays the bare Address, because `pickError` reads it.
  */
-export function makeError(kind: ErrorKind, origin: string, text: string): ErrorValue {
-  const cause = truncateCause(text === '' ? origin : `${origin} ${text}`);
+export function makeError(
+  kind: ErrorKind,
+  origin: string,
+  text: string,
+  originName: string | null = null,
+): ErrorValue {
+  const label = originName === null || originName === '' ? origin : `${origin} (${originName})`;
+  const cause = truncateCause(text === '' ? label : `${label} ${text}`);
   return errorValue(kind, cause, origin);
 }
 

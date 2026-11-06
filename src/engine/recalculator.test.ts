@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as graphModule from './graph';
 import { recalculate } from './recalculator';
 import { createSheet, getValueByAddress, setCellName, setRawText } from './sheet';
 import type { Sheet } from './sheet';
@@ -334,5 +335,39 @@ describe('recalculation speed without a cycle', () => {
     expect(elapsed).toBeLessThan(5000);
     // Every cell is a formula and none is an error.
     for (const addr of ['A1', 'L1', 'A2', 'L20']) expect(val(sheet, addr).kind).toBe('number');
+  });
+});
+
+describe('recalculate with an internal fault', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns a refused internal-error result instead of throwing, and stores nothing', () => {
+    const sheet = build({ A1: '5', B1: '=A1+1' });
+    vi.spyOn(graphModule, 'buildGraph').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(recalculate(sheet, ctx())).toEqual({
+      accepted: false,
+      error: { kind: 'internal-error' },
+    });
+    vi.restoreAllMocks();
+    expect(getValueByAddress(sheet, 'B1')).toMatchObject({ stale: true });
+    expect(recalculate(sheet, ctx())).toEqual({ accepted: true, cycleCells: [] });
+  });
+});
+
+describe('#CYCLE! causes name a named origin', () => {
+  it('starts the cause with the address and the name', () => {
+    const sheet = build({ A1: '=B1', B1: '=A1' });
+    setCellName(sheet, 'A1', 'loop_a');
+    recalculate(sheet, ctx());
+    expect(val(sheet, 'A1')).toMatchObject({
+      error: '#CYCLE!',
+      origin: 'A1',
+      cause: 'A1 (LOOP_A) is on a circular reference with B1',
+    });
+    expect(val(sheet, 'B1')).toMatchObject({ cause: 'B1 is on a circular reference with A1' });
   });
 });

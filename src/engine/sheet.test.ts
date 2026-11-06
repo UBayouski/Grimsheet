@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as addressModule from './address';
+import * as namesModule from './names';
 import { parseFormula } from './parser';
+import * as parserModule from './parser';
 import { printFormula } from './printer';
 import {
   commitRecalculation,
@@ -306,5 +309,60 @@ describe('order independence', () => {
     for (const [a, t] of edits) setRawText(written, a, t);
     for (const [a, n] of names) setCellName(written, a, n);
     expect(snapshot(named)).toEqual(snapshot(written));
+  });
+});
+
+describe('internal faults become a refused result', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const INTERNAL = { kind: 'internal-error' };
+
+  it('setRawText', () => {
+    const sheet = createSheet();
+    vi.spyOn(parserModule, 'parseFormula').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(setRawText(sheet, 'A1', '=1+1')).toEqual({ accepted: false, error: INTERNAL });
+    vi.restoreAllMocks();
+    expect(getValueByAddress(sheet, 'A1')).toMatchObject({ ok: true, stale: false });
+  });
+
+  it('setCellName', () => {
+    const sheet = createSheet();
+    vi.spyOn(namesModule, 'validateCellName').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(setCellName(sheet, 'A1', 'HP')).toEqual({ accepted: false, error: INTERNAL });
+  });
+
+  it('getValueByAddress', () => {
+    const sheet = createSheet();
+    vi.spyOn(addressModule, 'parseAddress').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(getValueByAddress(sheet, 'A1')).toEqual({ ok: false, error: INTERNAL });
+  });
+
+  it('getValueByName', () => {
+    const sheet = createSheet();
+    setCellName(sheet, 'A1', 'HP');
+    const spy = vi.spyOn(Map.prototype, 'get').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    let result: unknown;
+    try {
+      result = getValueByName(sheet, 'HP');
+    } finally {
+      spy.mockRestore();
+    }
+    expect(result).toEqual({ ok: false, error: INTERNAL });
+  });
+
+  it('still reports ordinary refusals as before once the spies are restored', () => {
+    const sheet = createSheet();
+    expect(getValueByAddress(sheet, 'M1')).toEqual({ ok: false, error: { kind: 'cell-not-found' } });
+    expect(setRawText(sheet, 'M1', '1')).toEqual({ accepted: false, error: { kind: 'invalid-address' } });
   });
 });

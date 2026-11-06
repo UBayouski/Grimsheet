@@ -102,8 +102,22 @@ class Evaluation {
     this.originText = formatAddress(env.origin) || 'cell';
   }
 
+  private originName: string | null | undefined;
+
+  /** Name of the origin Cell, read once; any failure reads as "no name". */
+  private nameOfOrigin(): string | null {
+    if (this.originName === undefined) {
+      try {
+        this.originName = this.env.cellAt(this.env.origin).name;
+      } catch {
+        this.originName = null;
+      }
+    }
+    return this.originName;
+  }
+
   err(kind: ErrorValue['error'], text: string): ErrorValue {
-    return makeError(kind, this.originText, text);
+    return makeError(kind, this.originText, text, this.nameOfOrigin());
   }
 
   evaluate(node: Node): Operand {

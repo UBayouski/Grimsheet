@@ -16,7 +16,8 @@ export type RecalculateResult =
   | {
       readonly accepted: false;
       readonly error: { readonly kind: 'invalid-context'; readonly field: ContextField };
-    };
+    }
+  | { readonly accepted: false; readonly error: { readonly kind: 'internal-error' } };
 
 const NUMERIC_LITERAL = /^[+-]?\d+(\.\d+)?$/;
 
@@ -45,8 +46,16 @@ function cycleCause(component: readonly number[], index: number): string {
   return `is on a circular reference with ${others.map(addressOfIndex).join(', ')}`;
 }
 
-/** Full from-scratch recalculation. Never throws. */
+/** Full from-scratch recalculation. Never throws: an internal fault is a refused `internal-error` result. */
 export function recalculate(sheet: Sheet, ctx: EvaluationContext): RecalculateResult {
+  try {
+    return recalculateUnguarded(sheet, ctx);
+  } catch {
+    return { accepted: false, error: { kind: 'internal-error' } };
+  }
+}
+
+function recalculateUnguarded(sheet: Sheet, ctx: EvaluationContext): RecalculateResult {
   const checked = validateContext(ctx);
   if (!checked.ok) return { accepted: false, error: { kind: 'invalid-context', field: checked.field } };
   const state = getSheetState(sheet);
@@ -94,7 +103,12 @@ export function recalculate(sheet: Sheet, ctx: EvaluationContext): RecalculateRe
     if (cell.raw === '') {
       value = empty;
     } else if (cycle.has(index)) {
-      value = makeError('#CYCLE!', addressOfIndex(index), cycleCause(componentOfCell.get(index) ?? [], index));
+      value = makeError(
+        '#CYCLE!',
+        addressOfIndex(index),
+        cycleCause(componentOfCell.get(index) ?? [], index),
+        cell.name,
+      );
     } else if (cell.ast === null) {
       value = classifyLiteral(cell.raw);
     } else if (cell.isRule) {
@@ -110,7 +124,7 @@ export function recalculate(sheet: Sheet, ctx: EvaluationContext): RecalculateRe
           random,
         });
       } catch {
-        value = makeError('#VALUE!', addressOfIndex(index), 'internal error');
+        value = makeError('#VALUE!', addressOfIndex(index), 'internal error', cell.name);
       }
     }
     values[index] = value;

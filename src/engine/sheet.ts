@@ -42,6 +42,7 @@ export type SetRawTextResult =
       readonly canonicalText: string | null;
     }
   | { readonly accepted: false; readonly error: { readonly kind: 'invalid-address' } }
+  | { readonly accepted: false; readonly error: { readonly kind: 'internal-error' } }
   | {
       readonly accepted: false;
       readonly error: { readonly kind: 'parse-error'; readonly parseError: ParseError };
@@ -53,6 +54,7 @@ export type SetNameResult =
       readonly accepted: false;
       readonly error:
         | { readonly kind: 'invalid-address' }
+        | { readonly kind: 'internal-error' }
         | { readonly kind: 'invalid-name'; readonly failed: NameCheckFailure }
         | { readonly kind: 'duplicate-name'; readonly name: string; readonly heldBy: string };
     };
@@ -65,7 +67,8 @@ export type ReadResult =
       readonly value: Value;
       readonly stale: boolean;
     }
-  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } };
+  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } };
 
 const states = new WeakMap<object, SheetState>();
 
@@ -127,7 +130,18 @@ function addressOfIndex(index: number): string {
   return `${String.fromCharCode(64 + col)}${row}`;
 }
 
+const INTERNAL_ERROR = { kind: 'internal-error' } as const;
+
+/** Never throws. An internal fault is reported as a refused `internal-error` result. */
 export function setRawText(sheet: Sheet, address: string, rawText: string): SetRawTextResult {
+  try {
+    return setRawTextUnguarded(sheet, address, rawText);
+  } catch {
+    return { accepted: false, error: INTERNAL_ERROR };
+  }
+}
+
+function setRawTextUnguarded(sheet: Sheet, address: string, rawText: string): SetRawTextResult {
   const state = getSheetState(sheet);
   const target = state === undefined ? undefined : resolveAddress(state, address);
   if (state === undefined || target === undefined || typeof rawText !== 'string') {
@@ -163,8 +177,16 @@ export function setRawText(sheet: Sheet, address: string, rawText: string): SetR
   };
 }
 
-/** Pass null to clear the name. A refused call changes nothing. */
+/** Pass null to clear the name. A refused call changes nothing. Never throws. */
 export function setCellName(sheet: Sheet, address: string, name: string | null): SetNameResult {
+  try {
+    return setCellNameUnguarded(sheet, address, name);
+  } catch {
+    return { accepted: false, error: INTERNAL_ERROR };
+  }
+}
+
+function setCellNameUnguarded(sheet: Sheet, address: string, name: string | null): SetNameResult {
   const state = getSheetState(sheet);
   const target = state === undefined ? undefined : resolveAddress(state, address);
   if (state === undefined || target === undefined) {
@@ -215,22 +237,32 @@ function readCell(state: SheetState, cell: CellRecord): ReadResult {
   };
 }
 
+/** Never throws. An internal fault is reported as `internal-error`, not as a missing Cell. */
 export function getValueByAddress(sheet: Sheet, address: string): ReadResult {
-  const state = getSheetState(sheet);
-  const target = state === undefined ? undefined : resolveAddress(state, address);
-  if (state === undefined || target === undefined) {
-    return { ok: false, error: { kind: 'cell-not-found' } };
+  try {
+    const state = getSheetState(sheet);
+    const target = state === undefined ? undefined : resolveAddress(state, address);
+    if (state === undefined || target === undefined) {
+      return { ok: false, error: { kind: 'cell-not-found' } };
+    }
+    return readCell(state, target.cell);
+  } catch {
+    return { ok: false, error: INTERNAL_ERROR };
   }
-  return readCell(state, target.cell);
 }
 
+/** Never throws. An internal fault is reported as `internal-error`, not as a missing Cell. */
 export function getValueByName(sheet: Sheet, name: string): ReadResult {
-  const state = getSheetState(sheet);
-  if (state === undefined || typeof name !== 'string') {
-    return { ok: false, error: { kind: 'cell-not-found' } };
+  try {
+    const state = getSheetState(sheet);
+    if (state === undefined || typeof name !== 'string') {
+      return { ok: false, error: { kind: 'cell-not-found' } };
+    }
+    const index = state.names.get(name.toUpperCase());
+    const cell = index === undefined ? undefined : state.cells[index];
+    if (cell === undefined) return { ok: false, error: { kind: 'cell-not-found' } };
+    return readCell(state, cell);
+  } catch {
+    return { ok: false, error: INTERNAL_ERROR };
   }
-  const index = state.names.get(name.toUpperCase());
-  const cell = index === undefined ? undefined : state.cells[index];
-  if (cell === undefined) return { ok: false, error: { kind: 'cell-not-found' } };
-  return readCell(state, cell);
 }

@@ -14,6 +14,11 @@ const FORBIDDEN_IDENTIFIERS = [
   'navigator',
   'fetch',
   'XMLHttpRequest',
+  'AudioContext',
+  'location',
+  'indexedDB',
+  'requestAnimationFrame',
+  'HTMLElement',
 ];
 
 const EXPECTED_MODULES = [
@@ -187,6 +192,8 @@ export function scanSource(source: string): string[] {
   for (const id of FORBIDDEN_IDENTIFIERS) {
     if (id === 'Function') {
       if (/\bnew\s+Function\b/.test(code)) findings.push('new Function');
+      // A plain call is the same as `new Function`, so it is flagged too.
+      if (/\bFunction\s*\(/.test(code)) findings.push('Function(');
     } else if (new RegExp(`\\b${id}\\b`).test(code)) {
       findings.push(id);
     }
@@ -250,6 +257,22 @@ describe('engine source constraints', () => {
     ]) {
       expect(findings).toContain(expected);
     }
+  });
+
+  it('flags a plain Function( call, and does not flag lower-case function', () => {
+    expect(scanSource('const f = Function("return 1");')).toEqual(['Function(']);
+    expect(scanSource('const f = Function ("return 1");')).toEqual(['Function(']);
+    expect(scanSource('const f = new Function("return 1");')).toEqual(['new Function', 'Function(']);
+    expect(scanSource('function f(x: number) { return x; } const g = (x: number) => x;')).toEqual([]);
+  });
+
+  it('flags the added browser globals', () => {
+    expect(scanSource('const c = new AudioContext();')).toEqual(['AudioContext']);
+    expect(scanSource('const l = location.href;')).toEqual(['location']);
+    expect(scanSource('indexedDB.open("x");')).toEqual(['indexedDB']);
+    expect(scanSource('requestAnimationFrame(tick);')).toEqual(['requestAnimationFrame']);
+    expect(scanSource('const e = x as HTMLElement;')).toEqual(['HTMLElement']);
+    expect(scanSource('const s = "location"; // indexedDB\nconst relocation = 1;')).toEqual([]);
   });
 
   it('ignores comments and string literals and respects word boundaries', () => {

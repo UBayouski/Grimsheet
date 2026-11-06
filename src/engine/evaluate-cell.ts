@@ -17,6 +17,7 @@ export type EvaluateCellResult =
       readonly stale: boolean;
     }
   | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } }
   | {
       readonly ok: false;
       readonly error: { readonly kind: 'invalid-context'; readonly field: ContextField };
@@ -30,7 +31,8 @@ export type ErrorDescription = {
 
 export type DescribeErrorResult =
   | { readonly ok: true; readonly description: ErrorDescription | null }
-  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } };
+  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } };
 
 function pointOfIndex(index: number): GridPoint {
   return { col: (index % 12) + 1, row: Math.floor(index / 12) + 1 };
@@ -55,6 +57,7 @@ function findCell(state: SheetState, target: CellTarget): CellRecord | undefined
 }
 
 const NOT_FOUND = { ok: false, error: { kind: 'cell-not-found' } } as const;
+const INTERNAL = { ok: false, error: { kind: 'internal-error' } } as const;
 
 /** Per_Monster_Evaluation. Stores nothing. Never throws. */
 export function evaluateCell(
@@ -110,11 +113,11 @@ export function evaluateCell(
         random: checked.random,
       });
     } catch {
-      value = makeError('#VALUE!', addressOfIndex(cell.index), 'internal error');
+      value = makeError('#VALUE!', addressOfIndex(cell.index), 'internal error', cell.name);
     }
     return { ok: true, value, source: 'evaluated', stale };
   } catch {
-    return NOT_FOUND;
+    return INTERNAL;
   }
 }
 
@@ -138,6 +141,6 @@ export function describeError(sheet: Sheet, target: CellTarget): DescribeErrorRe
     if (v.kind !== 'error') return { ok: true, description: null };
     return { ok: true, description: { kind: v.error, cause: v.cause, origin: v.origin } };
   } catch {
-    return NOT_FOUND;
+    return INTERNAL;
   }
 }

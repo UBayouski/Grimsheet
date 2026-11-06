@@ -22,7 +22,9 @@ export const RESERVED_NAMES: readonly string[] = ['HERO', 'SELF', 'TRUE', 'FALSE
 export type NameCheckFailure = 'pattern' | 'reserved' | 'function' | 'address-like';
 
 const NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const ADDRESS_LIKE = /^[A-La-l][0-9]+$/;
+// Any letter, not only columns A to L: the tokenizer reads every such word as an address token,
+// so a name of this shape could never be referenced.
+const ADDRESS_LIKE = /^[A-Za-z][0-9]+$/;
 
 /**
  * Checks, in order: pattern, reserved, function, address-like. All comparisons are

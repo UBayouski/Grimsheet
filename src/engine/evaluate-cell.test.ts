@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as addressModule from './address';
+import * as contextModule from './context';
 import { describeError, evaluateCell, listCycleCells } from './evaluate-cell';
 import { recalculate } from './recalculator';
 import { createSheet, getSheetState, getValueByAddress, setCellName, setRawText } from './sheet';
@@ -229,4 +231,38 @@ describe('evaluateCell with a hostile context', () => {
       });
     });
   }
+});
+
+describe('evaluateCell and describeError with an internal fault', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('evaluateCell reports internal-error, not cell-not-found', () => {
+    const sheet = build({ A1: '=ROW(SELF)' });
+    vi.spyOn(contextModule, 'validateContext').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(evaluateCell(sheet, { address: 'A1' }, ctx())).toEqual({
+      ok: false,
+      error: { kind: 'internal-error' },
+    });
+  });
+
+  it('describeError reports internal-error, not cell-not-found', () => {
+    const sheet = build({ A1: '=1/0' });
+    vi.spyOn(addressModule, 'parseAddress').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    expect(describeError(sheet, { address: 'A1' })).toEqual({
+      ok: false,
+      error: { kind: 'internal-error' },
+    });
+  });
+
+  it('a Cell that really is missing is still cell-not-found once spies are restored', () => {
+    const sheet = build({ A1: '=1/0' });
+    expect(describeError(sheet, { address: 'M1' })).toEqual({ ok: false, error: { kind: 'cell-not-found' } });
+    expect(evaluateCell(sheet, { address: 'M1' }, ctx())).toEqual({ ok: false, error: { kind: 'cell-not-found' } });
+  });
 });

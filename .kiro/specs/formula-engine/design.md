@@ -150,7 +150,7 @@ Totality is argued by structure first. A try-boundary is only defense in depth.
 - The graph algorithms (Tarjan, Kahn) use explicit stacks and arrays and run over at most 240 nodes.
 - Arithmetic results are checked with `Number.isFinite`; a non-finite result becomes `#VALUE!` (Requirement 12, criterion 5).
 - The only external call is `context.random()`. It runs inside a guard. A throw, a non-number or a value outside [0, 1) becomes `#VALUE!` for that `RAND()` call.
-- Defense in depth: `evaluateAst` runs per Cell inside `try/catch`. A caught exception becomes `#VALUE!` with a cause that starts with `internal error`. Every public function has an outer `try/catch` that returns a refused result. The property tests assert that no Cell cause contains `internal error`, so the boundary firing is itself a test failure.
+- Defense in depth: `evaluateAst` runs per Cell inside `try/catch`. A caught exception becomes `#VALUE!` with a cause that starts with `internal error`. Every public function has an outer `try/catch` that returns a refused result: `recalculate`, `setRawText`, `setCellName`, `getValueByAddress`, `getValueByName`, `evaluateCell` and `describeError` return `{ kind: 'internal-error' }` (never `cell-not-found`, which means the Cell really is absent); the parser, printer and `validateContext` return their own refusals. The property tests assert that no Cell cause contains `internal error`, so the boundary firing is itself a test failure.
 
 ## Components and Interfaces
 
@@ -184,7 +184,7 @@ export function validateCellName(
 
 `parseAddress` accepts `^[A-La-l]([1-9]|1[0-9]|20)$`. This rejects leading zeros, signs, decimal points, whitespace and everything outside `A1`..`L20`.
 
-`validateCellName` checks, in this order: the `[A-Za-z_][A-Za-z0-9_]*` pattern, then the reserved names `HERO`, `SELF`, `TRUE`, `FALSE`, then the function names (`SUM`, `MIN`, `MAX`, `ABS`, `MOD`, `IF`, `AND`, `OR`, `NOT`, `ROW`, `COL`, `DIST`, `TOWARD`, `RAND`), then the "reads as an Address" test `^[A-La-l][0-9]+$`. All comparisons are case-insensitive. The canonical form is upper case.
+`validateCellName` checks, in this order: the `[A-Za-z_][A-Za-z0-9_]*` pattern, then the reserved names `HERO`, `SELF`, `TRUE`, `FALSE`, then the function names (`SUM`, `MIN`, `MAX`, `ABS`, `MOD`, `IF`, `AND`, `OR`, `NOT`, `ROW`, `COL`, `DIST`, `TOWARD`, `RAND`), then the "reads as an Address" test `^[A-Za-z][0-9]+$` (any letter, so it matches exactly what the tokenizer turns into an `address` token; `M1` is refused too). All comparisons are case-insensitive. The canonical form is upper case.
 
 ### Values and errors (`values.ts`, `errors.ts`)
 
@@ -512,7 +512,7 @@ Edges (Requirement 11, criterion 1, and Requirement 13, criteria 7 and 8):
 
 All edges come from the text of the Formula, so a reference in the branch `IF` does not take still counts. A self-reference is an edge from a Cell to itself.
 
-One extra edge is added beyond Requirement 11, criterion 1. A non-Rule_Cell that uses `HERO` in value position (anywhere except as a direct argument of `ROW`, `COL` or `DIST`) gets an edge to the hero's Cell if `heroAddress` is in the Sheet. Without it, `=HERO` would read a Cell that may not be evaluated yet. See Open Question 18.
+One extra edge, stated in Requirement 11, criterion 1, is added. A non-Rule_Cell that uses `HERO` in value position (anywhere except as a direct argument of `ROW`, `COL` or `DIST`) gets an edge to the hero's Cell if `heroAddress` is in the Sheet. Without it, `=HERO` would read a Cell that may not be evaluated yet. Requirement 11, criterion 1 now includes this edge (Open Question 18, closed). Known limitation: `ROW(IF(c, HERO, B1))` also gets it.
 
 `findCycleCells` marks a component as circular if it has two or more members, or one member with a self-edge. `topologicalOrder` condenses the SCCs. A component is ready when all components it depends on are done. Its key is the smallest reading index among its members. Each step takes the ready component with the smallest key. With at most 240 components, a linear scan for the minimum is enough. Members of a circular component are emitted together in ascending index order. The result is a function of the graph alone.
 
@@ -528,6 +528,7 @@ export type CellTarget = { readonly address: string } | { readonly name: string 
 export type SetRawTextResult =
   | { readonly accepted: true; readonly address: string; readonly kind: 'formula' | 'literal'; readonly canonicalText: string | null }
   | { readonly accepted: false; readonly error: { readonly kind: 'invalid-address' } }
+  | { readonly accepted: false; readonly error: { readonly kind: 'internal-error' } }
   | { readonly accepted: false; readonly error: { readonly kind: 'parse-error'; readonly parseError: ParseError } };
 
 export function setRawText(sheet: Sheet, address: string, rawText: string): SetRawTextResult;
@@ -536,6 +537,7 @@ export type SetNameResult =
   | { readonly accepted: true; readonly address: string; readonly name: string | null }
   | { readonly accepted: false; readonly error:
       | { readonly kind: 'invalid-address' }
+      | { readonly kind: 'internal-error' }
       | { readonly kind: 'invalid-name'; readonly failed: NameCheckFailure }
       | { readonly kind: 'duplicate-name'; readonly name: string; readonly heldBy: string } };
 
@@ -544,7 +546,8 @@ export function setCellName(sheet: Sheet, address: string, name: string | null):
 
 export type ReadResult =
   | { readonly ok: true; readonly address: string; readonly name: string | null; readonly value: Value; readonly stale: boolean }
-  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } };
+  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } };
 
 export function getValueByAddress(sheet: Sheet, address: string): ReadResult;
 export function getValueByName(sheet: Sheet, name: string): ReadResult;
@@ -581,7 +584,8 @@ export function validateContext(
 ```ts
 export type RecalculateResult =
   | { readonly accepted: true; readonly cycleCells: readonly string[] }
-  | { readonly accepted: false; readonly error: { readonly kind: 'invalid-context'; readonly field: ContextField } };
+  | { readonly accepted: false; readonly error: { readonly kind: 'invalid-context'; readonly field: ContextField } }
+  | { readonly accepted: false; readonly error: { readonly kind: 'internal-error' } };
 
 export function recalculate(sheet: Sheet, ctx: EvaluationContext): RecalculateResult;
 ```
@@ -605,6 +609,7 @@ Algorithm:
 export type EvaluateCellResult =
   | { readonly ok: true; readonly value: Value; readonly source: 'evaluated' | 'stored'; readonly stale: boolean }
   | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } }
   | { readonly ok: false; readonly error: { readonly kind: 'invalid-context'; readonly field: ContextField } };
 
 export function evaluateCell(sheet: Sheet, target: CellTarget, ctx: EvaluationContext): EvaluateCellResult;
@@ -615,7 +620,8 @@ export function listCycleCells(sheet: Sheet): string[];
 export type ErrorDescription = { readonly kind: ErrorKind; readonly cause: string; readonly origin: string };
 export type DescribeErrorResult =
   | { readonly ok: true; readonly description: ErrorDescription | null } // null when the Cell does not hold an error
-  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } };
+  | { readonly ok: false; readonly error: { readonly kind: 'cell-not-found' } }
+  | { readonly ok: false; readonly error: { readonly kind: 'internal-error' } };
 export function describeError(sheet: Sheet, target: CellTarget): DescribeErrorResult;
 ```
 
@@ -723,10 +729,10 @@ The prework found three groups of criteria that are universal over a large input
 | Reference, name, function, type, division or cycle problems | evaluator, recalculator | Error Values (`#REF!`, `#NAME?`, `#VALUE!`, `#DIV/0!`, `#CYCLE!`) with a cause. Evaluation continues for every other Cell. |
 | Non-finite arithmetic result | evaluator | `#VALUE!`. |
 | Misbehaving Random_Source (throws, returns a non-number or a value outside [0, 1)) | `RAND` | `#VALUE!` for that call only. |
-| Unexpected internal exception | per-Cell and per-API `try/catch` | `#VALUE!` with a cause beginning `internal error`, or a refused result. This is defense in depth; the property tests fail if it ever fires. |
+| Unexpected internal exception | per-Cell and per-API `try/catch` | `#VALUE!` with a cause beginning `internal error`, or a refused result with `error.kind` `internal-error`. This is defense in depth; the property tests fail if it ever fires. |
 | Stale reads | `getValue*`, `evaluateCell` | `stale: true` while the Sheet has edits not yet recalculated. |
 
-Error causes are plain English, 1 to 200 characters, and begin with the originating Address (and the name in parentheses if the Cell has one). Examples: `B9 refers to M30, which does not exist`; `B9 refers to NOSUCH, which is not a cell name`; `B9 calls FOO, which is not a function`; `B9 divides by zero`; `B2 refers to C3 (MOVE_M1), which is a rule, not a value`. A propagated error keeps the original cause and origin. A cause longer than 200 code points is cut from the end, so the origin Address always survives.
+Error causes are plain English, 1 to 200 characters, and begin with the originating Address (and the name in parentheses if the Cell has one, as in `B14 (MOVE_M1) divides by zero`; this holds for evaluator errors, `#CYCLE!` and the internal-error value; the Value's `origin` field stays the bare Address). Examples: `B9 refers to M30, which does not exist`; `B9 refers to NOSUCH, which is not a cell name`; `B9 calls FOO, which is not a function`; `B9 divides by zero`; `B2 refers to C3 (MOVE_M1), which is a rule, not a value`. A propagated error keeps the original cause and origin. A cause longer than 200 code points is cut from the end, so the origin Address always survives.
 
 ## Testing Strategy
 
@@ -789,7 +795,7 @@ Checks per scenario: no exception, one outcome per `parseFormula` call, 240 Valu
 | `recalculator.test.ts` | Dependent before dependency in the definition order; cycle breaking and `#CYCLE!` clearing; downstream `#CYCLE!`; untaken `IF` branch not an operand but still an edge; Range member `#CYCLE!`; Rule_Cell on a cycle holds `#CYCLE!`; Rule_Cell off a cycle holds `rule`; a Cell that reads a Rule_Cell gets `#VALUE!` with the right cause; scripted Random_Source shows call order and that Rule_Cells draw nothing; `heroAddress` outside the Sheet makes `HERO` `#REF!`; invalid context is refused and nothing changes. |
 | `evaluate-cell.test.ts` | Cell-not-found before context check; Rule_Cell evaluated with `selfAddress`; absent or out-of-sheet `selfAddress` gives `#REF!`; non-Rule_Cell and cycle Rule_Cell return stored Values without a context; empty Cell returns `""`; result not stored; Rule_Cell referencing another Rule_Cell sees `#VALUE!`; erroring formula returns the Error_Value; `stale` flag. |
 | `index.test.ts` | Exactly the documented named exports, no default export. |
-| `constraints.test.ts` | Scans `src/engine/**/*.ts` (excluding tests) for `eval`, `new Function`, `Math.random`, `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch`, `XMLHttpRequest`, and for imports from `src/model`, `src/game`, `src/ui`. The `lib` setting in `tsconfig.json` includes DOM types, so this scan is what enforces DOM-freeness. |
+| `constraints.test.ts` | Scans `src/engine/**/*.ts` (excluding tests) for `eval`, `new Function`, `Math.random`, `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch`, `XMLHttpRequest`, `AudioContext`, `location`, `indexedDB`, `requestAnimationFrame`, `HTMLElement` and a plain `Function(` call, and for imports from `src/model`, `src/game`, `src/ui`. The `lib` setting in `tsconfig.json` includes DOM types, so this scan is what enforces DOM-freeness. |
 
 ### Requirements traceability
 
@@ -831,7 +837,7 @@ Each item records an edge case the requirements leave open or only imply, the de
 15. **Range orientation.** `A5:A1` is kept as written in the AST (so print and parse are stable) and normalized to `A1:A5` by the evaluator and the graph. Members are enumerated in row-major order.
 16. **Literals such as `"1e3"` or `"  5"`.** They are strings. Only `^[+-]?\d+(\.\d+)?$` is a number (Requirement 1, criterion 8).
 17. **Final result that is an empty-Cell reference.** `=A1` with `A1` empty evaluates to the number `0`, like ordinary spreadsheets. The requirements do not say.
-18. **`HERO` in value position adds a dependency edge.** A non-Rule_Cell using `HERO` where its Value is needed gets an edge to the hero's Cell, in addition to the edges in Requirement 11, criterion 1. Otherwise the Cell could read a Value not yet computed. The result is that `=HERO` placed on the hero's own Cell is a cycle. `HERO` as a direct argument of `ROW`, `COL` or `DIST` adds no edge. `TOWARD(IF(c, HERO, B2))` adds an edge, because the position is not a direct argument.
+18. **`HERO` in value position adds a dependency edge.** A non-Rule_Cell using `HERO` where its Value is needed gets an edge to the hero's Cell, in addition to the edges in Requirement 11, criterion 1. Otherwise the Cell could read a Value not yet computed. The result is that `=HERO` placed on the hero's own Cell is a cycle. `HERO` as a direct argument of `ROW`, `COL` or `DIST` adds no edge. `TOWARD(IF(c, HERO, B2))` adds an edge, because the position is not a direct argument. **Closed (decision, after the second formula-reviewer review):** the edge is now part of Requirement 11, criterion 1, with its reason: a Formula that reads `HERO` depends on the hero's Cell, so recalculation order needs the edge, and a cycle through the hero's position is a real cycle. The consequence that the cycle set depends on `heroAddress` is accepted. **Known limitation:** `ROW(IF(c, HERO, B1))` also gets the edge, because `HERO` is not a direct argument of `ROW`, although `ROW` never reads its Value. This can give a `#CYCLE!` that a full reading of the formula would not need. It is kept to keep the rule simple (the edges come from the text), and no code changes for it.
 19. **Unknown function.** Arguments are evaluated (so `#CYCLE!` precedence holds and `RAND()` draw order stays fixed) but their Values are not used. The call is `#NAME?` unless an argument is `#CYCLE!`. Requirement 14, criterion 10 ("do not evaluate the unsupported part") is read as "do not execute the function".
 20. **Order of checks in a call.** `#CYCLE!` in any argument, then unknown function (`#NAME?`), then wrong argument count (`#VALUE!`), then the leftmost argument error, then type errors, then the result. Problems with the call itself come before problems with its arguments.
 21. **Empty and boolean arguments to `SUM`, `MIN`, `MAX`.** Empty and boolean Range members are skipped. A single empty Cell argument is skipped too, as in ordinary spreadsheets (so `MIN(5, A1)` with an empty `A1` is `5`, the same as `MIN(5, A1:A1)`). `MIN` or `MAX` of only empty Cells is `#VALUE!`, and `SUM` of them is `0`. A single string or boolean argument is `#VALUE!`. (Changed after the first formula-reviewer review: the earlier rule counted a single empty Cell as `0`, which made `MIN(5, A1)` differ from `MIN(5, A1:A1)`.)
@@ -843,4 +849,4 @@ Each item records an edge case the requirements leave open or only imply, the de
 27. **Addresses in Formulas.** Leading zeros are accepted (`A01` is `A1`) and printed canonically. Rows above 1,000,000 are clamped to 1,000,000 in the AST, which is out of the Sheet anyway. API input uses the strict form of Requirement 1, criterion 2.
 28. **A Range with one endpoint outside the Sheet.** It evaluates to `#REF!` as a whole and has no dependency edges, not even for the members that lie inside the Sheet. So a `#CYCLE!` inside such a Range is not seen.
 29. **`ROW(A1:A3)` and other Range arguments to functions that do not take Ranges.** `#REF!` (Requirement 7, criterion 11) rather than `#VALUE!` (Requirement 9, criterion 23). `IF` passes a Range operand through, so `SUM(IF(c, A1:A3, B1:B3))` works.
-30. **A name shaped like a cell address is always a cell reference.** A word matching `^[A-Za-z][0-9]+$` becomes an `address` token (see the tokenizer rules), even when a Cell is named that way, so `F2` is the Cell F2 and never a function or a Cell_Name. `=F2(1)` is therefore a Parse_Error (an address token cannot be followed by `(`), not `#NAME?`. Only words that do not read as an Address can be function names (`=FOO(1)` is `#NAME?`). `validateCellName` refuses names that read as an Address in columns A to L (such as `F2`), so a Sheet cannot hold one. It still accepts `M1` to `Z9`, which the tokenizer also reads as address tokens, so those names can never be referenced (the second formula-reviewer review reports this; it is not fixed yet).
+30. **A name shaped like a cell address is always a cell reference.** A word matching `^[A-Za-z][0-9]+$` becomes an `address` token (see the tokenizer rules), even when a Cell is named that way, so `F2` is the Cell F2 and never a function or a Cell_Name. `=F2(1)` is therefore a Parse_Error (an address token cannot be followed by `(`), not `#NAME?`. Only words that do not read as an Address can be function names (`=FOO(1)` is `#NAME?`). `validateCellName` refuses every name that reads as an Address, for any letter (`F2`, `M1`, `Z9`), so a Sheet cannot hold a name the tokenizer would read as an address token.
