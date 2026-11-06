@@ -463,3 +463,41 @@ describe('totality', () => {
     expect(evaluateAst(parsed.ast, env).kind).toBe('error');
   });
 });
+
+describe('empty Cell in a boolean position is FALSE', () => {
+  it('IF takes the else branch', () => {
+    expect(run('=IF(A1,1,2)')).toEqual(numberValue(2));
+  });
+
+  it('AND, OR and NOT treat it as FALSE', () => {
+    expect(run('=AND(A1)')).toEqual(booleanValue(false));
+    expect(run('=OR(A1,TRUE)')).toEqual(booleanValue(true));
+    expect(run('=OR(A1)')).toEqual(booleanValue(false));
+    expect(run('=NOT(A1)')).toEqual(booleanValue(true));
+    expect(run('=AND(TRUE,A1)')).toEqual(booleanValue(false));
+  });
+
+  it('still gives #VALUE! for numbers and strings in those positions', () => {
+    const cells: Record<string, CellView> = {
+      '1,1': { empty: false, name: null, value: numberValue(1) },
+      '1,2': { empty: false, name: null, value: stringValue('x') },
+    };
+    for (const text of ['=IF(1,1,2)', '=IF("x",1,2)', '=IF(A1,1,2)', '=IF(A2,1,2)', '=AND(A1)', '=OR(A2)', '=NOT(A1)', '=NOT("x")']) {
+      expect(errorOf(run(text, { cells })).error).toBe('#VALUE!');
+    }
+  });
+});
+
+describe('a single empty Cell argument to SUM, MIN and MAX is skipped', () => {
+  it('matches how a Range member is treated', () => {
+    expect(run('=MIN(A1,5)')).toEqual(numberValue(5));
+    expect(run('=MAX(A1,-5)')).toEqual(numberValue(-5));
+    expect(run('=SUM(A1)')).toEqual(numberValue(0));
+    expect(run('=MIN(5,A1)')).toEqual(run('=MIN(5,A1:A1)'));
+  });
+
+  it('MIN and MAX of only empty Cells are #VALUE!', () => {
+    expect(errorOf(run('=MIN(A1)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=MAX(A1)')).error).toBe('#VALUE!');
+  });
+});

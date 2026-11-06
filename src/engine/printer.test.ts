@@ -12,14 +12,22 @@ function parse(text: string): Node {
 
 function print(text: string): string {
   const result = printFormula(parse(text));
-  if (!result.ok) throw new Error(`print refused: ${result.reason}`);
+  if (!result.ok) throw new Error(`print refused: ${result.error.detail}`);
   return result.text;
 }
 
+/** The detail text of a refusal. */
 function refusal(node: unknown): string {
   const result = printFormula(node as Node);
   if (result.ok) throw new Error(`expected refusal, got ${result.text}`);
-  return result.reason;
+  return result.error.detail;
+}
+
+/** The error kind of a refusal. */
+function refusalKind(node: unknown): string {
+  const result = printFormula(node as Node);
+  if (result.ok) throw new Error(`expected refusal, got ${result.text}`);
+  return result.error.kind;
 }
 
 describe('printFormula parentheses', () => {
@@ -206,7 +214,28 @@ describe('printFormula refusals', () => {
 
   it('never returns partial text on refusal', () => {
     const result = printFormula({ kind: 'binary', op: '+', left: one, right: null } as unknown as Node);
-    expect(result).toEqual({ ok: false, reason: expect.any(String) });
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'invalid-node', detail: expect.any(String) },
+    });
     expect('text' in result).toBe(false);
+  });
+
+  it('reports non-finite-number only for a non-finite number node', () => {
+    expect(refusalKind({ kind: 'number', value: Number.NaN })).toBe('non-finite-number');
+    expect(refusalKind({ kind: 'number', value: Number.POSITIVE_INFINITY })).toBe('non-finite-number');
+    expect(refusalKind({ kind: 'number', value: Number.NEGATIVE_INFINITY })).toBe('non-finite-number');
+    expect(refusalKind({ kind: 'binary', op: '+', left: one, right: { kind: 'number', value: Number.NaN } })).toBe(
+      'non-finite-number',
+    );
+  });
+
+  it('reports invalid-node for every other refusal', () => {
+    expect(refusalKind({ kind: 'number', value: -1 })).toBe('invalid-node');
+    expect(refusalKind({ kind: 'number', value: '1' })).toBe('invalid-node');
+    expect(refusalKind({ kind: 'range', from: cell, to: cell })).toBe('invalid-node');
+    expect(refusalKind({ kind: 'cell', col: 27, row: 1 })).toBe('invalid-node');
+    expect(refusalKind({ kind: 'mystery' })).toBe('invalid-node');
+    expect(refusalKind(null)).toBe('invalid-node');
   });
 });

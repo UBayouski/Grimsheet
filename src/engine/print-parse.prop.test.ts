@@ -13,7 +13,7 @@ describe('print and parse', () => {
 
         const printed = printFormula(ast);
         if (!printed.ok) {
-          throw new Error(`printer refused a valid AST: ${printed.reason}\nAST: ${astJson}`);
+          throw new Error(`printer refused a valid AST: ${printed.error.kind}: ${printed.error.detail}\nAST: ${astJson}`);
         }
 
         const parsed = parseFormula(printed.text);
@@ -36,7 +36,7 @@ describe('print and parse', () => {
         const reprinted = printFormula(parsed.ast);
         if (!reprinted.ok) {
           throw new Error(
-            `printer refused the parsed AST: ${reprinted.reason}\nAST: ${astJson}\nPrinted: ${printed.text}`,
+            `printer refused the parsed AST: ${reprinted.error.kind}: ${reprinted.error.detail}\nAST: ${astJson}\nPrinted: ${printed.text}`,
           );
         }
         if (reprinted.text !== printed.text) {

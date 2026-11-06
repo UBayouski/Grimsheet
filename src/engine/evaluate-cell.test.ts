@@ -175,3 +175,58 @@ describe('describeError', () => {
     });
   });
 });
+
+describe('evaluateCell with a hostile context', () => {
+  const hostile: Array<[string, EvaluationContext, 'heroAddress' | 'random']> = [
+    [
+      'a heroAddress getter that throws',
+      {
+        get heroAddress(): never {
+          throw new Error('hero getter');
+        },
+        random: () => 0.5,
+      } as unknown as EvaluationContext,
+      'heroAddress',
+    ],
+    [
+      'a random getter that throws',
+      {
+        heroAddress: { col: 1, row: 1 },
+        get random(): never {
+          throw new Error('random getter');
+        },
+      } as unknown as EvaluationContext,
+      'random',
+    ],
+    [
+      'a Proxy that throws on every get',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('proxy trap');
+          },
+        },
+      ) as unknown as EvaluationContext,
+      'heroAddress',
+    ],
+  ];
+
+  for (const [label, hostileCtx, field] of hostile) {
+    it(`returns invalid-context for ${label}`, () => {
+      const sheet = build({ A1: '=ROW(SELF)' });
+      expect(evaluateCell(sheet, { address: 'A1' }, hostileCtx)).toEqual({
+        ok: false,
+        error: { kind: 'invalid-context', field },
+      });
+    });
+
+    it(`still reports cell-not-found first for ${label}`, () => {
+      const sheet = build({ A1: '=ROW(SELF)' });
+      expect(evaluateCell(sheet, { address: 'M1' }, hostileCtx)).toEqual({
+        ok: false,
+        error: { kind: 'cell-not-found' },
+      });
+    });
+  }
+});

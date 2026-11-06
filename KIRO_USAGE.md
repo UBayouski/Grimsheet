@@ -377,3 +377,38 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught in my own agent config: the deny list silently made the agent unable to run its two main checks. The first report said so under "Could not verify", which is how I found it.
 - Open: the findings are from reading the code and were not reproduced. The agent said so for findings 1, 2, 3, 4 and 7. Nothing is fixed yet.
 - Not verified: the agent's read-only guarantee rests on its tool list (no write tools) and its allowlist. A GitHub issue reports that `toolsSettings` may not be enforced at runtime in some CLI versions, so the missing write tools are the stronger guard. I did not test an attempted write.
+
+## 2026-11-05 — Acting on the first formula-reviewer review
+
+Surface: IDE, with the Kiro CLI for the second review
+
+Features: agent, spec, hook, pbt
+
+What I asked for: Act on the 9 findings of the first formula-reviewer review. Fix findings 1, 2, 4, 5 and 6 in code, each with tests that fail on the old code. Resolve findings 3 and 7 by changing `design.md` and pinning each with a test. Add the missing stress test (finding 9). Then run `npm run verify`, tick parent task 5, run the reviewer again and log the result. Use the IDE file-edit tools for every change so the save hook runs, and do not commit.
+
+What Kiro did:
+- Fixed in code:
+  - Findings 1 and 2: `validateContext` in `context.ts` is now total. Every property read goes through a guarded read, so a throwing getter or a throwing Proxy trap marks that field invalid. `recalculate` returns `invalid-context`, and `evaluateCell` returns `invalid-context` after the `cell-not-found` check, which still comes first.
+  - Finding 4: `classifyLiteral` in `recalculator.ts` normalises `-0` to `0`.
+  - Finding 5: an empty cell in an `IF` condition, `AND`, `OR` or `NOT` is `FALSE`. Numbers and strings there are still `#VALUE!`.
+  - Finding 6: `PrintResult` in `printer.ts` now has the design shape `{ ok: false, error: { kind: 'non-finite-number' | 'invalid-node', detail } }`. `printer.test.ts` and `print-parse.prop.test.ts` were updated to match.
+- Resolved by a design change:
+  - Finding 3: `design.md` now says a single empty-cell argument to `SUM`, `MIN` or `MAX` is skipped, like an empty Range member. I chose this because it is what ordinary spreadsheets do, and because the old rule made `MIN(5, A1)` differ from `MIN(5, A1:A1)`. The code already behaved this way, so no code changed. Three tests pin it: `MIN(A1,5)` is 5, `MAX(A1,-5)` is -5 and `SUM(A1)` is 0. Requirement 9.5 already says to compute over the numeric members, so the requirements needed no change. The edit covers the function table row, the rule paragraph and open question 21.
+  - Finding 7: a new open question, 30, in `design.md` says a name shaped like an Address is always a cell reference, so `=F2(1)` is a parse error (Col 4, at the `(`), not `#NAME?`. One parser test pins it. The code already behaved this way.
+- Finding 9 (test gap): one recalculation test with 240 formula cells and no cycle. Rows 2 to 20 each read four large Ranges over the rows above them. It asserts no cycle cells and a time under 5,000 ms.
+- Old code versus new tests: I swapped the four changed source files (`context.ts`, `evaluator.ts`, `recalculator.ts`, `printer.ts`) back to their last committed versions and ran the four affected test files. 22 tests failed: the hostile-context tests for both functions, the `-0` test, the empty-cell boolean tests, and all the printer refusal tests. The tests that pin the design change, the `F2(1)` test and the stress test passed on the old code, which is expected: the first two document behaviour the code already had, and the stress test closes a gap. I restored the files afterwards and checked that the new source was back in place.
+- `npm run verify`: 22 test files, 404 tests passing (384 before, so 20 new), typecheck and lint clean. Parent task 5 is ticked in `tasks.md`.
+- Second formula-reviewer run (kiro-cli, `--agent formula-reviewer`, `fs_read` trusted): it ran `npm test` (22 files, 404 tests) and `npm run check`, both green. It reported 5 findings: 1 bug, 3 spec drift and 1 test gap, and none of the original 9. The new findings:
+  - Bug: `validateCellName` accepts names like `M1` to `Z9`, but the tokenizer reads them as address tokens, so those names can never be referenced.
+  - Spec drift: the extra graph edge for `HERO` in value position (open question 18) means the hero's position can create or clear a cycle, and `ROW(IF(c, HERO, B1))` gets a false edge.
+  - Spec drift: `recalculate` and the sheet functions have no outer `try/catch`, and the outer catch in `evaluateCell` still reports `cell-not-found` for an internal fault.
+  - Spec drift: error causes name only the origin Address, not the cell name in parentheses.
+  - Test gap: the constraint scan flags `new Function` but not a plain `Function(...)` call, and it checks few browser globals.
+  - None is fixed yet.
+
+What changed because of it (time saved, bug caught, decision made):
+- Decision: findings 3 and 7 were settled in the design, because the code already did the sensible thing and the design was the part that was wrong or silent. Each is pinned by a test, so the design and the code cannot drift apart again without a failure.
+- Bug caught by the second review: my own new design note for finding 7 said `validateCellName` refuses every address-shaped name. It does not. It refuses only columns A to L, and `M1` slips through (the reviewer's finding 1). I corrected the note to say so and to point at the open finding. The note was wrong when I wrote it, and the second review is what showed it.
+- The second review stays a read-only check. It said it did not read all of `design.md`, did not read every test file, and did not measure the worst-case 5,000 ms timing. Its mapping from requirements to tests is by behaviour, because the tests do not cite requirement numbers.
+- Save hook: every edit in this session went through the IDE tools (`str_replace`, `fs_write`, `fs_append`). No hook output appeared in the result of any of those edits, so I did not see the `PostFileSave` hook fire. That does not show that it did not run, because I cannot see it from inside the session, and a result without output is also what a hook that ran and printed nothing would give. The old-code check was the one place I used the terminal to change source files, and I restored them straight after. The full `npm run verify` I ran myself passed.
+- Nothing was committed.

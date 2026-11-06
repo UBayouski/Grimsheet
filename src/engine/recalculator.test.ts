@@ -226,3 +226,113 @@ describe('recalculate', () => {
     expect(val(sheet, 'A1')).toEqual(expected);
   });
 });
+
+describe('recalculate with a hostile context', () => {
+  const hostile: Array<[string, () => EvaluationContext, 'heroAddress' | 'random']> = [
+    [
+      'a heroAddress getter that throws',
+      () =>
+        ({
+          get heroAddress(): never {
+            throw new Error('hero getter');
+          },
+          random: () => 0.5,
+        }) as unknown as EvaluationContext,
+      'heroAddress',
+    ],
+    [
+      'a random getter that throws',
+      () =>
+        ({
+          heroAddress: { col: 1, row: 1 },
+          get random(): never {
+            throw new Error('random getter');
+          },
+        }) as unknown as EvaluationContext,
+      'random',
+    ],
+    [
+      'a Proxy that throws on every get',
+      () =>
+        new Proxy(
+          {},
+          {
+            get() {
+              throw new Error('proxy trap');
+            },
+          },
+        ) as unknown as EvaluationContext,
+      'heroAddress',
+    ],
+    [
+      'a heroAddress whose col getter throws',
+      () =>
+        ({
+          heroAddress: {
+            get col(): never {
+              throw new Error('col getter');
+            },
+            row: 1,
+          },
+          random: () => 0.5,
+        }) as unknown as EvaluationContext,
+      'heroAddress',
+    ],
+  ];
+
+  for (const [label, make, field] of hostile) {
+    it(`returns invalid-context for ${label}`, () => {
+      const sheet = build({ A1: '5', B1: '=A1+1' });
+      expect(recalculate(sheet, make())).toEqual({
+        accepted: false,
+        error: { kind: 'invalid-context', field },
+      });
+      // Nothing was stored: the sheet is still stale.
+      expect(getValueByAddress(sheet, 'B1')).toMatchObject({ stale: true });
+    });
+  }
+});
+
+describe('literal -0', () => {
+  it('is stored as 0, not -0', () => {
+    const sheet = build({ A1: '-0', B1: '-0.0', C1: '+0' });
+    recalculate(sheet, ctx());
+    for (const addr of ['A1', 'B1', 'C1']) {
+      const v = val(sheet, addr);
+      expect(v).toEqual({ kind: 'number', value: 0 });
+      expect(v.kind === 'number' && Object.is(v.value, 0)).toBe(true);
+    }
+  });
+});
+
+describe('recalculation speed without a cycle', () => {
+  it('finishes 240 formula cells with several large Ranges each in under 5,000 ms', () => {
+    const cells: Record<string, string> = {};
+    // Rows 2..20: each formula reads four large Ranges covering every cell in the rows above it,
+    // so each reads up to 7 x 228 cells. References only point upward, so there is no cycle.
+    for (let row = 2; row <= 20; row += 1) {
+      for (let col = 1; col <= 12; col += 1) {
+        const above = `A1:L${row - 1}`;
+        cells[`${String.fromCharCode(64 + col)}${row}`] =
+          `=SUM(${above}, ${above}) + MIN(${above}, ${above}) + MAX(${above}, ${above}) + SUM(${above})`;
+      }
+    }
+    // Row 1: formulas too, each reading only the cell to its left (a chain, no cycle), so all 240 are formulas.
+    for (let col = 1; col <= 12; col += 1) {
+      const self = `${String.fromCharCode(64 + col)}1`;
+      const prev = col === 1 ? '1' : `${String.fromCharCode(63 + col)}1`;
+      cells[self] = `=${prev} + 1`;
+    }
+    expect(Object.keys(cells)).toHaveLength(240);
+    const sheet = build(cells);
+
+    const started = performance.now();
+    const result = recalculate(sheet, ctx());
+    const elapsed = performance.now() - started;
+
+    expect(result).toEqual({ accepted: true, cycleCells: [] });
+    expect(elapsed).toBeLessThan(5000);
+    // Every cell is a formula and none is an error.
+    for (const addr of ['A1', 'L1', 'A2', 'L20']) expect(val(sheet, addr).kind).toBe('number');
+  });
+});

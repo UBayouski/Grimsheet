@@ -4,7 +4,10 @@ import { formatNumber } from './values';
 
 export type PrintResult =
   | { readonly ok: true; readonly text: string }
-  | { readonly ok: false; readonly reason: string };
+  | {
+      readonly ok: false;
+      readonly error: { readonly kind: 'non-finite-number' | 'invalid-node'; readonly detail: string };
+    };
 
 const MAX_ROW = 1_000_000;
 
@@ -29,11 +32,14 @@ const ATOM_LEVEL = 6;
 
 /** Internal control flow only: never escapes `printFormula`. */
 class Refusal {
-  constructor(readonly reason: string) {}
+  constructor(
+    readonly kind: 'non-finite-number' | 'invalid-node',
+    readonly detail: string,
+  ) {}
 }
 
-function refuse(reason: string): never {
-  throw new Refusal(reason);
+function refuse(detail: string, kind: 'non-finite-number' | 'invalid-node' = 'invalid-node'): never {
+  throw new Refusal(kind, detail);
 }
 
 function printCell(node: CellNode): string {
@@ -70,7 +76,8 @@ function print(raw: unknown, depth: number, minLevel: number, inCallArgument: bo
 function printBare(node: Node, depth: number, inCallArgument: boolean): string {
   switch (node.kind) {
     case 'number':
-      if (typeof node.value !== 'number' || !Number.isFinite(node.value)) refuse('number is not finite');
+      if (typeof node.value !== 'number') refuse('number node has no number');
+      if (!Number.isFinite(node.value)) refuse('number is not finite', 'non-finite-number');
       if (node.value < 0 || Object.is(node.value, -0)) refuse('number node is negative');
       return formatNumber(node.value);
     case 'string':
@@ -118,7 +125,7 @@ export function printFormula(ast: Node): PrintResult {
   try {
     return { ok: true, text: `=${print(ast, 1, 0, false)}` };
   } catch (failure) {
-    if (failure instanceof Refusal) return { ok: false, reason: failure.reason };
-    return { ok: false, reason: 'formula could not be printed' };
+    if (failure instanceof Refusal) return { ok: false, error: { kind: failure.kind, detail: failure.detail } };
+    return { ok: false, error: { kind: 'invalid-node', detail: 'formula could not be printed' } };
   }
 }

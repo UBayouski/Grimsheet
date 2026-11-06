@@ -173,10 +173,11 @@ class Evaluation {
   private evalIf(args: readonly [Node, Node, Node]): Operand {
     const cond = this.deref(this.evaluate(args[0]));
     if (isError(cond)) return val(cond);
-    if (cond.kind !== 'boolean') {
+    if (cond.kind !== 'boolean' && cond.kind !== 'empty') {
       return val(this.err('#VALUE!', 'uses a condition in IF that is not TRUE or FALSE'));
     }
-    return this.evaluate(cond.value ? args[1] : args[2]);
+    // An empty Cell in the condition is FALSE.
+    return this.evaluate(cond.kind === 'boolean' && cond.value ? args[1] : args[2]);
   }
 
   /** The error an argument carries (before any type check), or undefined. */
@@ -226,6 +227,10 @@ class Evaluation {
       const out: boolean[] = [];
       for (const op of operands) {
         const s = this.deref(op);
+        if (s.kind === 'empty') {
+          out.push(false); // an empty Cell in a boolean position is FALSE
+          continue;
+        }
         if (s.kind !== 'boolean') {
           return this.err('#VALUE!', `uses a value that is not TRUE or FALSE in ${fn}`);
         }

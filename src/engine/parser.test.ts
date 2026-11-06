@@ -161,6 +161,15 @@ describe('parseFormula: depth cap of 200', () => {
   }
 });
 
+describe('parseFormula: a name shaped like a cell address', () => {
+  it('is always a cell reference, so calling it is a parse error, not #NAME?', () => {
+    const error = parseErr('=F2(1)');
+    expect(error.message).toMatch(/\S/);
+    expect(error.column).toBe(4); // the "(" after =F2
+    expect(error.text).toMatch(/^Col 4: /);
+  });
+});
+
 describe('parseFormula: never throws', () => {
   it('returns a result for odd input', () => {
     const inputs = ['', '=', '==', '=(', '=)', '="', '=\u0000', '=\ud800', '=SUM(', '=A1:', '=:', '=1e999'];

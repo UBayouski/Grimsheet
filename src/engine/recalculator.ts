@@ -32,7 +32,8 @@ function classifyLiteral(raw: string): Value {
   if (raw === '') return stringValue('');
   if (NUMERIC_LITERAL.test(raw)) {
     const n = Number(raw);
-    if (Number.isFinite(n)) return numberValue(n);
+    // Normalise -0 to 0 so literals match evaluated results.
+    if (Number.isFinite(n)) return numberValue(n === 0 ? 0 : n);
   }
   return stringValue(raw);
 }
