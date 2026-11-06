@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { loadLevel } from '../../model/index';
+import { applyAction } from '../turn';
+import { startRun } from '../run';
 import {
   actionListArbitrary,
   ALL_ADDRESSES,
@@ -135,5 +137,62 @@ describe('source', () => {
   it('does not use Math.random', () => {
     const text = readFileSync(new URL('./arbitraries.ts', import.meta.url), 'utf8');
     expect(text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')).not.toContain('Math.random');
+  });
+});
+
+describe('generators with run.ts and turn.ts', () => {
+  it('every generated level starts with startRun', () => {
+    assertProperty(
+      fc.property(gameLevelArbitrary, (doc) => {
+        const result = startRun(doc);
+        if (!result.ok) {
+          const lines = result.errors.map((e) => `  ${e.code} at ${e.path || '(root)'}: ${e.message}`);
+          throw new Error(`startRun refused a generated document:\n${lines.join('\n')}`);
+        }
+      }),
+      200,
+    );
+  });
+
+  it('applyAction accepts every generated action list without throwing', () => {
+    assertProperty(
+      fc.property(gameLevelArbitrary, actionListArbitrary, (doc, actions) => {
+        const started = startRun(doc);
+        if (!started.ok) throw new Error('level did not start');
+        let state = started.state;
+        for (const action of actions) {
+          const result = applyAction(state, action);
+          expect(typeof result.ok).toBe('boolean');
+          if (result.ok) state = result.state;
+        }
+      }),
+      100,
+    );
+  });
+
+  it('stateDifference is undefined for two starts and names a field after a move', () => {
+    const floor = '#' + '.'.repeat(10) + '#';
+    const wall = '#'.repeat(12);
+    const doc = {
+      schemaVersion: 1,
+      id: '01-the-corridor',
+      title: 'The Corridor',
+      hint: 'Walk to the exit.',
+      startingHp: 5,
+      ink: 3,
+      seed: 7,
+      hero: { at: 'B2' },
+      monsters: [],
+      map: [wall, floor, ...Array.from({ length: 9 }, () => floor), wall],
+      cells: [],
+    };
+    const a = startRun(doc);
+    const b = startRun(doc);
+    if (!a.ok || !b.ok) throw new Error('level did not start');
+    // The two starts hold separate Level objects, so the second is rebased onto the first.
+    expect(stateDifference(a.state, { ...b.state, level: a.state.level })).toBeUndefined();
+    const moved = applyAction(a.state, { kind: 'move', dir: 'E' });
+    if (!moved.ok) throw new Error('move was refused');
+    expect(stateDifference(a.state, { ...moved.state, level: a.state.level })).toBe('hero');
   });
 });
