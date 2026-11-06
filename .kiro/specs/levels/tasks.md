@@ -24,7 +24,7 @@ Rules that apply to every task:
 | Batch | Mode | Tasks | Depends on |
 |---|---|---|---|
 | 1 | IDE | 1.1 `.gitattributes` and the helper | None (the three barrels exist) |
-| 2 | Crew, parallel (disjoint files) | 2.1 Level 1, 2.2 Level 2, 2.3 Level 3, 2.4 Level 4, 2.5 Level 5 | Batch 1 |
+| 2 | Crew, parallel (disjoint files); 2.1 was built in the IDE after its Crew step produced no commit | 2.1 Level 1, 2.2 Level 2, 2.3 Level 3, 2.4 Level 4, 2.5 Level 5 | Batch 1 |
 | 3 | Crew, parallel (disjoint files) | 3.1 barrel and index test, 3.2 files test, 3.3 solutions test, 3.4 search test, 3.5 scan test | Batch 2 |
 | 4 | IDE | 4.1 final checkpoint | Batch 3 |
 | 5 | IDE, blocked | 5.1 `main.ts` swap and stub removal | Batch 4 and grid-ui tasks 4.2 and 5.2 |
@@ -42,8 +42,8 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 2.3, 9.1, 9.2, 9.3, 11.1, 11.2, 11.3, 15.1, 15.3, Decisions 8, 14, 16 and 18, design D1_
 
-- [ ] 2. The five levels
-  - [ ] 2.1 [Batch 2] [Crew] Level 1, The Corridor
+- [x] 2. The five levels
+  - [x] 2.1 [Batch 2] [IDE] Level 1, The Corridor
     - Files: create `src/levels/01-the-corridor.json`, `tests/solutions/01-the-corridor.json`, `src/levels/level-01.test.ts`; create and delete `src/levels/author-01.scratch.test.ts`
     - Produce both JSON files with the scratch generator exactly per Blueprint 1 of the design: title `The Corridor`, `startingHp` 3, `ink` 0, `seed` 1, hero `B6`, no monsters, a corridor `B6` to `K6` with `X` at `K6`, all 144 map cells locked, one panel row (row 14: locked label `Steps to the exit` at `A14`, locked named cell `DIST_TO_EXIT` at `B14` with `=DIST(HERO,K6)`), the hint `Walk east. The rules panel counts the steps in DIST_TO_EXIT. Someone has to.`, solution of nine `move E` with `minimalInk` 0
     - Tests in `level-01.test.ts`: the level loads and `startRun` is ok with `hp` 3, `ink` 0 and Status `playing`; the file text equals `serializeLevelText` of its loaded Level; the raw text, locked flag and Cell_Name of `DIST_TO_EXIT`; the Editable_Cell set is empty; no monsters; the hero starts on `B6` and the Value at `K6` is `X`; the title, the Tab_Label `Sheet1: The Corridor` and the hint substring checks of Requirement 2.5 (`DIST_TO_EXIT`, and `rules panel` case-insensitive); `DIST_TO_EXIT` reads 9 at load and 0 after the last step; the stored solution replays to `won` through the helper, every action accepted, `hp` above 0 before the last action and `hp` 3 at the end
@@ -52,7 +52,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 4.1, 4.2, 2.1, 2.2, 2.5, 3.1, 3.3, 9.1, 9.3, 10.1, 10.2, 10.3, 13.1_
 
-  - [ ] 2.2 [Batch 2] [Crew] Level 2, The Chaser
+  - [x] 2.2 [Batch 2] [Crew] Level 2, The Chaser
     - Files: create `src/levels/02-the-chaser.json`, `tests/solutions/02-the-chaser.json`, `src/levels/level-02.test.ts`; create and delete `src/levels/author-02.scratch.test.ts`
     - Produce both JSON files per Blueprint 2: title `The Chaser`, `startingHp` 3, `ink` 2, `seed` 2, hero `B6`, monster `M1` at `H6` with `move` `MOVE_M1` and `atk` `ATK_M1`, a 10 by 5 room (rows 4 to 8, columns B to K) with `X` at `K6`, all map cells locked, panel rows 14 and 15 with locked labels `Move rule of M1` and `Attack rule of M1` and unlocked named cells `MOVE_M1` (`=IF(DIST(HERO,SELF)<4,TOWARD(HERO),"-")`) and `ATK_M1` (`=IF(DIST(HERO,SELF)<2,2,0)`), the hint `MOVE_M1 decides who gets chased. It is only text.`, seed 2, and the solution of 14 actions with `minimalInk` 1: `edit B14 =IF(DIST(HERO,SELF)<1,TOWARD(HERO),"-")`, `move E` x4, `move N` x2, `move E` x5, `move S` x2
     - Tests in `level-02.test.ts`: loads, `startRun` ok with `hp` 3 and `ink` 2, file text equals `serializeLevelText` of the loaded Level; raw texts and locked flags of `MOVE_M1` and `ATK_M1`; the Editable_Cell set is exactly `MOVE_M1` and `ATK_M1`; one monster `M1` at `H6` with the rule names; the exit `X` at `K6` lies behind the monster; size rule of Requirement 11.4: `walkableCount` is at most 60 (50 in the blueprint); title, Tab_Label `Sheet2: The Chaser`, hint substring `MOVE_M1`; the stored solution replays to `won`, every action accepted, `hp` above 0 before the last action and `hp` 3 at the end; no path cell of the stored route is closer than 2 to `H6` (hand check of the design, computed from the Manhattan distance)
@@ -60,7 +60,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 5.1, 5.2, 5.3, 2.1, 2.2, 2.5, 3.1, 3.3, 9.1, 9.3, 10.1, 10.2, 10.3, 11.4, 13.1_
 
-  - [ ] 2.3 [Batch 2] [Crew] Level 3, The Locked Crypt
+  - [x] 2.3 [Batch 2] [Crew] Level 3, The Locked Crypt
     - Files: create `src/levels/03-the-locked-crypt.json`, `tests/solutions/03-the-locked-crypt.json`, `src/levels/level-03.test.ts`; create and delete `src/levels/author-03.scratch.test.ts`
     - Produce both JSON files per Blueprint 3: title `The Locked Crypt`, `startingHp` 3, `ink` 2, `seed` 3, hero `B6`, no monsters, two chambers divided by column G (wall in rows 4, 5, 7 and 8) with the locked door formula cell `G6` (`=IF(KEY=1337,".","#")`) and `X` at `K6`, panel rows 14 to 17: `RUNE_ASH` `8`, `RUNE_SALT` `190`, `RUNE_DUST` `13` (all three unlocked) and `KEY` `=RUNE_ASH*RUNE_SALT` (locked), each with a locked label of 1 to 24 characters, the hint `The door asks KEY a question. Read what feeds KEY: RUNE_ASH, RUNE_SALT. Not every rune is on the payroll.`, and the solution of 11 actions with `minimalInk` 2: `edit B14 7`, `edit B15 191`, `move E` x9
     - Tests in `level-03.test.ts`: loads, `startRun` ok with `hp` 3 and `ink` 2, file text equals `serializeLevelText` of the loaded Level; the door text at `G6` and its lock flag; `KEY` text and lock flag; at load `KEY` reads 1520 and the Value at `G6` is `#`; `RUNE_DUST` is read by no formula (its raw text appears in no other cell's formula); the Editable_Cell set is exactly `RUNE_ASH`, `RUNE_SALT` and `RUNE_DUST`; title, Tab_Label `Sheet3: The Locked Crypt`, hint substrings (`KEY`, and `RUNE_ASH` or `RUNE_SALT`); an edit of `RUNE_DUST` alone leaves the door at `#`; the stored solution replays to `won`, every action accepted, `hp` above 0 before the last action, `hp` 3 and `ink` 0 at the end, with `KEY` 1330 after the first edit and 1337 after the second. No test claims that two edits are required (Decisions 9 and 17)
@@ -68,7 +68,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 6.1, 6.2, 6.3, 2.1, 2.2, 2.5, 3.1, 3.3, 9.1, 9.3, 10.1, 10.2, 10.3, 13.1_
 
-  - [ ] 2.4 [Batch 2] [Crew] Level 4, The Trap Row
+  - [x] 2.4 [Batch 2] [Crew] Level 4, The Trap Row
     - Files: create `src/levels/04-the-trap-row.json`, `tests/solutions/04-the-trap-row.json`, `src/levels/level-04.test.ts`; create and delete `src/levels/author-04.scratch.test.ts`
     - Produce both JSON files per Blueprint 4: title `The Trap Row`, `startingHp` 5, `ink` 1, `seed` 4, hero `B6`, no monsters, a room (rows 2 to 11, columns B to K) crossed by a two-column band of `^` in columns F and G, a gap in row 6 where `F6` is the locked formula cell `=IF(RATIO>=0,".","#")` and `G6` is floor, `X` at `K6`, panel rows 14 to 17: `TRAP` `3` (locked), `RATIO` `=LOAD/DIVISOR` (locked), `LOAD` `6` and `DIVISOR` `0` (unlocked), each with a locked label, the hint `The #DIV/0! cell is a hole. Follow RATIO back to its cause. Traps bite.`, and the solution of 10 actions with `minimalInk` 1: `edit B17 1`, `move E` x9
     - Tests in `level-04.test.ts`: loads, `startRun` ok with `hp` 5 and `ink` 1, file text equals `serializeLevelText` of the loaded Level; `TRAP` is 3 and locked; the raw text of `RATIO`, `LOAD` and `DIVISOR`; at load the Value at `F6` and the Value of `RATIO` are `#DIV/0!`; the Editable_Cell set is exactly `LOAD` and `DIVISOR`; no monsters; the band covers columns F and G in rows 2 to 5 and 7 to 11; title, Tab_Label `Sheet4: The Trap Row`, hint substrings (`#DIV/0!` and `RATIO`); an edit of `LOAD` leaves `RATIO` as `#DIV/0!` (decoy); a crossing over the traps loses (one step onto `F5` leaves `hp` 2, the second step is fatal); the stored solution replays to `won`, every action accepted, `hp` above 0 before the last action, `hp` 5 and `ink` 0 at the end
@@ -76,7 +76,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 7.1, 7.2, 7.3, 2.1, 2.2, 2.5, 3.1, 3.3, 9.1, 9.3, 10.1, 10.2, 10.3, 13.1_
 
-  - [ ] 2.5 [Batch 2] [Crew] Level 5, The Lich
+  - [x] 2.5 [Batch 2] [Crew] Level 5, The Lich
     - Files: create `src/levels/05-the-lich.json`, `tests/solutions/05-the-lich.json`, `src/levels/level-05.test.ts`; create and delete `src/levels/author-05.scratch.test.ts`
     - Produce both JSON files per Blueprint 5: title `The Lich`, `startingHp` 6, `ink` 2, `seed` 5, hero `B6`, monster `M1` at `I6` (`DIST` 7 from the hero on a straight line of floor), a 10 by 5 room (rows 4 to 8, columns B to K) with the locked gate formula cell `K4` (`=IF(LICH_HP<=0,"X","#")`), panel rows 14 to 19: `MOVE_M1` (`=IF(DIST(HERO,SELF)<4,TOWARD(HERO),"-")`, locked), `ATK_M1` (`=IF(DIST(HERO,SELF)<=2,LICH_HP,0)`, locked), `LICH_HP` (`=MAX(1,PHYLACTERY)`, unlocked), `PHYLACTERY` (`4`, locked), `HEX_A` (`=HEX_B+1`, unlocked), `HEX_B` (`=HEX_A+1`, unlocked), each with a locked label, the hint `LICH_HP is just a number. Change it while he is far. HEX_A and HEX_B haunt the sheet.`, and the solution of 13 actions with `minimalInk` 2: `edit B16 0`, `edit B19 0`, `move N` x2, `move E` x9
     - Tests in `level-05.test.ts`: loads, `startRun` ok with `hp` 6 and `ink` 2, file text equals `serializeLevelText` of the loaded Level; raw texts and lock flags of every named cell; the Editable_Cell set is exactly `LICH_HP`, `HEX_A` and `HEX_B`; at load `LICH_HP` is 4, the Value at `K4` is `#`, and `HEX_A` and `HEX_B` are `#CYCLE!`; one monster `M1` with `MOVE_M1` and `ATK_M1`; size rule: `walkableCount` is 49 and at most 60 (the gate counts as not walkable at load); title, Tab_Label `Sheet5: The Lich`, hint substrings (`LICH_HP`, and `HEX_A` or `HEX_B`)

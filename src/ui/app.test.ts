@@ -253,6 +253,33 @@ describe('mountApp', () => {
   });
 });
 
+describe('grid focus', () => {
+  it('focuses the grid table on mount and keeps it there through game keys', () => {
+    mount();
+    const table = q<HTMLElement>('#grid-table');
+    expect(document.activeElement).toBe(table);
+    key(document, 'ArrowRight');
+    expect(document.activeElement).toBe(table);
+    key(document, ' ');
+    expect(document.activeElement).toBe(table);
+  });
+
+  it('returns focus to the grid when a game key is pressed while focus is on the body', () => {
+    mount();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    key(document, 'ArrowRight');
+    expect(document.activeElement).toBe(q('#grid-table'));
+  });
+
+  it('keeps the active descendant pointing at the selected cell', () => {
+    mount();
+    key(document, 'ArrowRight');
+    const selected = q('[data-selected="true"]').getAttribute('id');
+    expect(q('#grid-table').getAttribute('aria-activedescendant')).toBe(selected);
+  });
+});
+
 describe('barrel', () => {
   it('exports exactly the expected runtime names', () => {
     expect(Object.keys(barrel).sort()).toEqual(['browserStorage', 'mountApp']);

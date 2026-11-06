@@ -3,7 +3,7 @@ import { formatValue } from '../engine/index';
 import { applyAction, cellName, cellRawText, cellValue, isCellLocked, startRun } from '../game/index';
 import type { Action, DamageLog, RunState } from '../game/index';
 import { serializeLevelText, tabLabel } from '../model/index';
-import { describeStep, loadLevelFile, manhattan, readSolution, replay, walkableCount } from './helpers';
+import { describeStep, loadLevelFile, lockReport, manhattan, readSolution, replay, walkableCount } from './helpers';
 
 const ID = '05-the-lich';
 const COLUMNS = 'ABCDEFGHIJKL';
@@ -204,6 +204,19 @@ describe('level 5, The Lich', () => {
     const refused = run.steps[1]?.result;
     expect(refused?.ok).toBe(false);
     if (refused !== undefined && !refused.ok) expect(refused.reason).toBe('no-ink');
+  });
+
+  it('locks every map cell and every panel label; only the editable cells are open (Decision 7)', () => {
+    const report = lockReport(started());
+    expect(report.openMapCells).toEqual([]);
+    expect(report.openLabelCells).toEqual([]);
+    expect([...report.openCells].sort()).toEqual(['HEX_A', 'HEX_B', 'LICH_HP']);
+  });
+
+  it('refuses typing an exit next to the hero, so the level cannot be won for 1 ink', () => {
+    const result = applyAction(started(), { kind: 'edit', address: 'C6', raw: 'X' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('locked');
   });
 
   it('replays the stored solution to a win', () => {

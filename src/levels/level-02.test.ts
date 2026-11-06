@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cellName, cellRawText, cellValue, isCellLocked, startRun } from '../game/index';
 import type { RunState } from '../game/index';
 import { serializeLevelText, tabLabel } from '../model/index';
-import { describeStep, loadLevelFile, manhattan, readSolution, replay, walkableCount } from './helpers';
+import { describeStep, loadLevelFile, lockReport, manhattan, readSolution, replay, walkableCount } from './helpers';
 
 const ID = '02-the-chaser';
 const MOVE_RAW = '=IF(DIST(HERO,SELF)<4,TOWARD(HERO),"-")';
@@ -69,6 +69,13 @@ describe('level 2, The Chaser', () => {
     expect(tabLabel(file.level)).toBe('Sheet2: The Chaser');
     expect(file.level.hint).toContain('MOVE_M1');
     expect(file.level.seed).toBe(2);
+  });
+
+  it('locks every map cell and every panel label; only the editable cells are open (Decision 7)', () => {
+    const report = lockReport(started());
+    expect(report.openMapCells).toEqual([]);
+    expect(report.openLabelCells).toEqual([]);
+    expect([...report.openCells].sort()).toEqual(['ATK_M1', 'MOVE_M1']);
   });
 
   it('replays the stored solution to a win', () => {

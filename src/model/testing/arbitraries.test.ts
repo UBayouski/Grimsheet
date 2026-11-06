@@ -161,6 +161,25 @@ describe('mutatedDocumentArbitrary and jsonValueArbitrary', () => {
   });
 });
 
+describe('jsonValueArbitrary and negative zero', () => {
+  it('never holds -0 anywhere in the value', () => {
+    const holdsNegativeZero = (value: unknown): boolean => {
+      if (typeof value === 'number') return Object.is(value, -0);
+      if (Array.isArray(value)) return (value as unknown[]).some(holdsNegativeZero);
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value as Record<string, unknown>).some(holdsNegativeZero);
+      }
+      return false;
+    };
+    assertProperty(
+      fc.property(jsonValueArbitrary, (value) => {
+        expect(holdsNegativeZero(value)).toBe(false);
+      }),
+      2000,
+    );
+  });
+});
+
 describe('anyStringArbitrary', () => {
   it('stays within 300,000 characters', () => {
     assertProperty(

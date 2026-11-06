@@ -11,6 +11,7 @@ import {
   parseSolution,
   replay,
   searchEditFree,
+  lockReport,
   stateKey,
   walkableCount,
 } from './helpers';
@@ -247,6 +248,60 @@ describe('walkableCount', () => {
   it('ignores the rules panel', () => {
     const doc = levelDoc({ cells: [{ address: 'A14', raw: '.' }] });
     expect(walkableCount(started(doc))).toBe(10);
+  });
+});
+
+describe('lockReport', () => {
+  const MAP_ROWS = mapWith({ 6: '#.........X#' });
+
+  /** Locked specs for all 144 map cells, as the shipped levels write them. */
+  function lockedMapSpecs(): Record<string, unknown>[] {
+    const specs: Record<string, unknown>[] = [];
+    MAP_ROWS.forEach((row, r) => {
+      [...row].forEach((glyph, c) => {
+        specs.push({ address: `${'ABCDEFGHIJKL'.charAt(c)}${r + 1}`, raw: glyph, locked: true });
+      });
+    });
+    return specs;
+  }
+
+  const panel = (labelLocked: boolean, ruleLocked: boolean): Record<string, unknown>[] => [
+    labelLocked ? { address: 'A14', raw: 'Load', locked: true } : { address: 'A14', raw: 'Load' },
+    ruleLocked
+      ? { address: 'B14', raw: '6', locked: true, name: 'LOAD' }
+      : { address: 'B14', raw: '6', name: 'LOAD' },
+  ];
+
+  it('reports an unlocked map as 144 open map cells', () => {
+    const report = lockReport(started(levelDoc({ cells: panel(true, false) })));
+    expect(report.openMapCells).toHaveLength(144);
+    expect(report.openLabelCells).toEqual([]);
+    expect(report.openCells).toEqual(['LOAD']);
+  });
+
+  it('reports nothing open on the map when all 144 map cells are locked', () => {
+    const report = lockReport(started(levelDoc({ cells: [...lockedMapSpecs(), ...panel(true, false)] })));
+    expect(report.openMapCells).toEqual([]);
+    expect(report.openLabelCells).toEqual([]);
+    expect(report.openCells).toEqual(['LOAD']);
+  });
+
+  it('reports an unlocked label, and a locked rule cell as closed', () => {
+    const report = lockReport(started(levelDoc({ cells: [...lockedMapSpecs(), ...panel(false, true)] })));
+    expect(report.openLabelCells).toEqual(['A14']);
+    expect(report.openCells).toEqual([]);
+  });
+
+  it('reports an unnamed open cell by its address and ignores empty cells', () => {
+    const cells = [...lockedMapSpecs(), { address: 'C15', raw: '7' }];
+    const report = lockReport(started(levelDoc({ cells })));
+    expect(report.openCells).toEqual(['C15']);
+    expect(report.openMapCells).toEqual([]);
+  });
+
+  it('reports one unlocked map cell by address', () => {
+    const cells = lockedMapSpecs().filter((c) => c['address'] !== 'D6');
+    expect(lockReport(started(levelDoc({ cells }))).openMapCells).toEqual(['D6']);
   });
 });
 

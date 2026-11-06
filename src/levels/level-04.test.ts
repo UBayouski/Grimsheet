@@ -3,7 +3,7 @@ import { formatValue } from '../engine/index';
 import { applyAction, cellName, cellRawText, cellValue, isCellLocked, startRun } from '../game/index';
 import type { Action, RunState } from '../game/index';
 import { serializeLevelText, tabLabel } from '../model/index';
-import { loadLevelFile, readSolution, replay } from './helpers';
+import { loadLevelFile, lockReport, readSolution, replay } from './helpers';
 
 const ID = '04-the-trap-row';
 const COLUMNS = 'ABCDEFGHIJKL';
@@ -101,6 +101,13 @@ describe('level 4, The Trap Row', () => {
     expect(state.hp).toBe(2);
     state = step(state, { kind: 'move', dir: 'E' });
     expect(state.status).toBe('lost');
+  });
+
+  it('locks every map cell and every panel label; only the editable cells are open (Decision 7)', () => {
+    const report = lockReport(started());
+    expect(report.openMapCells).toEqual([]);
+    expect(report.openLabelCells).toEqual([]);
+    expect([...report.openCells].sort()).toEqual(['DIVISOR', 'LOAD']);
   });
 
   it('replays the stored solution to a win', () => {

@@ -115,6 +115,34 @@ describe('skeleton', () => {
   });
 });
 
+describe('fixed column widths', () => {
+  it('declares a colgroup of 13 classed columns first in the table, with widths set in the stylesheet', () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    createView(root);
+    const table = root.querySelector('#grid-table');
+    const cols = Array.from(table?.querySelectorAll('colgroup > col') ?? []);
+    // One column for the row headers plus A to L.
+    expect(cols).toHaveLength(13);
+    expect(cols[0]?.className).toBe('col-row-header');
+    expect(cols.slice(1).every((c) => c.className === 'col-cell')).toBe(true);
+    // The colgroup comes first, so a table-layout: fixed table reads its widths from it.
+    expect(table?.firstElementChild?.tagName).toBe('COLGROUP');
+    root.remove();
+
+    const css = readFileSync('src/styles/grid-ui.css', 'utf8');
+    expect(css).toMatch(/col\.col-row-header\s*\{[^}]*width:\s*\d/);
+    expect(css).toMatch(/col\.col-cell\s*\{[^}]*width:\s*\d/);
+  });
+
+  it('gives the table an explicit width in the stylesheet, so table-layout: fixed applies', () => {
+    const css = readFileSync('src/styles/grid-ui.css', 'utf8');
+    const block = /\.grid-table\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(block).toMatch(/table-layout:\s*fixed/);
+    expect(block).toMatch(/(^|[;\s])width:\s*(?!auto)\S+/);
+  });
+});
+
 describe('cell attributes', () => {
   it('writes name, locked, selected, changed and entity', () => {
     createView(root).update(

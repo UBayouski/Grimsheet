@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyAction, cellName, cellRawText, cellValue, isCellLocked, startRun } from '../game/index';
 import type { Action, RunState } from '../game/index';
 import { serializeLevelText, tabLabel } from '../model/index';
-import { describeStep, loadLevelFile, readSolution, replay } from './helpers';
+import { describeStep, loadLevelFile, lockReport, readSolution, replay } from './helpers';
 
 const ID = '03-the-locked-crypt';
 
@@ -78,6 +78,13 @@ describe('level 3, The Locked Crypt', () => {
     const state = step(started(), { kind: 'edit', address: 'B16', raw: '99' });
     expect(shown(state, 'B17')).toBe('1520');
     expect(shown(state, 'G6')).toBe('#');
+  });
+
+  it('locks every map cell and every panel label; only the editable cells are open (Decision 7)', () => {
+    const report = lockReport(started());
+    expect(report.openMapCells).toEqual([]);
+    expect(report.openLabelCells).toEqual([]);
+    expect([...report.openCells].sort()).toEqual(['RUNE_ASH', 'RUNE_DUST', 'RUNE_SALT']);
   });
 
   it('replays the stored solution to a win', () => {

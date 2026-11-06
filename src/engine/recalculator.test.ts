@@ -327,6 +327,8 @@ describe('recalculation speed without a cycle', () => {
     expect(Object.keys(cells)).toHaveLength(240);
     const sheet = build(cells);
 
+    // This is the single check of the 5,000 ms limit of Requirement 12.3. The totality property
+    // asserts behaviour only, so a loaded machine cannot fail it on timing.
     const started = performance.now();
     const result = recalculate(sheet, ctx());
     const elapsed = performance.now() - started;
