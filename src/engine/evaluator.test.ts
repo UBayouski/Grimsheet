@@ -3,7 +3,14 @@ import type { GridPoint } from './address';
 import type { CellNode, Node } from './ast';
 import { evaluateAst, type CellView, type EvalEnv } from './evaluator';
 import { parseFormula } from './parser';
-import { booleanValue, numberValue, ruleValue, stringValue, type Value } from './values';
+import {
+  booleanValue,
+  errorValue,
+  numberValue,
+  ruleValue,
+  stringValue,
+  type Value,
+} from './values';
 
 const EMPTY_CELL: CellView = { empty: true, name: null, value: stringValue('') };
 
@@ -206,10 +213,225 @@ describe('types', () => {
   });
 });
 
-describe('function calls (stub)', () => {
-  it('give #NAME? for any call', () => {
-    expect(errorOf(run('=SUM(1,2)')).error).toBe('#NAME?');
+function numCells(...values: number[]): Record<string, CellView> {
+  const cells: Record<string, CellView> = {};
+  values.forEach((n, i) => {
+    cells[`1,${i + 1}`] = { empty: false, name: null, value: numberValue(n) };
+  });
+  return cells;
+}
+
+const CYCLE_CELLS: Record<string, CellView> = {
+  '1,1': {
+    empty: false,
+    name: null,
+    value: errorValue('#CYCLE!', 'A1 is on a circular reference', 'A1'),
+  },
+};
+
+describe('function calls', () => {
+  it('SUM, MIN and MAX take values and ranges', () => {
+    expect(run('=SUM(1,2,3)')).toEqual(numberValue(6));
+    expect(run('=MIN(4,2,9)')).toEqual(numberValue(2));
+    expect(run('=MAX(4,2,9)')).toEqual(numberValue(9));
+    const cells = numCells(1, 2, 3);
+    expect(run('=SUM(A1:A3)', { cells })).toEqual(numberValue(6));
+    expect(run('=SUM(A1:A3, 10)', { cells })).toEqual(numberValue(16));
+    expect(run('=MIN(A1:A3)', { cells })).toEqual(numberValue(1));
+    expect(run('=MAX(A1:A3)', { cells })).toEqual(numberValue(3));
+    expect(run('=SUM(A3:A1)', { cells })).toEqual(numberValue(6));
+  });
+
+  it('ranges skip text and empty cells', () => {
+    const cells: Record<string, CellView> = {
+      ...numCells(1),
+      '1,2': { empty: false, name: null, value: stringValue('x') },
+    };
+    expect(run('=SUM(A1:A3)', { cells })).toEqual(numberValue(1));
+  });
+
+  it('MIN and MAX over no numbers give #VALUE!', () => {
+    expect(errorOf(run('=MIN(A1:A3)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=MAX(A1:A3)')).error).toBe('#VALUE!');
+    expect(run('=SUM(A1:A3)')).toEqual(numberValue(0));
+  });
+
+  it('an error inside a range propagates', () => {
+    const cells: Record<string, CellView> = {
+      ...numCells(1, 2, 3),
+      '1,2': { empty: false, name: null, value: errorValue('#DIV/0!', 'A2 divides by zero', 'A2') },
+    };
+    expect(errorOf(run('=SUM(A1:A3)', { cells })).error).toBe('#DIV/0!');
+  });
+
+  it('a range outside a range-taking argument gives #REF!', () => {
+    expect(errorOf(run('=ABS(A1:A3)')).error).toBe('#REF!');
+  });
+
+  it('ABS and MOD', () => {
+    expect(run('=ABS(-3)')).toEqual(numberValue(3));
+    expect(run('=MOD(7,3)')).toEqual(numberValue(1));
+    expect(errorOf(run('=MOD(7,0)')).error).toBe('#DIV/0!');
+    expect(errorOf(run('=ABS("a")')).error).toBe('#VALUE!');
+  });
+
+  it('AND, OR and NOT', () => {
+    expect(run('=AND(TRUE,FALSE)')).toEqual(booleanValue(false));
+    expect(run('=AND(TRUE,TRUE)')).toEqual(booleanValue(true));
+    expect(run('=OR(FALSE,TRUE)')).toEqual(booleanValue(true));
+    expect(run('=OR(FALSE,FALSE)')).toEqual(booleanValue(false));
+    expect(run('=NOT(FALSE)')).toEqual(booleanValue(true));
+    expect(errorOf(run('=AND(TRUE,1)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=NOT("a")')).error).toBe('#VALUE!');
+  });
+
+  it('ROW, COL and DIST read cell references', () => {
+    expect(run('=ROW(B9)')).toEqual(numberValue(9));
+    expect(run('=COL(B9)')).toEqual(numberValue(2));
+    expect(run('=DIST(A1,C3)')).toEqual(numberValue(4));
+    expect(errorOf(run('=ROW(5)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=DIST(A1,5)')).error).toBe('#VALUE!');
+  });
+
+  it('TOWARD needs a bound monster', () => {
+    const self = { col: 2, row: 5 };
+    expect(run('=TOWARD(B2)', { self })).toEqual(stringValue('N'));
+    expect(run('=TOWARD(B8)', { self })).toEqual(stringValue('S'));
+    expect(run('=TOWARD(B5)', { self })).toEqual(stringValue('-'));
+    expect(errorOf(run('=TOWARD(B2)')).error).toBe('#REF!');
+  });
+
+  it('RAND uses the supplied generator', () => {
+    expect(run('=RAND()')).toEqual(numberValue(0.5));
+  });
+
+  it('function names are matched case-insensitively', () => {
+    expect(run('=sum(1,2)')).toEqual(numberValue(3));
+  });
+
+  it('calls nest inside expressions', () => {
+    expect(run('=1+ABS(-2)*SUM(1,2)')).toEqual(numberValue(7));
+  });
+});
+
+describe('call check order', () => {
+  it('#CYCLE! in an argument beats an unknown function', () => {
+    expect(errorOf(run('=FOO(A1)', { cells: CYCLE_CELLS })).error).toBe('#CYCLE!');
+  });
+
+  it('#CYCLE! beats a wrong argument count', () => {
+    expect(errorOf(run('=ABS(A1, 2)', { cells: CYCLE_CELLS })).error).toBe('#CYCLE!');
+  });
+
+  it('#CYCLE! beats an earlier argument error', () => {
+    expect(errorOf(run('=SUM(1/0, A1)', { cells: CYCLE_CELLS })).error).toBe('#CYCLE!');
+  });
+
+  it('an unknown function beats a wrong argument count', () => {
+    expect(errorOf(run('=FOO(1,2,3)')).error).toBe('#NAME?');
     expect(errorOf(run('=FOO()')).error).toBe('#NAME?');
-    expect(errorOf(run('=1+ABS(2)')).error).toBe('#NAME?');
+  });
+
+  it('an unknown function beats an argument error', () => {
+    expect(errorOf(run('=FOO(1/0)')).error).toBe('#NAME?');
+    expect(errorOf(run('=FOO(M1)')).error).toBe('#NAME?');
+  });
+
+  it('a wrong argument count beats an argument error', () => {
+    expect(errorOf(run('=ABS(1/0, 2)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=RAND(1/0)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=MOD(M1)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=SUM()')).error).toBe('#VALUE!');
+  });
+
+  it('the leftmost argument error wins', () => {
+    expect(errorOf(run('=SUM(1/0, M1)')).error).toBe('#DIV/0!');
+    expect(errorOf(run('=SUM(M1, 1/0)')).error).toBe('#REF!');
+  });
+
+  it('the leftmost argument error beats a type error', () => {
+    expect(errorOf(run('=MOD("a", 1/0)')).error).toBe('#DIV/0!');
+    expect(errorOf(run('=MOD(1/0, "a")')).error).toBe('#DIV/0!');
+    expect(errorOf(run('=AND(1, M1)')).error).toBe('#REF!');
+  });
+
+  it('a type error shows when no argument is an error', () => {
+    expect(errorOf(run('=MOD("a", 1)')).error).toBe('#VALUE!');
+  });
+});
+
+describe('IF', () => {
+  it('takes only the chosen branch', () => {
+    expect(run('=IF(TRUE, 1, 1/0)')).toEqual(numberValue(1));
+    expect(run('=IF(FALSE, 1/0, 2)')).toEqual(numberValue(2));
+    expect(run('=IF(TRUE, 1, GHOST)')).toEqual(numberValue(1));
+    expect(run('=IF(FALSE, FOO(), 2)')).toEqual(numberValue(2));
+  });
+
+  it('does not evaluate the skipped branch even when it holds a cycle', () => {
+    expect(run('=IF(TRUE, 1, A1)', { cells: CYCLE_CELLS })).toEqual(numberValue(1));
+  });
+
+  it('returns an error from the chosen branch', () => {
+    expect(errorOf(run('=IF(TRUE, 1/0, 2)')).error).toBe('#DIV/0!');
+    expect(errorOf(run('=IF(FALSE, 1, M1)')).error).toBe('#REF!');
+  });
+
+  it('propagates a condition error', () => {
+    expect(errorOf(run('=IF(1/0, 1, 2)')).error).toBe('#DIV/0!');
+  });
+
+  it('gives #VALUE! for a condition that is not a boolean', () => {
+    expect(errorOf(run('=IF(1, 2, 3)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=IF("a", 2, 3)')).error).toBe('#VALUE!');
+  });
+
+  it('gives #VALUE! for a wrong argument count', () => {
+    expect(errorOf(run('=IF(TRUE, 1)')).error).toBe('#VALUE!');
+    expect(errorOf(run('=IF(TRUE, 1, 2, 3)')).error).toBe('#VALUE!');
+  });
+
+  it('compares with cell values', () => {
+    const cells = numCells(5);
+    expect(run('=IF(A1>3, "big", "small")', { cells })).toEqual(stringValue('big'));
+  });
+});
+
+describe('totality', () => {
+  const formulas = [
+    '=SUM()',
+    '=SUM(A1:A3)',
+    '=IF()',
+    '=IF(1,2,3)',
+    '=FOO(FOO(FOO()))',
+    '=TOWARD(5)',
+    '=DIST()',
+    '=MOD(1)',
+    '=ABS(ABS(ABS("x")))',
+    '=SUM(M1:M3)',
+    '=SUM(A1:M1)',
+    '=ROW(A1:A3)',
+    '=SUM(1e308*10)',
+  ];
+
+  it('never throws and always gives a value', () => {
+    for (const text of formulas) {
+      const parsed = parseFormula(text);
+      if (!parsed.ok) continue;
+      const result = evaluateAst(parsed.ast, makeEnv({ cells: CYCLE_CELLS }));
+      expect(['number', 'string', 'boolean', 'error']).toContain(result.kind);
+    }
+  });
+
+  it('turns a throwing environment into an error', () => {
+    const parsed = parseFormula('=SUM(A1:A3)');
+    if (!parsed.ok) throw new Error('parse failed');
+    const env: EvalEnv = {
+      ...makeEnv(),
+      cellAt: () => {
+        throw new Error('boom');
+      },
+    };
+    expect(evaluateAst(parsed.ast, env).kind).toBe('error');
   });
 });
