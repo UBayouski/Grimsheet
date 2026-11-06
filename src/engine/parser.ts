@@ -124,16 +124,14 @@ class Parser {
 
   private parseUnary(): Parsed {
     const token = this.peek();
+    if (token.kind !== 'op' || token.text !== '-') return this.parsePrimary();
     this.enter(token);
     try {
-      if (token.kind === 'op' && token.text === '-') {
-        this.pos++;
-        const operand = this.parseUnary();
-        const h = operand.h + 1;
-        this.checkHeight(h, token);
-        return { node: { kind: 'negate', operand: operand.node }, h };
-      }
-      return this.parsePrimary();
+      this.pos++;
+      const operand = this.parseUnary();
+      const h = operand.h + 1;
+      this.checkHeight(h, token);
+      return { node: { kind: 'negate', operand: operand.node }, h };
     } finally {
       this.leave();
     }
