@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "id": "04-the-trap-row",
+  "title": "The Trap Row",
+  "hint": "The #DIV/0! cell is a hole. Follow RATIO back to its cause. Traps bite.",
+  "startingHp": 5,
+  "ink": 1,
+  "seed": 4,
+  "hero": {
+    "at": "B6"
+  },
+  "monsters": [],
+  "map": [
+    "############",
+    "#....^^....#",
+    "#....^^....#",
+    "#....^^....#",
+    "#....^^....#",
+    "#.........X#",
+    "#....^^....#",
+    "#....^^....#",
+    "#....^^....#",
+    "#....^^....#",
+    "#....^^....#",
+    "############"
+  ],
+  "cells": [
+    {
+      "address": "F6",
+      "raw": "=IF(RATIO>=0,\".\",\"#\")",
+      "locked": true
+    },
+    {
+      "address": "A14",
+      "raw": "Trap damage",
+      "locked": true
+    },
+    {
+      "address": "B14",
+      "raw": "3",
+      "locked": true,
+      "name": "TRAP"
+    },
+    {
+      "address": "A15",
+      "raw": "Ratio",
+      "locked": true
+    },
+    {
+      "address": "B15",
+      "raw": "=LOAD/DIVISOR",
+      "locked": true,
+      "name": "RATIO"
+    },
+    {
+      "address": "A16",
+      "raw": "Load",
+      "locked": true
+    },
+    {
+      "address": "B16",
+      "raw": "6",
+      "name": "LOAD"
+    },
+    {
+      "address": "A17",
+      "raw": "Divisor",
+      "locked": true
+    },
+    {
+      "address": "B17",
+      "raw": "0",
+      "name": "DIVISOR"
+    }
+  ]
+}
