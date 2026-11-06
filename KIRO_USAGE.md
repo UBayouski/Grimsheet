@@ -570,3 +570,34 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: the generator got a load-it-and-expect-ok smoke test, so a later change to the generator that breaks validity fails in `arbitraries.test.ts` with a readable message before it fails four properties with a shrunk counterexample.
 - While this was going on, the spec label rule was settled separately (labels are plain text, and 5.14 covers numeric literals). That change did not touch the code I changed here.
 - Nothing was committed.
+
+## 2026-11-06 — formula-reviewer over src/model (read-only review)
+
+Surface: CLI
+
+Features: agent, spec, pbt
+
+What I asked for: Run the formula-reviewer agent over `src/model` with a new brief in place of its engine checklist. Check the code against `sheet-model` `requirements.md` and `design.md`. Focus on inputs that make `loadLevel` or `loadLevelText` throw, error codes and paths that differ from the design table, a valid level that serialize then load would change, imports of engine internals, and requirements with no test. Same output format as the engine reviews. Read only, fix nothing.
+
+What Kiro did:
+- The agent read the specs and the non-test model files (`loader.ts`, `serializer.ts`, `types.ts`) and inspected the tests through their titles. It ran no tests and edited nothing.
+- It noted that tasks 1.1 to 4.3 look done and that 5.1 and 5.2 are not (`src/model/index.ts` and `module.test.ts` do not exist yet). It treated that as status, not as findings.
+- Counts by type (13 findings):
+
+| Type | High | Medium | Low | Total |
+|---|---|---|---|---|
+| bug | 2 | 1 | 2 | 5 |
+| spec drift | 0 | 3 | 3 | 6 |
+| test gap | 0 | 1 | 1 | 2 |
+| Total | 2 | 5 | 6 | 13 |
+
+- The two high findings are both about the never-throws guarantee. The outer `catch` can itself throw, for example on a getter that throws a revoked Proxy. The depth and node guard allocates children before it checks the 100,000-node budget, so a huge array can hang or exhaust memory.
+- The other bugs: the accepted Level is built from the original input and not from a validated snapshot; `-0` in `ink` or `seed` breaks the text round trip under `Object.is`; the message clamp can cut a surrogate pair.
+- Spec drift: a wrong-type `raw` produces a derived `missing-label` or `bad-rule-cell`; the `internal-error` message includes the exception text; a non-plain value inside a field reports `not-an-object` at the root path; the collector's `has()` is never used; the error order differs from Requirement 8.1; two test files import engine internals.
+- Test gaps: no tests for Proxy, sparse arrays, cyclic objects, `__proto__` keys, lone surrogates or a throwing `RandomSource`; some criteria (3.4 for `raw`, `move` and `atk`, the node budget, the post-recalculation skip) had no test the agent could confirm.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the totality property tests pass because their generators produce JSON-compatible values. The review found two ways to break the never-throws guarantee that those generators cannot reach.
+- Not verified: I ran none of the repros. The agent read the code and test titles only, and said so. Coverage claims rest on test titles, not test bodies.
+- The agent numbered its findings by section, so M5 (the unused collector `has()`) sits in its low section. The counts above follow its own table: 2 high, 5 medium, 6 low.
+- Nothing was fixed and nothing was committed. Each finding still needs a decision.
