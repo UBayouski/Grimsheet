@@ -49,14 +49,14 @@ Rules that apply to every task:
     - _Requirements: 14.2, 6.2, 10.3, 10.4, 2.5, 11.4, 9.3, 7.4, Decisions 5 and 20_
 
 - [ ] 2. Pure helper modules
-  - [ ] 2.1 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `key-map.ts` with tests
+  - [x] 2.1 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `key-map.ts` with tests
     - Files: create `src/ui/key-map.ts`, `src/ui/key-map.test.ts`
     - Export `mapKey(input, context)` implementing the 21-row table of the design top to bottom, first match wins, returning `{ command, preventDefault }` or `undefined`; letters compare through `toLowerCase()`; Meta counts as Ctrl; modifier-only keys (`Shift`, `Control`, `Alt`, `Meta`, `CapsLock`) always return `undefined` and never cancel a confirmation; no browser global is referenced
     - Tests: one table-driven case per row, each asserting both the command and the `preventDefault` flag; plain arrows move only with `focus: 'other'` and `screen: 'playing'`; Ctrl+Arrow and Command+Arrow select on every screen; Alt+Arrow and Shift+Arrow are `undefined`; Space is `wait` on `other` and `undefined` on `button`; `u`, `U`, Ctrl+Z and Command+Z undo while playing, Ctrl+Shift+Z is `undefined`; `r` restarts on every screen but Ctrl+R and Command+R are `undefined`; `n` only on `won` with `hasNext`; text focus ignores game keys except Enter and Escape while `editing`; button focus ignores `u`, `r`, `n`, plain arrows, Enter and Space; Enter on `other` starts an edit only while playing and F2 also from a button; the pending rows 6 to 10, including `r` and Enter confirming a restart, Enter confirming a switch, Escape cancelling, another key cancelling, Shift alone not cancelling, Tab cancelling without `preventDefault`; `composing` and `screen: 'none'` give `undefined`; won and lost screens accept only selection moves, restart, next and the pending rows
     - Acceptance: `npm run verify` passes
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 5.2, 7.1, 10.3, Decisions 1, 8, 9 and 17_
 
-  - [ ] 2.2 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `confirmation.ts` with tests
+  - [x] 2.2 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `confirmation.ts` with tests
     - Files: create `src/ui/confirmation.ts`, `src/ui/confirmation.test.ts`
     - Uses only `Status`, `Pending` and `LevelEntry` from `types.ts` and `STRINGS`; no game import
     - Export `decide(status, pending, wanted)` returning `'prompt'`, `'execute'` or `'cancel'` (execute when there is no run or the Status is not `playing`, or when `pending` equals `wanted`; prompt when nothing is pending; cancel otherwise), `isSame(a, b)` and `promptFor(wanted, entries)` using `STRINGS.confirmRestart` and `STRINGS.confirmSwitch(label)`; the `Pending` type comes from `types.ts`
@@ -72,7 +72,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 9.2, 9.3, 9.4, 10.4, 4.3, 8.6, 6.3, 7.5, Decisions 12 and 18_
 
-  - [ ] 2.4 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `progress.ts` with tests
+  - [x] 2.4 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `progress.ts` with tests
     - Files: create `src/ui/progress.ts`, `src/ui/progress.test.ts`
     - Imports `tabLabel` from `../model/index` (finished) and types from `types.ts`; no game import
     - Export `PROGRESS_KEY` (`grimsheet.progress`), `parseProgress(text, knownIds)` (never throws; empty Progress for null, bad JSON, another `version`, wrong field types or non-string items; keeps the first occurrence of each known id; drops unknown ids; `current` kept only when known), `serializeProgress`, `createProgressStore(storage, knownIds)` with `load` and `save` (both guard the storage call and swallow a throw), `describeLevels(docs)` (defensive read of `id` and `title`, `level-<n>` and `Unreadable level` fallbacks, label from `tabLabel` or `Sheet<n>: <title>`), `firstUnclearedIndex`, `isTabEnabled` (cleared, or first uncleared) and `startIndexFor` (saved current when its tab is enabled, else first uncleared, else 0, never a disabled level)

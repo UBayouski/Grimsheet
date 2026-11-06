@@ -656,3 +656,55 @@ What changed because of it (time saved, bug caught, decision made):
 - Task 4.3: `src/game/invariants.prop.test.ts` (Properties 4 to 7).
 - Task 4 verification: `npm run verify` passes with 40 test files and 804 tests, typecheck and lint clean. The three property files pass twice with different FC_SEED values (3 files, 7 tests each).
 - Note: `turn.ts` and `turn.test.ts` were committed inside the step 2 commit (74c0125) by an earlier step, not in this task.
+
+## 2026-11-06 — game-rules Batch 3 (IDE)
+
+Surface: IDE
+
+Features: spec
+
+What I asked for: Run Batch 3 of the game-rules spec in the IDE: tasks 3.1, 3.2 and 3.3, which all edit `src/game/turn.ts` and `turn.test.ts`, so they ran in order in the main checkout.
+
+What Kiro did:
+- 3.1 built the action shell and the turn sequence: `parseAction` (copies fields, `invalid-action` for any malformed value), `applyAction` with the registry check (`internal-error` for a forged state), the `not-playing` check, the fixed refusal messages and one outer `try/catch`, the move and wait paths, and `runTurn` (fresh Sheet and recalculation, `stepMonsters`, the trap, haunting once, the second recalculation, loss before win, `turn + 1`, the undo snapshot, frozen results).
+- 3.2 added the edit action with the checks in the Requirement 6.1 order (`not-playing`, `bad-address`, `reserved-row`, `locked`, `unchanged`, `no-ink`, `parse-error`), validating before anything is stored.
+- 3.3 added undo and isolation: one level of undo, restored through `makeSheet` and the saved generator state, with `nothing-to-undo` and `not-playing` refusals.
+- Result in the commit: `turn.ts` is 244 lines and `turn.test.ts` is 702 lines. The seven files `turn.test.ts` and `src/ui/*.test.ts` pass together with 302 tests; I did not take a separate count for `turn.test.ts`. Ticks for 3.1, 3.2, 3.3 and parent 3 are in `game-rules/tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Batch 3 was committed after the two Crew runs that used it. The Batch 4 Crew run (property tests) needed `turn.ts`, and the Batch 4 entry notes that `turn.ts` and `turn.test.ts` ended up inside a Crew step commit (`74c0125`) before my IDE commit. I did not diff the two versions, so I cannot say whether the Crew copy and the IDE version were identical.
+- Same lesson as in Batches 1 and 2: commit the batch a Crew run depends on before the run starts.
+
+## 2026-11-06 — grid-ui Batches 1 and 2: IDE then Crew
+
+Surface: IDE, Crew
+
+Features: spec
+
+What I asked for: Build Batches 1 and 2 of the grid-ui spec. Batch 1 (tasks 1.1 and 1.2) ran in the IDE. Batch 2 (2.1 `key-map.ts`, 2.2 `confirmation.ts`, 2.4 `progress.ts`, each with tests) ran in Kiro Crew. Task 2.3 `messages.ts` waits for the game barrel (game-rules Batch 5).
+
+What Kiro did:
+- Batch 1 in the IDE: 1.1 added `happy-dom` 21.0.4, pinned with no range, plus one eslint block that gives `tests/e2e/**` and `tests/fixtures/**` both Node and browser globals, and two smoke tests (`happy-dom-smoke.test.ts`, `node-env-smoke.test.ts`). 1.2 added `types.ts` (types only, nothing imported from `src/game/`), `strings.ts` and `strings.test.ts`.
+- Batch 2 in Crew: 6 steps, one file per step, committed from 11:45:38 to 11:54:59. They built `key-map.ts` (`mapKey`, the 21-row key table), `confirmation.ts` and `progress.ts`, each with its test file. The branch was merged as `70fe902`.
+- Ran at the same time as other work: the game-rules and grid-ui Crew runs overlapped each other (the game-rules Batch 4 steps ran from 11:41 and the grid-ui steps from 11:45), and each ran while I did IDE work on the other spec: grid-ui Batch 1 beside the game-rules Crew run, game-rules Batch 3 beside the grid-ui Crew run. The step timestamps overlap, which is what the history shows.
+- Combined result after both specs' merges: `npm run verify` passes with 46 test files and 1040 tests, typecheck and lint clean. I ran it myself.
+- In `grid-ui/tasks.md` I ticked 1.1, 1.2, 2.1, 2.2 and 2.4. Parent 1 is ticked; parent 2 stays open because 2.3 is not done. I searched all the spec task files and none shows `[~]`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Time: two specs moved at once, with Crew doing the pure helper modules while the IDE did the parts that share files.
+- Decision: the grid-ui tasks carry "can start before game-rules Batch 5" or "needs game-rules Batch 5" tags, so I only started the tasks that do not import the game barrel.
+- Not verified: I did not diff the Batch 1 files that Crew copied into its worktree against the IDE versions.
+
+## 2026-11-06 — node_modules wiped during parallel runs
+
+Surface: Crew, IDE
+
+Features: none
+
+What I asked for: Nothing. This is a note on an incident while the runs above were going.
+
+What Kiro did: Nothing during the incident. At 11:51 on 2026-11-06 the main checkout's `node_modules` was found empty. That was one minute after a Crew worktree was cleaned up. A `happy-dom` install (grid-ui task 1.1) had also happened earlier that morning. `npm ci` restored it, and the suite passed afterwards.
+
+What changed because of it (time saved, bug caught, decision made):
+- The cause is not confirmed. Two candidates: a worktree cleanup that touched the shared `node_modules`, or the `happy-dom` install interacting with the parallel runs. I have not tested either.
+- Watch for it after the next Crew run: check that `node_modules` still has its contents before and after the run, and after the worktree is cleaned up.
