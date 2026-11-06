@@ -190,3 +190,25 @@ What Kiro did:
 What changed because of it (time saved, bug caught, decision made):
 - The new rule held in this run: the verification step made no commit and edited no code. Earlier batches differed. In Batch 1 verification ran before the last test file. Batch 2 was a chat session with no Task Runner run. In Batch 3 verification ran last without editing, and in Batch 4 it ran early and edited `evaluator.ts`. One run is not enough to say the rule is reliable.
 - Time: two independent tasks ran in a separate worktree in about 7 minutes while the main checkout stayed free.
+
+## 2026-11-05 — formula-engine task 4.3 (recalculator) run in the IDE
+
+Surface: IDE
+
+Features: spec
+
+What I asked for: Run task 4.3 of the formula-engine spec, `recalculator.ts` with tests, from the spec panel with Start task, with Autopilot off.
+
+What Kiro did:
+- The first version named the peers of each cycle cell by calling `reachable()` for every pair of cycle cells.
+- An outside review measured two cases. A sheet of 240 cells all set to `=SUM(A1:L20)` took about 17 seconds, which breaks the 5-second limit in Requirement 12.3. A 240-cell circular chain took about 0.6 seconds.
+- The fix added `circularComponents()` to `graph.ts`, built from the existing Tarjan pass. The recalculator now names peers from each cell's own component, with no extra graph walks. The cause wording and order are unchanged.
+- The two cases now take about 15 ms and 5 ms. Two regression tests assert that each finishes in under 1 second. The first also checks that all 240 cells hold `#CYCLE!`.
+- Result: 15 test files, 323 tests passing, typecheck and lint clean.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the quadratic cycle-cause naming passed its first tests and was found only by an outside review that measured a full-sheet cycle. The task's own tests had no case that large, so the regression tests now cover it.
+- Differences from the Kiro Crew Task Runner runs:
+  - The task ran one at a time in the main checkout, not in a separate worktree.
+  - I approved each change in the diff view, instead of reviewing a plan and merging a branch afterwards.
+  - Kiro committed nothing, so there are no per-step commits and no separate author in the history. This entry is the record of what Kiro did.

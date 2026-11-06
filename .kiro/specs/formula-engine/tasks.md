@@ -142,7 +142,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `sheet.test.ts`; `npm run check` passes
     - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 1.7, 6.1, 6.5, 6.6, 14.2, 14.3_
 
-  - [ ] 4.3 [Batch 6] Create `recalculator.ts` with tests
+  - [x] 4.3 [Batch 6] Create `recalculator.ts` with tests
     - Files: create `src/engine/recalculator.ts`, `src/engine/recalculator.test.ts`
     - Export `RecalculateResult`, `recalculate`: validate the context; build the graph, find cycles, order; evaluate each Cell into a fresh array (empty gives `""`, Literal classified with `^[+-]?\d+(\.\d+)?$`, cycle Cell gets `#CYCLE!` with the cause texts from the design, Rule_Cell off a cycle gets the rule Value with no evaluation and no `random()` call, other Formulas through `evaluateAst` with `self` undefined inside `try/catch`); commit in one step through `commitRecalculation`
     - Tests: dependents defined before dependencies; cycle set, cleared by an edit, and Rule_Cell regaining its rule Value; downstream `#CYCLE!`; untaken `IF` branch not an operand but still an edge; `#CYCLE!` from a Range member; Rule_Cell on a cycle holds `#CYCLE!`; a Cell reading a Rule_Cell gets `#VALUE!` naming it; scripted Random_Source shows call order and that Rule_Cells draw nothing; Self_Address ignored; `HERO` outside the Sheet gives `#REF!`; invalid context refused with nothing changed; literal classification table

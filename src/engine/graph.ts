@@ -172,6 +172,18 @@ function isCircular(graph: DependencyGraph, group: readonly number[]): boolean {
   return (graph.edges[only] as readonly number[]).includes(only);
 }
 
+/**
+ * The circular strongly connected components from the same Tarjan pass: one ascending list of
+ * Cell indices per component that is a real circular reference (2+ Cells, or a Cell that
+ * depends on itself). Lists are ordered by their smallest member.
+ */
+export function circularComponents(graph: DependencyGraph): number[][] {
+  const { members } = stronglyConnected(graph);
+  return members
+    .filter((group) => isCircular(graph, group))
+    .sort((a, b) => (a[0] as number) - (b[0] as number));
+}
+
 /** Tarjan's algorithm (iterative). Returns the Cell indices on a circular reference, ascending. */
 export function findCycleCells(graph: DependencyGraph): number[] {
   const { members } = stronglyConnected(graph);
