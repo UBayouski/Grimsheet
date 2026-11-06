@@ -345,3 +345,35 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught: the review of Kiro Crew's scanner found two ways a banned construct could slip past it. The scan is what keeps the engine DOM-free (the `tsconfig` `lib` includes DOM types), so a blind spot there would weaken that constraint without any test failing.
 - Hooks: this was the first session with the split hooks. The IDE file-edit tools were not available in this session, so the edits were made through the terminal, and no `PostFileSave` hook fired. No hook output appeared during the session. Whether the `Stop` hook (`npm run verify`) ran at the end could not be observed from inside the session.
 - Nothing was committed.
+
+## 2026-11-05 — formula-reviewer custom agent and its first review of src/engine
+
+Surface: CLI
+
+Features: agent
+
+What I asked for: First, tick task 7 (final checkpoint) in the formula-engine `tasks.md`. Then create a read-only custom agent, `formula-reviewer`, in `.kiro/agents/`. It may read files and run `npm test`, `npm run check`, `git diff` and `git log`, and must never edit, create or delete files. It checks `src/engine` against `docs/BRIEF.md` section 4 and the formula-engine requirements: the frozen function set, the five error kinds and the `Col N: <message>.` format, error order and totality, deterministic recalculation, layering, and test coverage. It reports findings most severe first, each marked "bug", "spec drift" or "test gap". I asked for one run over all of `src/engine`, and for nothing to be fixed yet.
+
+What Kiro did:
+- Task 7: ran `npm run verify` first (22 files, 384 tests passing, typecheck and lint clean) and searched the imports. Only `src/engine/index.test.ts` imports `./index`. Then ticked task 7. Parent task 5 is still unticked although 5.1 to 5.4 are ticked; I left it, as it was not asked for.
+- Agent: created `.kiro/agents/formula-reviewer.json` with `fs_read` and `shell` only, no write tools, a shell allowlist of the four commands (plus `git status` and `git show`), and a prompt that sets the checks, the finding format and "Checked" and "Could not verify" sections.
+- Format fixes: the first draft used the tool name `execute_bash`, which is not a CLI tool name. I changed it to `shell` after checking a Kiro agent schema reference. The first draft's deny list also blocked `npm test` and `npm run check`, so the first review run could not run either. I removed the deny list and tightened the git allowlist patterns so they exclude `; & | < > $`.
+- First review: run with `kiro-cli chat --agent formula-reviewer --no-interactive`, trusting only `fs_read`. The agent was not available through the in-session sub-agent tool, which does not see agents created mid-session. Both runs changed no files (`git status` shows only the `tasks.md` tick and the new agent folder).
+- Second review (after the fix): `npm test` ran (22 files, 384 tests passing) and `npm run check` passed. 9 findings: 4 bug, 3 spec drift, 2 test gap.
+  - Bugs:
+    - `recalculate` has no outer `try/catch`, so a context with a throwing getter can throw.
+    - `evaluateCell` reports any exception as `cell-not-found`.
+    - A single empty-cell argument is skipped by `SUM`, `MIN` and `MAX`, where the design says `0`.
+    - A literal `-0` is stored as `-0`, but evaluated results are normalised to `0`.
+  - Spec drift:
+    - An empty cell in boolean context gives `#VALUE!`, where the design says `FALSE`.
+    - The printer failure shape differs from the design.
+    - A call such as `=F2(1)` gives a parse error instead of `#NAME?`.
+  - Test gaps:
+    - No test for a throwing context, a single empty-cell argument to `MIN` or `MAX`, or an empty cell in a boolean position.
+    - No non-cyclic stress case for the 5,000 ms limit.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught in my own agent config: the deny list silently made the agent unable to run its two main checks. The first report said so under "Could not verify", which is how I found it.
+- Open: the findings are from reading the code and were not reproduced. The agent said so for findings 1, 2, 3, 4 and 7. Nothing is fixed yet.
+- Not verified: the agent's read-only guarantee rests on its tool list (no write tools) and its allowlist. A GitHub issue reports that `toolsSettings` may not be enforced at runtime in some CLI versions, so the missing write tools are the stronger guard. I did not test an attempted write.

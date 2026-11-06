@@ -199,7 +199,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `constraints.test.ts`; `npm run check` passes
     - _Requirements: 8.11, 8.12, 14.5, 14.6, 14.7, 14.9_
 
-- [ ] 7. Final checkpoint - Ensure all tests pass
+- [x] 7. Final checkpoint - Ensure all tests pass
   - Run `npm test` and `npm run check`; both must pass with zero failures and zero DOM-related errors under Node 22 or later
   - Confirm `src/engine/index.ts` is the only file that re-exports the engine API, and that no file under `src/engine/` imports it
   - Ensure all tests pass, ask the user if questions arise.
