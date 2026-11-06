@@ -20,7 +20,7 @@ Rules that apply to every task:
 |---|---|---|---|
 | 1 | IDE for 1.1, Crew for 1.2 (disjoint files, 1.2 may run beside 1.1) | 1.1 engine export, 1.2 types | none |
 | 2 | Crew, parallel | 2.1 serializer, 2.2 arbitraries | Batch 1 |
-| 3 | IDE, strictly sequential (all edit `loader.ts` and `loader.test.ts`) | 3.1 guard, collector, shape, metadata, map, text loader; 3.2 cell specs; 3.3 hero and monsters; 3.4 build, placement, finish | Batches 1, 2 |
+| 3 | Strictly sequential (all edit `loader.ts` and `loader.test.ts`). 3.1 to 3.3 ran in Crew as one run of 9 steps; 3.4 runs in the IDE | 3.1 guard, collector, shape, metadata, map, text loader; 3.2 cell specs; 3.3 hero and monsters; 3.4 build, placement, finish | Batches 1, 2 |
 | 4 | Crew, parallel | 4.1 round-trip properties, 4.2 totality properties, 4.3 placement properties | Batches 2, 3 |
 | 5 | IDE, sequential | 5.1 barrel and module scan, 5.2 final checkpoint | Batch 4 |
 
@@ -41,15 +41,15 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.3_
 
-- [ ] 2. Serializer and test generators
-  - [ ] 2.1 [Batch 2] [Crew] Create `serializer.ts` with tests
+- [x] 2. Serializer and test generators
+  - [x] 2.1 [Batch 2] [Crew] Create `serializer.ts` with tests
     - Files: create `src/model/serializer.ts`, `src/model/serializer.test.ts`
     - Export `normalize` (Effective_Raw per Map_Area Cell, glyph or `.`, upper-case Addresses and names, `locked` only when `true`, drop redundant specs, Reading_Order, upper-case rule names, fixed key order built key by key), `serializeLevel`, `serializeLevelText` (`JSON.stringify(doc, null, 2) + '\n'`) and `tabLabel` (`Sheet${Number(id.slice(0, 2))}: ${title}`)
     - Tests: `tabLabel` for `01-the-corridor` and `10-x`; root, cell and monster field order; trailing newline and no `\r`; removable spec (unlocked, unnamed, raw equals glyph, or empty outside the map) is dropped; override `raw: "X"` over `.` folds into the map; non-glyph override folds to `.` and the spec stays; `locked: false` dropped; lower-case address and name upper-cased; specs sorted in Reading_Order; `normalize` is idempotent on a hand-built Level; equal Levels give identical text
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.6, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8_
 
-  - [ ] 2.2 [Batch 2] [Crew] Create `testing/arbitraries.ts` with a smoke test
+  - [x] 2.2 [Batch 2] [Crew] Create `testing/arbitraries.ts` with a smoke test
     - Files: create `src/model/testing/arbitraries.ts`, `src/model/testing/arbitraries.test.ts`
     - Single owner of all generators: a `mulberry32`-style seeded `RandomSource`; `validDocumentArbitrary` (12x12 map, labelled rule cells whose label is a non-empty literal or a formula giving a non-empty string, 0 to 16 monsters on floor, hero on a walkable cell, 0 to 240 specs with formulas, literals, quotes and Unicode, `locked` true, false or absent, lower-case letters, restating and overriding map specs, removable specs, shuffled order, blocking overrides kept off entity cells); `invalidDocumentArbitrary` (one fault each: hero on a blocking cell, monster on wall, exit, trap or error cell, bad glyph, duplicate name, unknown rule, rule outside the panel, missing label, label whose Value is a number); `mutatedDocumentArbitrary` (field removed, retyped, value replaced, unknown field added, address changed, map character changed); `jsonValueArbitrary`; `anyStringArbitrary` (arbitrary, JSON-like, repeated character up to 300,000); `deepNestingArbitrary` (depth 101 to 5,000, built iteratively, value and text forms); `normalizeOracle` written independently of `serializer.ts` (a `Map` keyed by address, explicit `(row, col)` sort, output built key by key, no import of `serializer.ts`); `assertProperty(property, numRuns)` that honours `FC_SEED`
     - Smoke tests that do not need the loader: generated documents have the expected shape (12 map rows of 12 glyphs, at most 16 monsters, at most 240 specs); `normalizeOracle` is idempotent on its own output; invalid documents differ from their valid base; nesting generators reach the stated depth; the seeded source is repeatable and stays in [0, 1); the file never uses `Math.random`
@@ -57,28 +57,28 @@ Rules that apply to every task:
     - _Requirements: 11.5, 11.6, 12.6, 12.7, 13.5_
 
 - [ ] 3. Loader
-  - [ ] 3.1 [Batch 3] [IDE] Create `loader.ts`: guard, collector, shape, metadata, map, text loader
+  - [x] 3.1 [Batch 3] [Crew] Create `loader.ts`: guard, collector, shape, metadata, map, text loader
     - Files: create `src/model/loader.ts`, `src/model/loader.test.ts`
     - Implement the iterative guard (not a plain object, depth over 100 gives `too-deep`, over 100,000 nodes gives `too-large`; explicit stack, no recursion, no writes); the error collector (`push`, `has(pathPrefix)`, cap of 50 with an exact dropped count and the `too-many-errors` marker); `makeError` (message clamped to 1 to 300 characters) and `quote` (at most 40 code points, escaped, ellipsis on truncation); `loadLevel(doc, random)` skeleton with the outer `try/catch` returning `internal-error`; root shape (missing fields, unknown fields with the allowed list, wrong types reported once, `cells` over 240 and `monsters` over 16, entry shapes for cells, monsters and `hero`); metadata checks; map checks; `loadLevelText` (over 200,000 characters gives `too-large` before parsing, `SyntaxError` gives `invalid-json` with position when available, `RangeError` gives `too-deep`, otherwise the same result as `loadLevel`)
     - Tests: Requirement 2 boundaries (HP 1 and 0, ink 0 and -1, id of 40 and 41 characters, seed 0, 4294967295 and 4294967296, version 2); Requirement 3 (null, array, number, string, missing field, unknown field `lokced` with allowed list, NaN and Infinity, wrong types, list caps); Requirement 4 (row count, row length, glyph message `map row 3, column F: "Q" is not one of # . X ^`); error order and the 50-error cap with its marker; quote truncation; a throwing getter gives `internal-error`; text loader cases (too large, invalid JSON, deep text, equal to the value loader); the input is not mutated
     - Acceptance: `npm run verify` passes
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 8.2, 8.3, 8.4, 9.1, 9.2, 9.3, 9.4, 12.3, 12.4, 12.5_
 
-  - [ ] 3.2 [Batch 3] [IDE] Add cell-spec checks to `loader.ts`
+  - [x] 3.2 [Batch 3] [Crew] Add cell-spec checks to `loader.ts`
     - Files: edit `src/model/loader.ts`, edit `src/model/loader.test.ts` (no other files)
     - Add `checkCells`: `parseAddress` from the engine barrel, row 13 refusal, duplicate Address after upper-casing, `raw` over 500 characters, `parseFormula` with the engine's `Col N: <message>.` text and the Address in the message, `locked` default, `validateCellName` (pattern, reserved, function, address-like) with the rejected text, duplicate names (case-insensitive) naming the earlier Address, the pre-recalculation label rules (`missing-label`, including column A; `label-is-named`), map-area names accepted without a label; build the `effective` Address map and the `names` map; apply the skip rules through `has(prefix)` so no derived error follows a failed field
     - Tests: every Requirement 5 criterion 1 to 13; duplicate address by case; four name-check failures; label cases (empty left cell, formula left cell, column A, named label); a name kept in `names` when its `raw` failed; `raw` stored exactly as written
     - Acceptance: `npm run verify` passes
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12, 5.13, 8.5, 14.3_
 
-  - [ ] 3.3 [Batch 3] [IDE] Add hero and monster checks to `loader.ts`
+  - [x] 3.3 [Batch 3] [Crew] Add hero and monster checks to `loader.ts`
     - Files: edit `src/model/loader.ts`, edit `src/model/loader.test.ts` (no other files)
     - Add `checkEntities`: `hero.at` and monster `at` must be Addresses in rows 1 to 12; monster id pattern and length; duplicate ids; overlaps with the hero or an earlier monster; `move` and `atk` must name a Cell_Name (`unknown-rule`, message `monster M1: move rule MOVE_X is not a named cell`); named Cell must be in rows 14 to 20 and non-empty (`bad-rule-cell`, naming the Address); Rule_Names stored upper-case; Author_Order kept; empty `monsters` accepted
     - Tests: Requirement 7 criteria 1, 4, 5, 6, 8, 9, 10, 11, 12; message forms; no derived `unknown-rule` when the named cell's `raw` failed; skip of overlap checks when `at` failed
     - Acceptance: `npm run verify` passes
     - _Requirements: 7.1, 7.4, 7.5, 7.6, 7.8, 7.9, 7.10, 7.11, 7.12, 8.5_
 
-  - [ ] 3.4 [Batch 3] [IDE] Add sheet construction, placement checks and the final result to `loader.ts`
+  - [x] 3.4 [Batch 3] [IDE] Add sheet construction, placement checks and the final result to `loader.ts`
     - Files: edit `src/model/loader.ts`, edit `src/model/loader.test.ts` (no other files)
     - Add `buildSheet` (only when the collector is empty: `createSheet`, `setRawText` for the 144 map cells then every spec, `setCellName`, `recalculate` with the hero Address and the caller's `RandomSource`; any refusal becomes `engine-refused` with the engine's text and no Sheet); `checkPlacement` in the Requirement 8.1 order (hero Value must be `.`, `X` or `^`; monsters must stand on `.`; each named Rules_Panel Cell's label Value must be a non-empty string, else `bad-label-value` naming the Cell_Name, the label Address and the Value found); skip all of it while any earlier error exists, with no note; finish with `normalize` from `serializer.ts`, `deepFreeze`, and `{ ok: true, level, sheet }`; the Level holds no reference to the Sheet
     - Tests: hero on wall and on `#DIV/0!` (messages `hero start B3 is a wall (#)`), hero on `.`, `X`, `^`; monster on exit, trap, wall and error cell; labels with raw `5`, `=2+3`, `=1=1`, `=1/0`, `=""` give `bad-label-value`; placement checks skipped when an earlier error exists; two loads with equivalent sources give independent Sheets with equal Values and an edit to one leaves the other unchanged; the Level is frozen; the Locked_Flag is read only from the Level; `ink: 0` valid level loads; `engine-refused` through a stubbed refusal where reachable

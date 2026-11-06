@@ -1,5 +1,17 @@
-import { describe, expect, it } from 'vitest';
-import { checkCells, checkEntities, createErrorCollector, loadLevel, loadLevelText, quote } from './loader';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getValueByAddress, setRawText } from '../engine/index';
+import * as recalculatorModule from '../engine/recalculator';
+import * as sheetModule from '../engine/sheet';
+import {
+  buildSheet,
+  checkCells,
+  checkEntities,
+  checkPlacement,
+  createErrorCollector,
+  loadLevel,
+  loadLevelText,
+  quote,
+} from './loader';
 import type { LoadError, LoadErrorCode, LoadResult } from './types';
 
 const random = (): number => 0.5;
@@ -214,7 +226,9 @@ describe('loadLevel: Requirement 4 map', () => {
     const map = Array.from({ length: 12 }, () => MAP_ROW);
     map[1] = '#.X^########';
     doc['map'] = map;
-    expect(codesOf(doc)).not.toContain('bad-map-glyph');
+    // The document is now fully valid and loads, so there may be no errors at all.
+    const result = loadLevel(doc, random);
+    expect(result.ok ? [] : result.errors.map((e) => e.code)).not.toContain('bad-map-glyph');
   });
 });
 
@@ -867,3 +881,386 @@ function cellErrorsOf(doc: Record<string, unknown>): readonly LoadError[] {
 function lowerNamedCells(): unknown[] {
   return [...RULE_CELLS, { address: 'B3', raw: '1', name: 'move_low' }];
 }
+
+// ---------------------------------------------------------------------------
+// Task 3.4: sheet construction, placement checks, final result
+// ---------------------------------------------------------------------------
+
+/** A small playable level: walls round the edge, an exit at K3, one monster at C3. */
+function playableMap(): string[] {
+  const rows: string[] = Array.from({ length: 12 }, (_, r) => (r === 0 || r === 11 ? '############' : '#..........#'));
+  rows[2] = '#.........X#';
+  return rows;
+}
+
+function playableDoc(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    ...baseDoc(),
+    map: playableMap(),
+    hero: { at: 'B2' },
+    monsters: [monster()],
+    cells: [...RULE_CELLS],
+    ...over,
+  };
+}
+
+/** `playableDoc` with one extra Cell_Spec. */
+function playableWith(spec: Record<string, unknown>, over: Record<string, unknown> = {}): Record<string, unknown> {
+  return playableDoc({ cells: [...RULE_CELLS, spec], ...over });
+}
+
+function loaded(doc: unknown): Extract<LoadResult, { ok: true }> {
+  const result = loadLevel(doc, random);
+  if (!result.ok) throw new Error('expected a load, got ' + JSON.stringify(result.errors));
+  return result;
+}
+
+describe('loadLevel: a valid document loads', () => {
+  it('returns a Level and a recalculated Sheet', () => {
+    const result = loaded(playableDoc());
+    expect(result.level.id).toBe('01-the-corridor');
+    const b14 = getValueByAddress(result.sheet, 'B14');
+    expect(b14).toMatchObject({ ok: true, value: { kind: 'string', value: 'N' }, stale: false });
+    expect(getValueByAddress(result.sheet, 'K3')).toMatchObject({ value: { kind: 'string', value: 'X' } });
+  });
+
+  it('accepts ink 0 and an empty monsters list', () => {
+    expect(loadLevel(playableDoc({ ink: 0, monsters: [], cells: [] }), random).ok).toBe(true);
+  });
+
+  it('applies map characters first and then the specs', () => {
+    const result = loaded(playableWith({ address: 'D5', raw: '7' }));
+    expect(getValueByAddress(result.sheet, 'D5')).toMatchObject({ value: { kind: 'number', value: 7 } });
+    expect(getValueByAddress(result.sheet, 'E5')).toMatchObject({ value: { kind: 'string', value: '.' } });
+  });
+});
+
+describe('loadLevel: Requirement 7 hero placement after recalculation', () => {
+  it('refuses a hero on a wall with the documented message (criterion 2)', () => {
+    const errors = errorsOf(loadLevel(playableDoc({ hero: { at: 'A1' } }), random));
+    expect(errors).toEqual([{ path: 'hero.at', code: 'hero-blocked', message: 'hero start A1 is a wall (#)' }]);
+  });
+
+  it('refuses a hero on an error cell, naming the error', () => {
+    const errors = errorsOf(loadLevel(playableWith({ address: 'B2', raw: '=1/0' }), random));
+    expect(errors).toEqual([{ path: 'hero.at', code: 'hero-blocked', message: 'hero start B2 is #DIV/0!' }]);
+  });
+
+  it('refuses a hero on a non-terrain value', () => {
+    const errors = errorsOf(loadLevel(playableWith({ address: 'B2', raw: '5' }), random));
+    expect(errors[0]?.code).toBe('hero-blocked');
+    expect(errors[0]?.message).toBe('hero start B2 is 5, which is not walkable');
+  });
+
+  it('accepts a hero on floor, exit and trap (criterion 3)', () => {
+    for (const [glyph, address] of [['.', 'B2'], ['X', 'B2'], ['^', 'B2']] as const) {
+      const map = playableMap();
+      map[1] = '#' + glyph + '.........#';
+      expect(loadLevel(playableDoc({ map, hero: { at: address } }), random).ok).toBe(true);
+    }
+  });
+
+  it('accepts a hero whose cell is a formula that gives a walkable glyph', () => {
+    expect(loadLevel(playableWith({ address: 'B2', raw: '="^"' }), random).ok).toBe(true);
+  });
+});
+
+describe('loadLevel: Requirement 7 monster placement after recalculation', () => {
+  function monsterAt(glyphRow: number, glyph: string): Record<string, unknown> {
+    const map = playableMap();
+    const row = Array.from(map[glyphRow - 1] ?? '');
+    row[2] = glyph; // column C
+    map[glyphRow - 1] = row.join('');
+    return playableDoc({ map, monsters: [monster({ at: `C${glyphRow}` })] });
+  }
+
+  it('refuses a monster on exit, trap and wall, naming the id, address, value and floor (criterion 7)', () => {
+    for (const [glyph, found] of [['X', '"X"'], ['^', '"^"'], ['#', 'a wall (#)']] as const) {
+      const errors = errorsOf(loadLevel(monsterAt(4, glyph), random));
+      expect(errors).toEqual([
+        {
+          path: 'monsters[0].at',
+          code: 'monster-not-on-floor',
+          message: `monster M1 at C4 is ${found}, but monsters start on floor (.)`,
+        },
+      ]);
+    }
+  });
+
+  it('refuses a monster on an error cell', () => {
+    const doc = playableWith({ address: 'C3', raw: '=1/0' });
+    const errors = errorsOf(loadLevel(doc, random));
+    expect(errors[0]?.code).toBe('monster-not-on-floor');
+    expect(errors[0]?.message).toBe('monster M1 at C3 is #DIV/0!, but monsters start on floor (.)');
+  });
+
+  it('accepts a monster on floor, including a formula that gives "."', () => {
+    expect(loadLevel(monsterAt(4, '.'), random).ok).toBe(true);
+    expect(loadLevel(playableWith({ address: 'C3', raw: '="."' }), random).ok).toBe(true);
+  });
+
+  it('reports the hero first, then monsters in list order', () => {
+    const map = playableMap();
+    map[2] = '#.##......X#';
+    const doc = playableDoc({
+      map,
+      hero: { at: 'A1' },
+      monsters: [monster({ id: 'M1', at: 'C3' }), monster({ id: 'M2', at: 'D3' })],
+    });
+    expect(errorsOf(loadLevel(doc, random)).map((e) => e.path)).toEqual(['hero.at', 'monsters[0].at', 'monsters[1].at']);
+  });
+});
+
+describe('loadLevel: Requirement 5 criterion 14, label Values after recalculation', () => {
+  it('refuses a label whose literal is a number', () => {
+    const doc = playableDoc({
+      cells: [{ address: 'A14', raw: '5' }, { address: 'B14', raw: '3', name: 'DMG' }],
+      monsters: [],
+    });
+    const errors = errorsOf(loadLevel(doc, random));
+    expect(errors).toEqual([
+      {
+        path: 'cells[1].name',
+        code: 'bad-label-value',
+        message: 'The label A14 of DMG holds 5, but a label must be a non-empty text',
+      },
+    ]);
+  });
+
+  it('reports one error per bad label, in cells order', () => {
+    const doc = playableDoc({
+      cells: [
+        { address: 'A14', raw: '5' },
+        { address: 'B14', raw: '3', name: 'ONE' },
+        { address: 'A15', raw: 'ok' },
+        { address: 'B15', raw: '3', name: 'TWO' },
+        { address: 'A16', raw: '-2.5' },
+        { address: 'B16', raw: '3', name: 'THREE' },
+      ],
+      monsters: [],
+    });
+    const errors = errorsOf(loadLevel(doc, random));
+    expect(errors.map((e) => e.path)).toEqual(['cells[1].name', 'cells[5].name']);
+    expect(errors[1]?.message).toBe('The label A16 of THREE holds -2.5, but a label must be a non-empty text');
+  });
+
+  it('does not check a map-area name for a label (criterion 13)', () => {
+    expect(loadLevel(playableWith({ address: 'D5', raw: '.', name: 'SPOT' }), random).ok).toBe(true);
+  });
+
+  it('refuses formula labels with missing-label first, so Values are never reached (criterion 11)', () => {
+    for (const raw of ['=2+3', '=1=1', '=1/0', '=""']) {
+      const doc = playableDoc({
+        cells: [{ address: 'A14', raw }, { address: 'B14', raw: '3', name: 'DMG' }],
+        monsters: [],
+      });
+      const errors = errorsOf(loadLevel(doc, random));
+      expect(errors.map((e) => e.code)).toEqual(['missing-label']);
+    }
+  });
+
+  it('checkPlacement itself reports number, boolean, error and empty-string label Values', () => {
+    const cases: [string, string][] = [
+      ['=2+3', '5'],
+      ['=1=1', 'TRUE'],
+      ['=1/0', '#DIV/0!'],
+      ['=""', '""'],
+    ];
+    for (const [raw, found] of cases) {
+      // Bypass the pre-recalculation label rule: take the names from a clean document, then put the formula in.
+      const clean = playableDoc({
+        cells: [{ address: 'A14', raw: 'Label' }, { address: 'B14', raw: '3', name: 'DMG' }],
+        monsters: [],
+      });
+      const info = checkCells(clean, createErrorCollector());
+      const built = createErrorCollector();
+      const sheet = buildSheet(clean, info, random, built);
+      expect(built.count).toBe(0);
+      if (sheet === undefined) throw new Error('no sheet');
+      expect(setRawText(sheet, 'A14', raw).accepted).toBe(true);
+      sheetRecalc(sheet);
+      const errors = createErrorCollector();
+      checkPlacement(sheet, clean, info, errors);
+      expect(errors.finish()).toEqual([
+        {
+          path: 'cells[1].name',
+          code: 'bad-label-value',
+          message: `The label A14 of DMG holds ${found}, but a label must be a non-empty text`,
+        },
+      ]);
+    }
+  });
+});
+
+function sheetRecalc(sheet: Parameters<typeof getValueByAddress>[0]): void {
+  const result = recalculatorModule.recalculate(sheet, { heroAddress: { col: 2, row: 2 }, random });
+  expect(result.accepted).toBe(true);
+}
+
+describe('loadLevel: post-recalculation checks are skipped after an earlier error (Requirement 8.1)', () => {
+  it('adds no placement error and no note when a scalar field failed', () => {
+    const errors = errorsOf(loadLevel(playableDoc({ hero: { at: 'A1' }, startingHp: 0 }), random));
+    expect(errors.map((e) => e.code)).toEqual(['bad-hp']);
+  });
+
+  it('adds no placement error when a formula failed to parse', () => {
+    const doc = playableWith({ address: 'D5', raw: '=1+' }, { hero: { at: 'A1' } });
+    expect(errorsOf(loadLevel(doc, random)).map((e) => e.code)).toEqual(['formula-parse']);
+  });
+
+  it('adds no label-value error when a monster rule is unknown', () => {
+    const doc = playableDoc({
+      cells: [{ address: 'A14', raw: '5' }, { address: 'B14', raw: '3', name: 'DMG' }],
+      monsters: [monster({ move: 'NOPE', atk: 'DMG' })],
+    });
+    expect(errorsOf(loadLevel(doc, random)).map((e) => e.code)).toEqual(['unknown-rule']);
+  });
+});
+
+describe('loadLevel: Requirement 6 independent Sheets', () => {
+  function allValues(sheet: Parameters<typeof getValueByAddress>[0]): unknown[] {
+    const out: unknown[] = [];
+    for (let r = 1; r <= 20; r += 1) {
+      for (const c of 'ABCDEFGHIJKL') {
+        const read = getValueByAddress(sheet, `${c}${r}`);
+        out.push(read.ok ? read.value : read.error);
+      }
+    }
+    return out;
+  }
+
+  it('two loads give equal Values and a separate Sheet each (criterion 4)', () => {
+    const doc = playableWith({ address: 'D5', raw: '=RAND()' });
+    const first = loaded(doc);
+    const second = loaded(doc);
+    expect(first.sheet).not.toBe(second.sheet);
+    expect(allValues(first.sheet)).toEqual(allValues(second.sheet));
+  });
+
+  it('an edit to one Sheet leaves the other unchanged', () => {
+    const doc = playableDoc();
+    const first = loaded(doc);
+    const second = loaded(doc);
+    const before = allValues(second.sheet);
+    expect(setRawText(first.sheet, 'D5', '99').accepted).toBe(true);
+    expect(allValues(second.sheet)).toEqual(before);
+    expect(getValueByAddress(second.sheet, 'D5')).toMatchObject({ value: { kind: 'string', value: '.' }, stale: false });
+  });
+
+  it('uses the supplied Random_Source for the first recalculation (criterion 2)', () => {
+    const doc = playableWith({ address: 'D5', raw: '=RAND()' });
+    const result = loadLevel(doc, () => 0.25);
+    if (!result.ok) throw new Error('expected a load');
+    expect(getValueByAddress(result.sheet, 'D5')).toMatchObject({ value: { kind: 'number', value: 0.25 } });
+  });
+});
+
+describe('loadLevel: the final Level', () => {
+  it('is normalized and deep-frozen', () => {
+    const doc = playableWith({ address: 'd5', raw: '.', locked: true, name: 'spot' });
+    const { level } = loaded(doc);
+    expect(Object.isFrozen(level)).toBe(true);
+    expect(Object.isFrozen(level.hero)).toBe(true);
+    expect(Object.isFrozen(level.map)).toBe(true);
+    expect(Object.isFrozen(level.cells)).toBe(true);
+    expect(Object.isFrozen(level.monsters)).toBe(true);
+    expect(level.cells.every((c) => Object.isFrozen(c))).toBe(true);
+    expect(level.monsters.every((m) => Object.isFrozen(m))).toBe(true);
+    expect(() => {
+      (level as { title: string }).title = 'changed';
+    }).toThrow();
+    // Normalized: upper-case address and name, the locked flag kept.
+    expect(level.cells.find((c) => c.address === 'D5')).toEqual({ address: 'D5', raw: '.', locked: true, name: 'SPOT' });
+  });
+
+  it('shares no object with the input document', () => {
+    const doc = playableDoc();
+    const { level } = loaded(doc);
+    expect(level.map).not.toBe(doc['map']);
+    expect(level.cells).not.toBe(doc['cells']);
+    expect(level.monsters).not.toBe(doc['monsters']);
+    expect(level.hero).not.toBe(doc['hero']);
+    const firstMonster = (doc['monsters'] as { at: string }[])[0];
+    if (firstMonster !== undefined) firstMonster.at = 'Z9';
+    expect(level.monsters[0]?.at).toBe('C3');
+  });
+
+  it('holds no reference to the Sheet and keeps the Locked_Flag only in the Level (Requirement 6.6)', () => {
+    const { level, sheet } = loaded(playableWith({ address: 'D5', raw: '3', locked: true }));
+    expect(Object.keys(level).sort()).toEqual(
+      ['cells', 'hero', 'hint', 'id', 'ink', 'map', 'monsters', 'schemaVersion', 'seed', 'startingHp', 'title'].sort(),
+    );
+    expect(Object.values(level)).not.toContain(sheet);
+    expect(JSON.stringify(level)).toContain('"locked":true');
+    // The engine's read result has no locked field at all.
+    expect(getValueByAddress(sheet, 'D5')).not.toHaveProperty('locked');
+  });
+
+  it('does not change the input document', () => {
+    const doc = playableWith({ address: 'd5', raw: ' =1+ ', locked: false });
+    const before = JSON.stringify(doc);
+    loadLevel(doc, random);
+    expect(JSON.stringify(doc)).toBe(before);
+  });
+});
+
+describe('loadLevel: engine refusals (Requirement 6.5)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('turns a setRawText refusal into engine-refused with the engine text and no Sheet', () => {
+    vi.spyOn(sheetModule, 'setRawText').mockImplementation(() => ({
+      accepted: false,
+      error: { kind: 'invalid-address' },
+    }));
+    const result = loadLevel(playableDoc(), random);
+    expect(result.ok).toBe(false);
+    expect(result).not.toHaveProperty('sheet');
+    const errors = errorsOf(result);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.code).toBe('engine-refused');
+    expect(errors[0]?.message).toContain('invalid-address');
+  });
+
+  it('turns a setCellName refusal into engine-refused at the name path', () => {
+    vi.spyOn(sheetModule, 'setCellName').mockImplementation(() => ({
+      accepted: false,
+      error: { kind: 'invalid-name', failed: 'reserved' },
+    }));
+    const errors = errorsOf(loadLevel(playableDoc(), random));
+    expect(errors[0]?.code).toBe('engine-refused');
+    expect(errors[0]?.path).toMatch(/^cells\[\d+\]\.name$/);
+    expect(errors[0]?.message).toContain('reserved');
+  });
+
+  it('turns a recalculate refusal into engine-refused', () => {
+    vi.spyOn(recalculatorModule, 'recalculate').mockImplementation(() => ({
+      accepted: false,
+      error: { kind: 'invalid-context', field: 'random' },
+    }));
+    const errors = errorsOf(loadLevel(playableDoc(), random));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.code).toBe('engine-refused');
+    expect(errors[0]?.message).toContain('invalid-context');
+    expect(errors[0]?.message).toContain('random');
+  });
+
+  it('turns an engine exception into a single internal-error', () => {
+    vi.spyOn(recalculatorModule, 'recalculate').mockImplementation(() => {
+      throw new Error('forced fault');
+    });
+    const errors = errorsOf(loadLevel(playableDoc(), random));
+    expect(errors.map((e) => e.code)).toEqual(['internal-error']);
+  });
+});
+
+describe('loadLevelText: a valid document', () => {
+  it('gives the same result as the value loader', () => {
+    const doc = playableDoc();
+    const fromText = loadLevelText(JSON.stringify(doc), random);
+    const fromValue = loaded(doc);
+    if (!fromText.ok) throw new Error('expected a load');
+    expect(fromText.level).toEqual(fromValue.level);
+  });
+});

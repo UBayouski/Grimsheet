@@ -483,3 +483,46 @@ What I asked for: Nothing. No Kiro session.
 What Kiro did: Nothing. I drafted `docs/BRIEF.md` section 6a, "Story and names", by hand outside Kiro. It covers the Necronomicell rules panel, the sheet-tab level names, the death and win screen text, and one strings file. Kiro only noted in this log that the section exists.
 
 What changed because of it (time saved, bug caught, decision made): The later specs (grid-ui, levels, skin-and-sound) take their text from section 6a, so it is the single source for names and screen text. It did not change the formula engine.
+
+## 2026-11-05 — sheet-model Batches 2 and 3a: two parallel Crew runs
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: Run two Kiro Crew Task Runner tasks of the sheet-model spec at the same time, each on its own worktree. Run one was Batch 2: task 2.1 (`serializer.ts`) and task 2.2 (`testing/arbitraries.ts`), each with tests. Run two was tasks 3.1 to 3.3: the loader. 3.1 is the guard, error collector, shape, metadata, map and text loader, 3.2 adds the cell-spec checks and 3.3 adds the hero and monster checks. The loader tasks all edit `loader.ts` and `loader.test.ts`, so I kept them in one run in order, and kept them apart from the serializer and generator files that run one owns.
+
+What Kiro did:
+- Run one (Batch 2) was 2 steps, one per task, and built:
+  - `serializer.ts` with `normalize`, `serializeLevel`, `serializeLevelText` and `tabLabel`, and its test file.
+  - `testing/arbitraries.ts`, the seeded random source, the valid, invalid and mutated document generators, the JSON, string and deep-nesting generators, an independent `normalizeOracle` and `assertProperty`, with a smoke test.
+- Run two (tasks 3.1 to 3.3) was 9 smaller steps, and built `loader.ts` and `loader.test.ts` in pieces: the guard, collector and error helpers (3.1a), `loadLevel` with the shape, metadata and map checks (3.1b), `loadLevelText` (3.1c), the 3.1 tests (3.1d), the cell-spec checks (3.2a), their tests (3.2b), `checkEntities` (3.3a) and its tests (3.3b). Step 6's code was committed together with step 7, so the history shows step commits 2, 3, 4, 5, 7, 8 and 9, and no separate one for step 6. There is also no commit for step 1 of this run.
+- Both ran at the same time on separate worktrees. The step commits are interleaved in time: 2.2's commit came at 23:10:22, the loader's first piece at 23:11:48, and 2.1's commit at 23:13:28, and the loader steps went on until 23:26:28. The two sets of files were disjoint, so I merged them as two merges into `main`: the Batch 2 branch, then the loader branch (`d88c6b8` and `a7f9d1b`). No merge conflicts.
+- Combined result in `main`: `npm run verify` gives 26 test files and 577 tests passing, with typecheck and lint clean. I ran it myself after both merges. I did not take a separate count for each run, so I cannot split the 577 between them.
+- I ticked tasks 2.1, 2.2 and parent 2, and 3.1, 3.2 and 3.3, in `tasks.md`, and changed the labels on 3.1 to 3.3 from `[IDE]` to `[Crew]` to say where they ran. The Batch 3 row of the batch table says the same. Task 3.4 stays `[IDE]` and is next.
+
+What changed because of it (time saved, bug caught, decision made):
+- Time: two runs went side by side and finished in the span of about twenty minutes of step commits, and the main checkout stayed free until I merged.
+- Decision: the plan had Batch 3 as IDE-only because the four loader tasks share two files. Running 3.1 to 3.3 as one ordered Crew run kept that rule, since the sequence was inside one run, and still used Crew. The cost is that the loader grew in nine commits in a branch that I only saw once it was done. 3.4 stays in the IDE.
+- Attribution: the step commits of both runs carry my git identity, not a separate "Kiro Crew" author, unlike the formula-engine Batch 3 to 5 runs. This entry is the record that Crew made them. I have not found out why the author setting did not apply here.
+- Crew's own per-step verification is not what I rely on. I re-ran the combined suite myself.
+
+## 2026-11-05 — sheet-model task 3.4 (sheet construction, placement, final result) run in the IDE
+
+Surface: IDE
+
+Features: spec
+
+What I asked for: Run task 3.4 of the sheet-model spec after the two Crew runs were merged: build the engine Sheet, run the placement checks on computed Values, and return the final Level.
+
+What Kiro did:
+- `loader.ts`: added `buildSheet` (`createSheet`, the 144 map cells, every Cell_Spec, the names, then one `recalculate` with the hero start and the caller's `RandomSource`; any refusal becomes `engine-refused` with the engine's reason and no Sheet), `checkPlacement` (hero must hold `.`, `X` or `^`, monsters must hold `.`, then each named Rules_Panel cell's label must be a non-empty string), and the finish (`normalize`, a deep freeze, then `{ ok: true, level, sheet }`). Both new functions run only when no earlier error exists, with no note about the skipped checks. The stub that returned `internal-error` for every valid document is gone.
+- Messages follow the spec: `hero start A1 is a wall (#)`, `hero start B2 is #DIV/0!`, `monster M1 at C4 is "X", but monsters start on floor (.)`.
+- `loader.test.ts`: 32 new tests. They cover valid loads, hero on wall, error, number, floor, exit and trap, monster on exit, trap, wall and error cell, order (hero, then monsters, then labels), the skip rules, two loads giving independent Sheets with equal Values, the supplied Random_Source, a frozen and normalized Level that shares nothing with the input and holds no Sheet, `ink: 0`, and `engine-refused` through `vi.spyOn` on `setRawText`, `setCellName` and `recalculate` (restored after each test), plus an engine exception giving one `internal-error`. One 3.1-era test, "accepts all four glyphs", relied on every document failing because the build stage was missing. It now accepts a successful load.
+- Result: `npm run verify` gives 26 test files and 609 tests passing (577 before, so 32 new), with typecheck and lint clean. I ticked 3.4 in `tasks.md`.
+- Not done: I did not run the new tests against the previous loader in a scratch copy this time. The previous loader returned `internal-error` for every valid document, so every "loads" test would fail on it by reading the code, but I did not run that.
+
+What changed because of it (time saved, bug caught, decision made):
+- Spec conflict found, not settled: the task text and the design's test list expect labels with raw `=2+3`, `=1=1`, `=1/0` and `=""` to give `bad-label-value`. Requirement 5.11 and the 3.2 code refuse any label that starts with `=` as `missing-label` first, and placement checks are skipped after that. So through the public loader `bad-label-value` can only be reached with a numeric literal label such as `5`. I followed the requirements: the loader tests assert `missing-label` for the four formula labels, and `checkPlacement` is tested directly, with a hand-built Sheet, for the number, boolean, error and empty-string Values. Whether Requirement 5.14 should say "numeric literal" or 5.11 should allow formula labels is for the spec owner to decide; the generator's `label-number-formula` fault still produces an invalid document either way, so the property tests are not affected.
+- `buildSheet` and `checkPlacement` are exported from `loader.ts` for testing. They are not part of the public barrel, which task 5.1 will define.
+- Nothing was committed.

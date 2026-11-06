@@ -1,6 +1,17 @@
-import { parseAddress, parseFormula, validateCellName } from '../engine/index';
-import type { NameCheckFailure } from '../engine/index';
-import type { LoadError, LoadErrorCode, LoadResult, RandomSource } from './types';
+import {
+  createSheet,
+  formatValue,
+  getValueByAddress,
+  parseAddress,
+  parseFormula,
+  recalculate,
+  setCellName,
+  setRawText,
+  validateCellName,
+} from '../engine/index';
+import type { NameCheckFailure, Sheet, Value } from '../engine/index';
+import { normalize } from './serializer';
+import type { LoadError, LoadErrorCode, LoadResult, Level, LevelDocument, RandomSource } from './types';
 
 export const MAX_DEPTH = 100;
 export const MAX_NODES = 100_000;
@@ -723,12 +734,162 @@ export function checkEntities(doc: unknown, errors: ErrorCollector, info: CellsI
   }
 }
 
+// ---------------------------------------------------------------------------
+// Sheet construction, placement checks and the final result (task 3.4)
+// ---------------------------------------------------------------------------
+
+/** Reads the reason out of an engine refusal, for an `engine-refused` message. */
+function describeRefusal(error: unknown): string {
+  if (typeof error !== 'object' || error === null) return 'unknown reason';
+  const e = error as {
+    kind?: unknown;
+    parseError?: { text?: unknown };
+    field?: unknown;
+    failed?: unknown;
+    name?: unknown;
+  };
+  const parts: string[] = [typeof e.kind === 'string' ? e.kind : 'unknown reason'];
+  if (typeof e.parseError?.text === 'string') parts.push(e.parseError.text);
+  if (typeof e.field === 'string') parts.push(`field ${e.field}`);
+  if (typeof e.failed === 'string') parts.push(`check ${e.failed}`);
+  if (typeof e.name === 'string') parts.push(`name ${e.name}`);
+  return parts.join(', ');
+}
+
+function refuseBuild(errors: ErrorCollector, path: string, step: string, error: unknown): undefined {
+  errors.push(path, 'engine-refused', `The engine refused ${step}: ${describeRefusal(error)}`);
+  return undefined;
+}
+
 /**
- * Validates a Level_Document. Never throws and never mutates the input.
- * Later tasks extend this with cell, entity and build stages.
+ * Builds and recalculates the engine Sheet. Call only when the collector is empty.
+ * Map characters first, then every Cell_Spec, then the names, then one recalculation with the
+ * hero start as the hero Address. Any engine refusal becomes `engine-refused` and no Sheet.
+ */
+export function buildSheet(
+  doc: unknown,
+  info: CellsInfo,
+  random: RandomSource,
+  errors: ErrorCollector,
+): Sheet | undefined {
+  if (!isPlainRecord(doc)) return refuseBuild(errors, '', 'the document', { kind: 'not-an-object' });
+  const sheet = createSheet();
+
+  const map = Array.isArray(doc['map']) ? (doc['map'] as unknown[]) : [];
+  for (let r = 0; r < MAP_ROWS; r += 1) {
+    const row = map[r];
+    const chars = typeof row === 'string' ? Array.from(row) : [];
+    for (let c = 0; c < MAP_COLUMNS; c += 1) {
+      const address = `${COLUMN_LETTERS.charAt(c)}${r + 1}`;
+      const result = setRawText(sheet, address, chars[c] ?? '.');
+      if (!result.accepted) return refuseBuild(errors, `map[${r}]`, `map cell ${address}`, result.error);
+    }
+  }
+
+  const cells = Array.isArray(doc['cells']) ? (doc['cells'] as unknown[]) : [];
+  for (let i = 0; i < cells.length; i += 1) {
+    const entry = cells[i];
+    if (!isPlainRecord(entry) || typeof entry['address'] !== 'string' || typeof entry['raw'] !== 'string') continue;
+    const parsed = parseAddress(entry['address']);
+    if (!parsed.ok) return refuseBuild(errors, `cells[${i}].address`, 'a cell address', { kind: 'bad-address' });
+    const result = setRawText(sheet, parsed.canonical, entry['raw']);
+    if (!result.accepted) return refuseBuild(errors, `cells[${i}].raw`, `cell ${parsed.canonical}`, result.error);
+  }
+
+  for (const [name, address] of info.names) {
+    const index = info.indexByAddress.get(address) ?? 0;
+    const result = setCellName(sheet, address, name);
+    if (!result.accepted) return refuseBuild(errors, `cells[${index}].name`, `name ${name}`, result.error);
+  }
+
+  const hero = isPlainRecord(doc['hero']) ? doc['hero']['at'] : undefined;
+  const heroPoint = typeof hero === 'string' ? parseAddress(hero) : undefined;
+  if (heroPoint === undefined || !heroPoint.ok) {
+    return refuseBuild(errors, 'hero.at', 'the hero start', { kind: 'bad-address' });
+  }
+  const recalculated = recalculate(sheet, { heroAddress: heroPoint.point, random });
+  if (!recalculated.accepted) return refuseBuild(errors, '', 'the first recalculation', recalculated.error);
+  return sheet;
+}
+
+/** Plain-English description of a Value found at a start Address. */
+function describeFound(value: Value): string {
+  if (value.kind === 'string') return value.value === '#' ? 'a wall (#)' : quote(value.value);
+  return formatValue(value);
+}
+
+function valueAt(sheet: Sheet, address: string): Value | undefined {
+  const read = getValueByAddress(sheet, address);
+  return read.ok ? read.value : undefined;
+}
+
+/**
+ * Post-recalculation checks, in the order of Requirement 8.1: the hero, the monsters in list
+ * order, then the label Value of each named Rules_Panel Cell in `cells` order.
+ * Call only when no earlier error exists.
+ */
+export function checkPlacement(sheet: Sheet, doc: unknown, info: CellsInfo, errors: ErrorCollector): void {
+  if (!isPlainRecord(doc)) return;
+
+  const hero = isPlainRecord(doc['hero']) ? mapAddress(doc['hero']['at']) : undefined;
+  if (hero !== undefined) {
+    const value = valueAt(sheet, hero);
+    const walkable = value?.kind === 'string' && (value.value === '.' || value.value === 'X' || value.value === '^');
+    if (!walkable) {
+      const found = value === undefined ? 'missing' : describeFound(value);
+      const tail = value?.kind === 'error' || (value?.kind === 'string' && value.value === '#') ? '' : ', which is not walkable';
+      errors.push('hero.at', 'hero-blocked', `hero start ${hero} is ${found}${tail}`);
+    }
+  }
+
+  const monsters = Array.isArray(doc['monsters']) ? (doc['monsters'] as unknown[]) : [];
+  for (let i = 0; i < monsters.length; i += 1) {
+    const entry = monsters[i];
+    if (!isPlainRecord(entry)) continue;
+    const at = mapAddress(entry['at']);
+    if (at === undefined) continue;
+    const value = valueAt(sheet, at);
+    if (value?.kind === 'string' && value.value === '.') continue;
+    const id = typeof entry['id'] === 'string' ? entry['id'] : `monsters[${i}]`;
+    const found = value === undefined ? 'missing' : describeFound(value);
+    errors.push(
+      `monsters[${i}].at`,
+      'monster-not-on-floor',
+      `monster ${id} at ${at} is ${found}, but monsters start on floor (.)`,
+    );
+  }
+
+  for (const [name, address] of info.names) {
+    const parsed = parseAddress(address);
+    if (!parsed.ok || parsed.point.row < PANEL_FIRST_ROW || parsed.point.col < 2) continue;
+    const labelAddress = `${COLUMN_LETTERS.charAt(parsed.point.col - 2)}${parsed.point.row}`;
+    const value = valueAt(sheet, labelAddress);
+    if (value?.kind === 'string' && value.value !== '') continue;
+    const index = info.indexByAddress.get(address) ?? 0;
+    const found = value === undefined ? 'missing' : value.kind === 'string' ? '""' : describeFound(value);
+    errors.push(
+      `cells[${index}].name`,
+      'bad-label-value',
+      `The label ${labelAddress} of ${name} holds ${found}, but a label must be a non-empty text`,
+    );
+  }
+}
+
+/** Freezes a plain JSON-like value and everything under it. */
+function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
+  }
+  return value;
+}
+
+/**
+ * Validates a Level_Document and builds its Level and Sheet. Never throws and never mutates the input.
+ * Stages: guard, shape, cells, entities; then, only if no error exists, the Sheet build and the
+ * placement checks; then normalize and freeze.
  */
 export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
-  void random;
   try {
     const guard = guardValue(doc);
     if (!guard.ok) {
@@ -739,10 +900,14 @@ export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
     const info = checkCells(doc, errors);
     checkEntities(doc, errors, info);
     if (errors.count > 0) return { ok: false, errors: errors.finish() };
-    return {
-      ok: false,
-      errors: [makeError('', 'internal-error', 'The loader has no build stage yet.')],
-    };
+
+    const sheet = buildSheet(doc, info, random, errors);
+    if (sheet === undefined) return { ok: false, errors: errors.finish() };
+    checkPlacement(sheet, doc, info, errors);
+    if (errors.count > 0) return { ok: false, errors: errors.finish() };
+
+    const level: Level = deepFreeze(normalize(doc as LevelDocument));
+    return { ok: true, level, sheet };
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown failure';
     return { ok: false, errors: [makeError('', 'internal-error', `The loader failed unexpectedly: ${reason}`)] };
