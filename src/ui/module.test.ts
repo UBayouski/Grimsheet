@@ -183,7 +183,11 @@ const uiSourceNames = uiEntries
   .map((e) => e.name)
   .sort();
 
-const MAIN_FILES = [join(SRC, 'main.ts'), join(ROOT, 'tests', 'fixtures', 'main.ts')];
+const MAIN_FILES = [
+  join(SRC, 'main.ts'),
+  join(ROOT, 'tests', 'fixtures', 'main.ts'),
+  join(ROOT, 'tests', 'fixtures', 'errors-main.ts'),
+];
 
 describe('ui module layout', () => {
   it('has exactly the designed files and no subdirectories', () => {
@@ -252,9 +256,11 @@ describe('no AI tool names and no remote references', () => {
   const files: string[] = [
     ...listFiles(UI_DIR, (n) => n.endsWith('.ts')),
     join(SRC, 'styles', 'grid-ui.css'),
+    join(SRC, 'styles', 'error-monsters.css'),
     join(SRC, 'main.ts'),
     ...listFiles(join(ROOT, 'tests', 'fixtures'), () => true),
     ...listFiles(join(ROOT, '.kiro', 'specs', 'grid-ui'), () => true),
+    ...listFiles(join(ROOT, '.kiro', 'specs', 'error-monsters'), () => true),
   ];
 
   it.each(files.map((f) => [f.slice(ROOT.length + 1).replace(/\\/g, '/'), f] as const))(
@@ -265,12 +271,15 @@ describe('no AI tool names and no remote references', () => {
     },
   );
 
-  it('keeps the stylesheet free of url(, @import and http', () => {
-    const css = read(join(SRC, 'styles', 'grid-ui.css'));
-    expect(css).not.toMatch(/url\(/i);
-    expect(css).not.toMatch(/@import/i);
-    expect(css).not.toMatch(/http/i);
-  });
+  it.each(['grid-ui.css', 'error-monsters.css'])(
+    'keeps %s free of url(, @import and http',
+    (name) => {
+      const css = read(join(SRC, 'styles', name));
+      expect(css).not.toMatch(/url\(/i);
+      expect(css).not.toMatch(/@import/i);
+      expect(css).not.toMatch(/http/i);
+    },
+  );
 });
 
 describe('layering', () => {

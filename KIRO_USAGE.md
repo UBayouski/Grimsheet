@@ -992,3 +992,26 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: a Vite library bundle, not a `tsc` emit, because the module imports level JSON and the game barrel, and one bundled ESM file is the simplest thing `node` can run with no loader or flag. It is tooling only and never enters the site build or `dist/`.
 - `npm run verify` did not pass cleanly, for a reason outside this task: `src/ui/module.test.ts` asserts the exact set of `src/ui` files, and two untracked files from error-monsters work in progress (`src/ui/error-look.ts` and its test) are present, so that one layout test fails. With those set aside the run is 66 files and 1573 tests passing; my `src/play` tests pass on their own (17). I did not touch `src/ui` except to drop the already-deleted `stub-levels.ts` from a file list in a previous task. I left the error-monsters files alone.
 - Nothing was committed.
+
+## 2026-11-06 — README written with Kiro Web (PR #4)
+
+Surface: Web
+
+Features: vibe
+
+What I asked for: Have Kiro Web write the project's README from the repo's own sources (the brief, the steering docs, the specs and the code), as a pull request.
+
+What Kiro did:
+- Kiro Web wrote the full README in one commit on a branch, drawing only on the repo: `docs/BRIEF.md`, `.kiro/steering/`, the specs under `.kiro/specs/` and the source. It opened PR #4.
+- A review of that draft against the code found five factual errors:
+  - An arrow-key claim that did not match the real key handling.
+  - The number of specs was wrong.
+  - A claim about the property tests that the tests do not make.
+  - The Web surface's scope was overstated.
+  - Audio was placed in the wrong layer; sound lives in the UI layer, not elsewhere.
+- Kiro Web corrected all five in a second commit on the same PR, and the branch was merged after that.
+
+What changed because of it (time saved, bug caught, decision made):
+- Kiro Web produced a complete first draft from the repo with no hand-writing, which was faster than starting the README by hand.
+- The review was necessary: a from-sources draft still had five concrete mistakes, each checkable against the code, and all five were fixed before merge rather than landing and being corrected later.
+- The correction happened on the PR as a second commit, so the history shows the draft and the fix separately.

@@ -231,6 +231,138 @@ describe('cell attributes', () => {
     expect(a1.querySelector('.cell-text')?.textContent).toBe('<b>x</b>');
     expect(a1.querySelector('b')).toBeNull();
   });
+
+  it('sets title for an error cell and removes it when the cell stops being an error', () => {
+    const view = createView(root);
+    view.update(makeVm({ B9: { errorKind: '#REF!', text: '#REF!', cause: 'B9 refers to M30, which does not exist' } }));
+    const b9 = td('B9');
+    expect(b9.getAttribute('title')).toBe('B9 refers to M30, which does not exist');
+    view.update(makeVm());
+    expect(b9.hasAttribute('title')).toBe(false);
+  });
+
+  it('shows a cause with markup as text and creates no element', () => {
+    createView(root).update(
+      makeVm({ A1: { errorKind: '#VALUE!', text: '#VALUE!', cause: '<img onerror=x>' } }),
+    );
+    const a1 = td('A1');
+    expect(a1.getAttribute('title')).toBe('<img onerror=x>');
+    expect(a1.querySelector('img')).toBeNull();
+    expect(root.querySelector('img')).toBeNull();
+  });
+
+  it('keeps the glyph, aria-label and title on an error cell under an entity', () => {
+    createView(root).update(
+      makeVm({
+        B9: {
+          errorKind: '#CYCLE!',
+          text: '#CYCLE!',
+          cause: 'B9 is part of a circular reference',
+          entity: { type: 'monster', id: 'M1' },
+          ariaLabel: 'Monster M1 at B9',
+        },
+      }),
+    );
+    const b9 = td('B9');
+    expect(b9.querySelector('.entity-glyph')?.textContent).toBe('M');
+    expect(b9.getAttribute('aria-label')).toBe('Monster M1 at B9');
+    expect(b9.getAttribute('title')).toBe('B9 is part of a circular reference');
+  });
+});
+
+describe('explanation line', () => {
+  it('has no role and no aria-live and sits in the formula row', () => {
+    createView(root).update(makeVm());
+    const explanation = root.querySelector('#cell-explanation');
+    expect(explanation?.hasAttribute('role')).toBe(false);
+    expect(explanation?.hasAttribute('aria-live')).toBe(false);
+    expect(explanation?.classList.contains('cell-explanation')).toBe(true);
+  });
+
+  it('fills text, data-error and hidden from the view model', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    const explanation = root.querySelector<HTMLElement>('#cell-explanation');
+    expect(explanation?.hidden).toBe(true);
+    expect(explanation?.textContent).toBe('');
+    expect(explanation?.hasAttribute('data-error')).toBe(false);
+    view.update(
+      makeVm({}, { explanation: { text: 'B9 refers to M30, which does not exist', kind: '#REF!' } }),
+    );
+    expect(explanation?.hidden).toBe(false);
+    expect(explanation?.textContent).toBe('B9 refers to M30, which does not exist');
+    expect(explanation?.getAttribute('data-error')).toBe('#REF!');
+    view.update(makeVm());
+    expect(explanation?.hidden).toBe(true);
+    expect(explanation?.textContent).toBe('');
+    expect(explanation?.hasAttribute('data-error')).toBe(false);
+  });
+
+  it('extends the formula bar aria-describedby', () => {
+    createView(root).update(makeVm());
+    expect(root.querySelector('#formula-bar')?.getAttribute('aria-describedby')).toBe(
+      'formula-note formula-alert cell-explanation',
+    );
+  });
+});
+
+describe('ghost note', () => {
+  it('has no role and no aria-live and the table describes it', () => {
+    createView(root).update(makeVm());
+    const note = root.querySelector('#ghost-note');
+    expect(note?.hasAttribute('role')).toBe(false);
+    expect(note?.hasAttribute('aria-live')).toBe(false);
+    expect(root.querySelector('#grid-table')?.getAttribute('aria-describedby')).toBe('ghost-note');
+  });
+
+  it('is singular, plural and emptied', () => {
+    const view = createView(root);
+    const note = root.querySelector('#ghost-note');
+    view.update(makeVm({}, { ghostCells: ['J9'] }));
+    expect(note?.textContent).toBe(STRINGS.ghostNote(1));
+    view.update(makeVm({}, { ghostCells: ['J9', 'K9'] }));
+    expect(note?.textContent).toBe(STRINGS.ghostNote(2));
+    view.update(makeVm());
+    expect(note?.textContent).toBe('');
+  });
+});
+
+describe('setGhost', () => {
+  it('moves the attribute and leaves exactly one [data-ghost]', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    view.setGhost('J9');
+    expect(root.querySelectorAll('[data-ghost]')).toHaveLength(1);
+    expect(td('J9').getAttribute('data-ghost')).toBe('true');
+    view.setGhost('K9');
+    expect(root.querySelectorAll('[data-ghost]')).toHaveLength(1);
+    expect(td('K9').getAttribute('data-ghost')).toBe('true');
+    expect(td('J9').hasAttribute('data-ghost')).toBe(false);
+  });
+
+  it('removes the attribute for undefined', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    view.setGhost('J9');
+    view.setGhost(undefined);
+    expect(root.querySelectorAll('[data-ghost]')).toHaveLength(0);
+  });
+
+  it('ignores an unknown address', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    view.setGhost('ZZ99');
+    expect(root.querySelectorAll('[data-ghost]')).toHaveLength(0);
+  });
+
+  it('is left alone by a subsequent update()', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    view.setGhost('J9');
+    view.update(makeVm({}, { ghostCells: ['J9', 'K9'] }));
+    expect(td('J9').getAttribute('data-ghost')).toBe('true');
+    expect(root.querySelectorAll('[data-ghost]')).toHaveLength(1);
+  });
 });
 
 describe('chrome', () => {

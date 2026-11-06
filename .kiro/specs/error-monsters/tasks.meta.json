@@ -37,6 +37,63 @@
         "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
         "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
         "timestamp": 1794008134721
+      },
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008345479
+      }
+    ],
+    "2.2 [Batch 2] [IDE] Add `title`, the explanation line, the ghost note and `setGhost` to the renderer": [
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008348648
+      },
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008527747
+      }
+    ],
+    "2.3 [Batch 2] [IDE] Own the ghost state machine in `app.ts`": [
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008530761
+      },
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008827625
+      }
+    ],
+    "2. View model, renderer and the ghost": [
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008827813
+      }
+    ],
+    "3.1 [Batch 3] [Crew] Create `error-monsters.css`": [
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794008929721
+      }
+    ],
+    "3.2 [Batch 3] [Crew] Create the e2e fixture": [
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794008930644
+      }
+    ],
+    "3.3 [Batch 3] [Crew] Update `module.test.ts` and add the CSS imports": [
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794008931693
       }
     ]
   }

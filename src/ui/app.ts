@@ -1,4 +1,5 @@
 import { createInitialState, keyContext, step } from './controller';
+import { GHOST_INTERVAL_MS, nextGhostCell, placeGhost, sameCells } from './error-look';
 import { mapKey } from './key-map';
 import { createProgressStore, describeLevels } from './progress';
 import { createView } from './render';
@@ -10,10 +11,13 @@ import type {
   Env,
   FocusKind,
   KeyCommand,
+  MediaQueryLike,
   MountOptions,
   StorageLike,
   UiEvent,
+  ViewModel,
 } from './types';
+import type { Level, RunState } from '../game/index';
 import { viewOf } from './view-model';
 
 function memoryStorage(): StorageLike {
@@ -69,7 +73,84 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
 
   let state: AppState = createInitialState(env, store.load());
   let destroyed = false;
-  view.update(viewOf(state, env));
+
+  // The ghost lives in closure variables, not in AppState. Its position changes on a timer that never
+  // goes through `step` (no render, no controller call), so `step` and `viewOf` stay pure.
+  let ghostCells: readonly string[] = [];
+  let ghostAt: string | undefined;
+  let seenLevel: Level | undefined;
+  let ghostTimer: ReturnType<typeof setInterval> | undefined;
+  let reduced: boolean;
+
+  function stopTimer(): void {
+    if (ghostTimer !== undefined) {
+      clearInterval(ghostTimer);
+      ghostTimer = undefined;
+    }
+  }
+
+  function startTimer(): void {
+    stopTimer();
+    if (!destroyed) ghostTimer = setInterval(tick, GHOST_INTERVAL_MS);
+  }
+
+  function tick(): void {
+    if (destroyed) return;
+    ghostAt = nextGhostCell(ghostCells, ghostAt);
+    view.setGhost(ghostAt);
+  }
+
+  function paint(vm: ViewModel, run: RunState | undefined): void {
+    view.update(vm);
+    const levelChanged = run?.level !== seenLevel;
+    seenLevel = run?.level;
+    const changed = levelChanged || !sameCells(ghostCells, vm.ghostCells);
+    ghostAt = placeGhost({
+      prevCells: ghostCells,
+      prevAt: ghostAt,
+      cells: vm.ghostCells,
+      levelChanged,
+      still: reduced,
+    });
+    ghostCells = vm.ghostCells;
+    view.setGhost(ghostAt);
+    if (ghostCells.length < 2 || reduced) stopTimer();
+    else if (changed || ghostTimer === undefined) startTimer();
+  }
+
+  const QUERY = '(prefers-reduced-motion: reduce)';
+  function readMotion(): MediaQueryLike | undefined {
+    try {
+      const win = doc.defaultView;
+      const ask =
+        options.matchMedia ??
+        (win !== null && typeof win.matchMedia === 'function'
+          ? (q: string) => win.matchMedia(q)
+          : undefined);
+      return ask?.(QUERY);
+    } catch {
+      return undefined;
+    }
+  }
+  const motion = readMotion();
+  reduced = motion === undefined || motion.matches !== false;
+  const onMotion = (): void => {
+    if (destroyed) return;
+    reduced = motion === undefined || motion.matches !== false;
+    ghostAt = placeGhost({
+      prevCells: ghostCells,
+      prevAt: ghostAt,
+      cells: ghostCells,
+      levelChanged: false,
+      still: reduced,
+    });
+    view.setGhost(ghostAt);
+    if (reduced || ghostCells.length < 2) stopTimer();
+    else startTimer();
+  };
+  motion?.addEventListener?.('change', onMotion);
+
+  paint(viewOf(state, env), state.run);
   // Startup effects (focus the grid) were dropped before; run them so play starts with the grid focused.
   runEffect({ type: 'focus', target: 'grid' });
 
@@ -96,7 +177,7 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   function fail(): void {
     try {
       state = { ...state, message: STRINGS.somethingWrong };
-      view.update(viewOf(state, env));
+      paint(viewOf(state, env), state.run);
     } catch {
       // Nothing more can be done.
     }
@@ -109,7 +190,7 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
       const result = step(state, event, env);
       const vm = viewOf(result.state, env);
       state = result.state;
-      view.update(vm);
+      paint(vm, result.state.run);
       effects = result.effects;
     } catch {
       fail();
@@ -219,6 +300,8 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
+      stopTimer();
+      motion?.removeEventListener?.('change', onMotion);
       doc.removeEventListener('keydown', onKeyDown);
       doc.removeEventListener('click', onClick);
       root.removeEventListener('dblclick', onDblClick);

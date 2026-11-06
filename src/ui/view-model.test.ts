@@ -160,6 +160,53 @@ describe('viewOf rows', () => {
     expect(cellAt(vm, 'C3').text).toBe('.');
   });
 
+  it('sets cause to describeCellError for an error cell and undefined otherwise', () => {
+    const run = start();
+    const vm = viewOf(stateOf({ run }), ENV);
+    const bad = cellAt(vm, 'G3');
+    expect(bad.errorKind).toBe('#DIV/0!');
+    expect(bad.cause).toBe(describeCellError(run, 'G3'));
+    expect(bad.cause).toBeTruthy();
+    expect(cellAt(vm, 'C3').cause).toBeUndefined();
+  });
+});
+
+/** A doc where J9 and K9 form a two-cell cycle and L9 is a downstream #CYCLE!. */
+function cycleDoc(): LevelDocument {
+  return makeDoc({
+    cells: [
+      { address: 'J9', raw: '=K9' },
+      { address: 'K9', raw: '=J9' },
+      { address: 'L9', raw: '=K9+1' },
+      { address: 'A14', raw: 'Move 1', locked: true },
+      { address: 'B14', raw: '="-"', name: 'MOVE_M1' },
+      { address: 'A15', raw: 'Attack 1' },
+      { address: 'B15', raw: '=0', name: 'ATK_M1' },
+      { address: 'A18', raw: 'Trap' },
+      { address: 'B18', raw: '=2', name: 'TRAP', locked: true },
+    ],
+  });
+}
+
+describe('viewOf explanation', () => {
+  it('is set when the selected cell is an error and undefined otherwise', () => {
+    const run = start();
+    const selected = viewOf(stateOf({ run, selection: 'G3' }), ENV);
+    expect(selected.explanation).toEqual({
+      text: describeCellError(run, 'G3'),
+      kind: '#DIV/0!',
+    });
+    expect(viewOf(stateOf({ run, selection: 'C3' }), ENV).explanation).toBeUndefined();
+  });
+});
+
+describe('viewOf ghostCells', () => {
+  it('lists Cycle_Cells in reading order and excludes a downstream #CYCLE!', () => {
+    const run = start(cycleDoc());
+    const vm = viewOf(stateOf({ run }), ENV);
+    expect(vm.ghostCells).toEqual(['J9', 'K9']);
+  });
+
   it('marks exactly one cell as selected', () => {
     const vm = viewOf(stateOf({ selection: 'C3' }), ENV);
     const selected = vm.rows.flat().filter((c) => c.selected);
@@ -294,6 +341,12 @@ describe('viewOf without a run', () => {
     expect(vm.screen).toBe('playing');
     expect(vm.formula.readOnly).toBe(true);
     expect(vm.status.label).toBe('Sheet1: Level 1');
+  });
+
+  it('gives empty ghostCells and undefined explanation', () => {
+    const vm = viewOf(stateOf({ run: undefined, selection: 'G3' }), ENV);
+    expect(vm.ghostCells).toEqual([]);
+    expect(vm.explanation).toBeUndefined();
   });
 });
 

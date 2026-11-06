@@ -7,6 +7,7 @@ export { ERROR_CLASS } from './error-look';
 
 export interface View {
   update(viewModel: ViewModel): void;
+  setGhost(address: string | undefined): void;
 }
 
 const COLUMNS = 12;
@@ -68,6 +69,7 @@ function updateCell(doc: Document, parts: CellParts, cell: CellView): void {
   setAttr(td, 'data-monster-id', cell.entity?.type === 'monster' ? cell.entity.id : undefined);
   setAttr(td, 'aria-label', cell.ariaLabel);
   setAttr(td, 'data-error', cell.errorKind);
+  setAttr(td, 'title', cell.cause);
   setText(parts.text, cell.text);
 
   // Glyph: present only with an entity.
@@ -125,11 +127,13 @@ export function createView(root: HTMLElement): View {
   formulaBar.spellcheck = false;
   formulaBar.setAttribute('autocomplete', 'off');
   formulaBar.setAttribute('aria-label', STRINGS.formulaBarLabel);
-  formulaBar.setAttribute('aria-describedby', 'formula-note formula-alert');
+  formulaBar.setAttribute('aria-describedby', 'formula-note formula-alert cell-explanation');
   const formulaNote = make(doc, 'span', 'formula-note', 'formula-note');
   const formulaAlert = make(doc, 'span', 'formula-alert', 'formula-alert');
   formulaAlert.setAttribute('role', 'alert');
-  formulaRow.append(nameBox, formulaBar, formulaNote, formulaAlert);
+  const explanation = make(doc, 'p', 'cell-explanation', 'cell-explanation');
+  explanation.hidden = true;
+  formulaRow.append(nameBox, formulaBar, formulaNote, formulaAlert, explanation);
 
   const toolbar = make(doc, 'div', 'toolbar');
   const buttonFor = (control: string, label: string): HTMLButtonElement => {
@@ -148,6 +152,7 @@ export function createView(root: HTMLElement): View {
   const table = make(doc, 'table', 'grid-table', 'grid-table');
   table.setAttribute('role', 'grid');
   table.setAttribute('aria-label', STRINGS.gridLabel);
+  table.setAttribute('aria-describedby', 'ghost-note');
   table.setAttribute('tabindex', '0');
 
   // Fixed column widths live in the stylesheet (the view never sets a style attribute). The stylesheet
@@ -207,6 +212,8 @@ export function createView(root: HTMLElement): View {
   }
   table.append(colgroup, thead, tbody);
 
+  const ghostNote = make(doc, 'p', 'visually-hidden', 'ghost-note');
+
   const banner = make(doc, 'div', 'end-banner', 'end-banner');
   banner.setAttribute('role', 'alert');
   banner.hidden = true;
@@ -226,7 +233,7 @@ export function createView(root: HTMLElement): View {
 
   const overlay = make(doc, 'div', undefined, 'screen-overlay');
 
-  root.append(header, tabBar, formulaRow, toolbar, table, banner, statusBar, overlay);
+  root.append(header, tabBar, formulaRow, toolbar, table, ghostNote, banner, statusBar, overlay);
 
   const tabButtons: HTMLButtonElement[] = [];
 
@@ -284,7 +291,29 @@ export function createView(root: HTMLElement): View {
     setText(statusInk, vm.status.ink);
     setText(statusTurn, vm.status.turn);
     setText(message, vm.message);
+
+    setText(explanation, vm.explanation?.text ?? '');
+    setAttr(explanation, 'data-error', vm.explanation?.kind);
+    const explanationHidden = vm.explanation === undefined;
+    if (explanation.hidden !== explanationHidden) explanation.hidden = explanationHidden;
+
+    setText(ghostNote, vm.ghostCells.length === 0 ? '' : STRINGS.ghostNote(vm.ghostCells.length));
   }
 
-  return { update };
+  let ghostAt: string | undefined;
+
+  function setGhost(address: string | undefined): void {
+    if (address === ghostAt) return;
+    if (ghostAt !== undefined) {
+      const prev = cells.get(ghostAt);
+      if (prev) setAttr(prev.td, 'data-ghost', undefined);
+    }
+    if (address !== undefined) {
+      const next = cells.get(address);
+      if (next) setAttr(next.td, 'data-ghost', 'true');
+    }
+    ghostAt = address;
+  }
+
+  return { update, setGhost };
 }
