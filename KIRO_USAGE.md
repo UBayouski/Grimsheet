@@ -526,3 +526,21 @@ What changed because of it (time saved, bug caught, decision made):
 - Spec conflict found, not settled: the task text and the design's test list expect labels with raw `=2+3`, `=1=1`, `=1/0` and `=""` to give `bad-label-value`. Requirement 5.11 and the 3.2 code refuse any label that starts with `=` as `missing-label` first, and placement checks are skipped after that. So through the public loader `bad-label-value` can only be reached with a numeric literal label such as `5`. I followed the requirements: the loader tests assert `missing-label` for the four formula labels, and `checkPlacement` is tested directly, with a hand-built Sheet, for the number, boolean, error and empty-string Values. Whether Requirement 5.14 should say "numeric literal" or 5.11 should allow formula labels is for the spec owner to decide; the generator's `label-number-formula` fault still produces an invalid document either way, so the property tests are not affected.
 - `buildSheet` and `checkPlacement` are exported from `loader.ts` for testing. They are not part of the public barrel, which task 5.1 will define.
 - Nothing was committed.
+
+## 2026-11-06 — sheet-model label rule settled (Web surface)
+
+Surface: Web
+
+Features: spec
+
+What I asked for: Settle the conflict that the task 3.4 entry above left open: the task text and the design's test list expected formula labels (`=2+3`, `=1=1`, `=1/0`, `=""`) to give `bad-label-value`, while Requirement 5.11 refuses any label starting with `=` as `missing-label` first. The rule is that labels are plain text. A docs-only change, with nothing under `src/` touched.
+
+What Kiro did:
+- `requirements.md`: Requirement 5.11 stays as it was. Requirement 5.14 now applies only when the label literal reads as a number (for example `5` or `1e3`), checked on the computed Value after recalculation.
+- `design.md`: the error-code table row, the post-recalculation step, the generator's label fault and the test list now say the same, and the formula-label examples are gone from the `bad-label-value` cases.
+- `tasks.md`: the task 3.4 text is updated the same way. No checkbox changed.
+- The change was made with Kiro Web and opened as a pull request.
+
+What changed because of it (time saved, bug caught, decision made):
+- Decision: labels are plain text. 5.11 stays, and 5.14 now covers numeric literals only, so the two criteria no longer overlap.
+- No code changed. The loader tests from the 3.4 run already followed this reading (`missing-label` for the four formula labels, `bad-label-value` for numeric literals such as `5` and `-2.5`), so the specs now match the tests.
