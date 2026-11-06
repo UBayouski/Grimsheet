@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { loadLevel } from '../loader';
 import {
   anyStringArbitrary,
   assertProperty,
@@ -15,6 +16,38 @@ import {
   seededRandom,
   validDocumentArbitrary,
 } from './arbitraries';
+
+describe('validDocumentArbitrary loads', () => {
+  it('every one of 200 generated valid documents loads with ok: true', () => {
+    // A generator that breaks validity fails here first, with the loader's errors in the message.
+    assertProperty(
+      fc.property(validDocumentArbitrary, (doc) => {
+        const result = loadLevel(doc, seededRandom(1));
+        if (!result.ok) {
+          const lines = result.errors.map((e) => `  ${e.code} at ${e.path || '(root)'}: ${e.message}`);
+          throw new Error(
+            `validDocumentArbitrary produced a document the loader refuses:\n${lines.join('\n')}\n` +
+              `Cells: ${JSON.stringify(doc.cells)}`,
+          );
+        }
+      }),
+      200,
+    );
+  });
+
+  it('puts names only in the Map_Area unless a labelled rule slot made them', () => {
+    assertProperty(
+      fc.property(validDocumentArbitrary, (doc) => {
+        for (const cell of doc.cells) {
+          if (cell.name === undefined) continue;
+          const row = Number(cell.address.slice(1));
+          if (row >= 14) expect(cell.name.toUpperCase()).toMatch(/^RULE_\d+$/);
+        }
+      }),
+      100,
+    );
+  });
+});
 
 describe('validDocumentArbitrary', () => {
   it('generates documents of the expected shape', () => {

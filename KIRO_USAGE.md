@@ -544,3 +544,29 @@ What Kiro did:
 What changed because of it (time saved, bug caught, decision made):
 - Decision: labels are plain text. 5.11 stays, and 5.14 now covers numeric literals only, so the two criteria no longer overlap.
 - No code changed. The loader tests from the 3.4 run already followed this reading (`missing-label` for the four formula labels, `bad-label-value` for numeric literals such as `5` and `-2.5`), so the specs now match the tests.
+
+## 2026-11-06 — sheet-model Batch 4: Crew property tests, generator fix in the IDE
+
+Surface: Crew, then IDE
+
+Features: spec, pbt
+
+What I asked for: Run Batch 4 of the sheet-model spec as a Kiro Crew Task Runner task: tasks 4.1, 4.2 and 4.3, the three property-test files. Then, when four properties failed after the merge, fix the cause in the IDE without touching `loader.ts` or `serializer.ts` unless a property then failed for a reason that was clearly a loader or serializer bug.
+
+What Kiro did:
+- Crew built three files in 3 steps, 277 lines in all: `round-trip.prop.test.ts` (Properties 1 to 3), `totality.prop.test.ts` (4 to 6) and `placement.prop.test.ts` (7 and 8). I merged the branch into `main`.
+- After the merge `npm test` had 4 failing properties: all three in the round-trip file and Property 7 in the placement file. Totality passed. Crew's own summary had shown 4/4 passed. The verification step reports its results and does not fail the run, so a red property did not show up as a failed step.
+- Reproduced with `FC_SEED` set to each seed: round-trip seed `-309010798` and placement seed `-962250358` both gave the same 4 failures.
+- Counterexample: a "valid" document whose cells include A14 `"Move rule"` (a label), B14 `="E"` named `RULE_0`, and C14 `""` locked and named `N_158`. C14 is a named Rules_Panel cell whose left neighbour B14 is a formula and is itself named. The loader correctly refused it under Requirements 5.11 and 5.12. So the defect was in the generator, not the loader.
+- Cause: `validDocumentArbitrary` in `testing/arbitraries.ts` could attach a generated name (`N_<index>`) to any extra spec, including specs in rows 14 to 20, where a named cell needs a text label on its left.
+- Fix, one condition: extra specs are named only when they are in the Map_Area (rows 1 to 12), where names need no label (Requirement 5.13). Named Rules_Panel cells now come only from the labelled rule slots. `loader.ts` and `serializer.ts` were not touched, and no property failed for a loader or serializer reason afterwards.
+- Guard against a repeat: `arbitraries.test.ts` now loads 200 generated valid documents and expects every one to give `ok: true`. If one fails, the message lists each loader error with its code, path and message, and the document's cells. A second test checks that names in rows 14 and below are only `RULE_<n>`.
+- Checked that the guard works: with the old condition put back for one run, the 200-document test failed on both seeds and on a random seed (shrinking to the same label fault). I restored the fix straight after and confirmed it was in place.
+- Results: both seeds pass (the whole model suite: 7 files, 175 tests), and three unseeded runs of the model suite pass, 7 files and 175 tests each. `npm run verify` gives 29 test files and 619 tests passing (609 before, so 10 new: the 8 property tests of Batch 4 and the 2 generator tests), with typecheck and lint clean. I ticked 4.1, 4.2, 4.3 and parent 4 in `tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the property tests found a generator that produced invalid "valid" documents, and the counterexample showed it in one shrunk case. The example-based tests had no way to see it, because they use hand-written documents.
+- Lesson, as with the formula-engine Crew runs: Crew's step summary is not a test result. I re-run `npm test` after every merge, and this time that is what caught the failure.
+- Decision: the generator got a load-it-and-expect-ok smoke test, so a later change to the generator that breaks validity fails in `arbitraries.test.ts` with a readable message before it fails four properties with a shrunk counterexample.
+- While this was going on, the spec label rule was settled separately (labels are plain text, and 5.14 covers numeric literals). That change did not touch the code I changed here.
+- Nothing was committed.

@@ -85,8 +85,8 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 4.4, 5.14, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 7.2, 7.3, 7.7, 8.1, 10.1, 12.4_
 
-- [ ] 4. Property-based testing
-  - [ ] 4.1 [Batch 4] [Crew] Write property tests for serialization and round trip
+- [x] 4. Property-based testing
+  - [x] 4.1 [Batch 4] [Crew] Write property tests for serialization and round trip
     - Files: create `src/model/round-trip.prop.test.ts`
     - **Property 1: Serialization equals the independent normalization**
     - **Property 2: Level round trip and text idempotence**
@@ -95,7 +95,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 6.4, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 11.1, 11.2, 11.3, 11.4, 11.5, 11.6**
 
-  - [ ] 4.2 [Batch 4] [Crew] Write property tests for loader totality
+  - [x] 4.2 [Batch 4] [Crew] Write property tests for loader totality
     - Files: create `src/model/totality.prop.test.ts`
     - **Property 4: The loader is total and does not mutate its input**
     - **Property 5: The text loader is total**
@@ -104,7 +104,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 8.3, 9.2, 9.3, 12.1, 12.2, 12.3, 12.5, 12.6, 12.7**
 
-  - [ ] 4.3 [Batch 4] [Crew] Write property tests for placement invariants
+  - [x] 4.3 [Batch 4] [Crew] Write property tests for placement invariants
     - Files: create `src/model/placement.prop.test.ts`
     - **Property 7: Accepted levels satisfy the placement invariants**
     - **Property 8: Rejected levels produce errors and no Sheet**

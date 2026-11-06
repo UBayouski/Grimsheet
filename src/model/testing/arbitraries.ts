@@ -364,7 +364,10 @@ function buildValidDocument(plan: ValidPlan): AuthoredDocument {
     }
     const cell: AuthoredCell = { address: addressOf(spec.index, spec.lowerAddress), raw };
     Object.assign(cell, lockedFields(spec.locked));
-    if (spec.named) {
+    // Extra names go only in the Map_Area, where a name needs no label (Requirement 5.13).
+    // A named Rules_Panel cell needs a text label on its left (5.11, 5.12), so those come only
+    // from the labelled rule slots above.
+    if (spec.named && inMap) {
       const name = `N_${spec.index}`;
       cell.name = spec.lowerName ? name.toLowerCase() : name;
     }
