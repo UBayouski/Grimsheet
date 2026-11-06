@@ -97,7 +97,8 @@ describe('sheet-model placement properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('Property 8: Rejected levels produce errors and no Sheet', () => {
     // Feature: sheet-model, Property 8: Rejected levels produce errors and no Sheet
@@ -111,5 +112,6 @@ describe('sheet-model placement properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });

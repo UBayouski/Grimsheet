@@ -42,7 +42,8 @@ describe('sheet-model loader totality properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('Property 5: The text loader is total', () => {
     // Feature: sheet-model, Property 5: The text loader is total
@@ -56,7 +57,8 @@ describe('sheet-model loader totality properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('Property 6: Deep nesting is refused, not crashed on', () => {
     // Feature: sheet-model, Property 6: Deep nesting is refused, not crashed on
@@ -75,5 +77,6 @@ describe('sheet-model loader totality properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });

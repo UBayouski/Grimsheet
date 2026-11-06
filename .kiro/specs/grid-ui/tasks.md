@@ -103,7 +103,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 6.1, 6.2, 6.3, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 11.4, Decisions 14, 15 and 17_
 
-- [ ] 4. Renderer, CSS and fixture levels
+- [x] 4. Renderer, CSS and fixture levels
   - [x] 4.1 [Batch 4] [Crew] [can start before game-rules Batch 5] Create `render.ts` and `grid-ui.css` with tests
     - Files: create `src/ui/render.ts`, `src/styles/grid-ui.css`, `src/ui/render.test.ts` (starts with `// @vitest-environment happy-dom`)
     - Depends on Batch 1 only: it uses the `ViewModel`, `CellView` and `TabView` types from `types.ts` (task 1.2) and `STRINGS`, and imports nothing from `src/game/`. `render.ts` exports `ERROR_CLASS`, the table from the five error kinds to `cell-error-ref`, `cell-error-name`, `cell-error-div0`, `cell-error-value` and `cell-error-cycle`, typed on `ErrorKind` from `../engine/index`; `view-model.ts` does not export it
@@ -112,7 +112,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.3, 6.1, 6.2, 6.3, 9.1, 9.5, 10.1, 10.2, 10.4, 11.1, 13.1, 13.2, 13.3, 14.1, 14.3, Decisions 16, 19 and 20_
 
-  - [ ] 4.2 [Batch 4] [Crew] [needs game-rules Batch 5] Create the fixture and stub levels with a validity test
+  - [x] 4.2 [Batch 4] [Crew] [needs game-rules Batch 5] Create the fixture and stub levels with a validity test
     - Files: create `tests/fixtures/levels.ts`, `src/stub-levels.ts`, `src/ui/fixture-levels.test.ts`
     - `tests/fixtures/levels.ts` exports `FIXTURE_LEVELS: readonly unknown[]` with the two fixture levels of the design: `01-fixture-corridor` (open floor, hero at `B2`, exit `X` at `D2`, no monsters, HP 5, ink 3, hint "Walk to the exit.") and `02-fixture-lab` (hero at `B2`, a far exit, one monster `M1` far from the hero, labelled rule cells `MOVE_M1` at `B15` holding `"-"` and `ATK_M1` at `B16` holding `0`, HP 5, ink 3). `src/stub-levels.ts` exports `STUB_LEVELS: readonly unknown[]`, one tiny valid Level_Document list for `src/main.ts` until the `levels` spec replaces it. Both are plain data with no logic
     - Tests: `fixture-levels.test.ts` sits under `src/ui/` because Vitest collects only `src/**/*.test.ts`; it imports `../../tests/fixtures/levels` and `../stub-levels` (allowed because this is a test file, and the module scan excludes test files) and asserts that every fixture level and the stub list start with `startRun`, that ids are unique, that the first fixture has no monsters and an exit two steps from the hero, that the second fixture has `B15` and `B16` as rule cells with the expected raw texts, and that the first fixture is won by two moves east using `applyAction`

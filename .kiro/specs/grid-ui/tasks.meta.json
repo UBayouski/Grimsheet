@@ -31,6 +31,25 @@
         "chatSessionId": "sess_405eb279-19a5-4e6d-8205-58413eabb846",
         "timestamp": 1793994163189
       }
+    ],
+    "4.2 [Batch 4] [Crew] [needs game-rules Batch 5] Create the fixture and stub levels with a validity test": [
+      {
+        "executionId": "0ea01ad4-4e12-4f2d-94af-d990da069843",
+        "chatSessionId": "sess_7868691a-127e-45e0-852d-7d0b6a1ea531",
+        "timestamp": 1793998821464
+      },
+      {
+        "executionId": "0ea01ad4-4e12-4f2d-94af-d990da069843",
+        "chatSessionId": "sess_7868691a-127e-45e0-852d-7d0b6a1ea531",
+        "timestamp": 1793998924733
+      }
+    ],
+    "4. Renderer, CSS and fixture levels": [
+      {
+        "executionId": "0ea01ad4-4e12-4f2d-94af-d990da069843",
+        "chatSessionId": "sess_7868691a-127e-45e0-852d-7d0b6a1ea531",
+        "timestamp": 1793998924853
+      }
     ]
   }
 }

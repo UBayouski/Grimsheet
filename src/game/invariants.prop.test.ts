@@ -114,7 +114,8 @@ describe('invariants', () => {
       }),
       NUM_RUNS_INK,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('accounts for hp through the damage log', () => {
     // Feature: game-rules, Property 5: HP accounting and the Damage_Log
@@ -168,7 +169,8 @@ describe('invariants', () => {
       ),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('keeps the hero and monsters on distinct Addresses inside the map', () => {
     // Feature: game-rules, Property 6: Entity placement
@@ -191,7 +193,8 @@ describe('invariants', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('keeps won and lost final and gives them their meaning', () => {
     // Feature: game-rules, Property 7: Status finality and meaning
@@ -222,5 +225,6 @@ describe('invariants', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });

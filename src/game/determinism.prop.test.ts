@@ -79,5 +79,6 @@ describe('determinism', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });

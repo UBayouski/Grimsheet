@@ -709,6 +709,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The cause is not confirmed. Two candidates: a worktree cleanup that touched the shared `node_modules`, or the `happy-dom` install interacting with the parallel runs. I have not tested either.
 - Watch for it after the next Crew run: check that `node_modules` still has its contents before and after the run, and after the worktree is cleaned up.
 - Update after the next Crew run (game-rules Batch 5 and grid-ui 4.1): after its worktree cleanup `node_modules` was intact (108 packages), so Crew cleanup is not confirmed as the cause.
+- Update after two more Crew runs (the grid-ui 2.3 and Batch 3 run, and one before it): `node_modules` was intact each time. It has now survived three Crew worktree cleanups since the wipe.
 
 ## 2026-11-06 — game-rules Batch 5 and grid-ui 4.1 in one Crew run; game-rules spec complete
 
@@ -731,4 +732,25 @@ What changed because of it (time saved, bug caught, decision made):
 - The game-rules spec is closed. Its five batches ran as IDE (Batch 1), Crew (Batch 2), IDE (Batch 3), Crew (Batch 4) and Crew (Batch 5), and the Batch 5 run also did grid-ui work. Every game-rules task is ticked.
 - Time: pairing a closing checkpoint with an unrelated spec's renderer in one run used the same worktree for both, and neither blocked the other.
 - Not verified: I did not diff the checkpoint step's changes beyond the file list, and did not read `render.ts` or the CSS line by line. I only know they pass the suite and the checks.
+- Nothing was committed by me.
+
+## 2026-11-06 — grid-ui 2.3 and Batch 3 in one Crew run
+
+Surface: Crew, then IDE
+
+Features: spec, pbt
+
+What I asked for: One Kiro Crew Task Runner run for grid-ui 2.3 (`messages.ts`), 3.1 (`view-model.ts`), 3.2 (`controller.ts` part A: start, turns, tabs, confirmation), 3.3 (`controller.ts` part B: Edit_Mode) and 4.2 (the fixture and stub levels with a validity test), each with tests. These tasks were unblocked by the game barrel from game-rules Batch 5.
+
+What Kiro did:
+- The first plan ran the two controller steps (3.2 and 3.3) in parallel. They both edit `controller.ts` and `controller.test.ts`, so I had it re-planned so that part B waits for part A. The history shows that order: 3.2 at 12:34:02 (step 4) and 3.3 at 12:40:50 (step 5).
+- Four steps made commits, merged as `fa6cdcb` at 12:47:41: 2.3 (`messages.ts`, 67 lines, and its test, 105), 3.1 (`view-model.ts`, 187 lines, and its test, 361), 3.2 (`controller.ts`, and `AppState` added to `types.ts`, 19 lines) and 3.3 (Edit_Mode added to `controller.ts` and `controller.test.ts`). The branch added 7 files and 1,975 lines. Task 3.1 and 2.3 ran side by side first (12:23:38 and 12:24:32).
+- Task 4.2 produced no commit. Its three files (`tests/fixtures/levels.ts`, `src/stub-levels.ts`, `src/ui/fixture-levels.test.ts`) were not in the merge, and they do not exist in the working tree as I write this. The task is to be run in the IDE afterwards. I have not seen that run: `grid-ui/tasks.md` currently shows 4.2 as `[~]` (in progress, not ticked).
+- Combined result with the merge: 51 test files and 1218 tests in the full suite, typecheck and lint clean (it was 48 files and 1076 tests before the merge, so the merge brought 3 test files).
+- Flaky timeout found while verifying the branch: `src/game/determinism.prop.test.ts` passed alone in about 1.5 s but took 5.4 s in the full suite (51 files running in parallel), and failed on Vitest's 5,000 ms default for a single test. The spec's time limits are per case, so the test, not the engine, was the problem. Fix: each `it()` in the three game property files (determinism, undo, invariants) and the three model property files (round-trip, totality, placement) now has a 60,000 ms timeout and a one-line comment that the limits apply per case, not per test. That is 15 tests in 6 files, the same pattern as `src/engine/totality.prop.test.ts`, which has had a long timeout since the RAND fix. `npm run verify` ran twice after the change: 51 files and 1218 tests passing both times, with typecheck and lint clean (Vitest durations 22.9 s and 21.2 s).
+
+What changed because of it (time saved, bug caught, decision made):
+- Lesson from the plan: the planner's parallel placement of two steps that edit the same two files would have raced. I read the step order before the run started and asked for a re-plan, as in the formula-engine Crew runs.
+- Gap: a Crew step can finish with no commit and no error in the summary. 4.2 is only known to be missing because the files are not there, so I check for the files, not for a step status.
+- The suite is now heavy enough (51 files, much of it property tests) that default per-test timeouts are too tight under parallel load. Every property test file now carries an explicit timeout.
 - Nothing was committed by me.

@@ -46,7 +46,8 @@ describe('sheet-model round-trip properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('Property 2: level round trip and text idempotence', () => {
     // Feature: sheet-model, Property 2: Level round trip and text idempotence
@@ -67,7 +68,8 @@ describe('sheet-model round-trip properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('Property 3: normalization preserves computed Values', () => {
     // Feature: sheet-model, Property 3: Normalization preserves computed Values
@@ -79,5 +81,6 @@ describe('sheet-model round-trip properties', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });

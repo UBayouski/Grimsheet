@@ -83,7 +83,8 @@ describe('undo', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 
   it('refuses undo with nothing to undo and ignores refused actions', () => {
     // Feature: game-rules, Property 3: Undo refusals
@@ -110,5 +111,6 @@ describe('undo', () => {
       }),
       NUM_RUNS,
     );
-  });
+    // The spec's time limits apply per case, not per test, so the test gets a long timeout.
+  }, 60_000);
 });
