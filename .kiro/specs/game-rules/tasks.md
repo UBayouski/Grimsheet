@@ -118,8 +118,8 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 14.1, 14.2, 14.3, 14.4, 14.5, 5.1, 5.5, 6.4, 6.6, 7.3, 7.6, 8.1, 8.3, 9.1, 9.2, 9.3, 9.4**
 
-- [ ] 5. Public API and constraints
-  - [ ] 5.1 [Batch 5] [IDE] Create the `index.ts` barrel, module scan and generator sanity checks
+- [x] 5. Public API and constraints
+  - [x] 5.1 [Batch 5] [IDE] Create the `index.ts` barrel, module scan and generator sanity checks
     - Files: create `src/game/index.ts`, `src/game/module.test.ts`; edit `src/game/testing/arbitraries.test.ts` (adds checks that need `run.ts` and `turn.ts`, now allowed because they exist)
     - Single owner of `index.ts`: named exports only, no default export. Runtime names (13): `startRun`, `applyAction`, `createRandom`, `cellValue`, `cellRawText`, `isCellLocked`, `cellName`, `describeCellError`, `isPlaying`, `canUndo`, `REFUSAL_REASONS`, `MAX_DAMAGE`, `seedOf`. Types via `export type`: `Action`, `Direction`, `Status`, `RunState`, `UndoSnapshot`, `MonsterState`, `EditRecordEntry`, `ActionResult`, `Refusal`, `RefusalReason`, `DamageEntry`, `DamageLog`, `DamageSource`, `StartRunResult`, `RandomGenerator`, plus `Value` and `Level` re-exported from the engine and model. Nothing else is exported (not the registry, `makeSheet`, `recalc`, `stepMonsters`, `wholeDamage` or any test helper)
     - `module.test.ts`: parses `index.ts` and compares the sorted exported names with the expected list of 13 runtime and 17 type names; imports the barrel and compares `Object.keys` with the 13 runtime names and asserts no `default`; reads every non-test `.ts` file under `src/game/`, including `testing/` and excluding `*.test.ts` and `*.prop.test.ts`, strips comments and string literals, and asserts the file list matches the design table, no `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch`, `XMLHttpRequest`, `AudioContext`, `Math.random`, `Date.now`, `new Date`, `eval`, `new Function`, imports only from files inside `src/game/`, `../model/index` and `../engine/index` (`../../model/index` and `../../engine/index` from `testing/`), no `src/ui` import, and no AI tool name other than Kiro using a deny-list assembled from string fragments so the test file does not spell the names; includes a self-check that the scanner flags a sample bad snippet; the suite needs no DOM environment
@@ -127,7 +127,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 12.2_
 
-  - [ ] 5.2 [Batch 5] [IDE] Final checkpoint
+  - [x] 5.2 [Batch 5] [IDE] Final checkpoint
     - Files: edit `.kiro/specs/game-rules/tasks.md` to tick the checkboxes; no source edits unless a defect is found
     - Run `npm run verify`; confirm under Node 22 or later it reports zero failures and zero DOM-related errors
     - Confirm with `git status` and `git diff` that only files under `src/game/` and the game-rules spec files changed, with no change under `src/model/` or `src/engine/`, and that nothing is committed
