@@ -1,8 +1,8 @@
-import { TITLE } from './title';
+import { mountApp, browserStorage } from './ui/index';
+import { STUB_LEVELS } from './stub-levels';
+import './styles/grid-ui.css';
 
-const app = document.getElementById('app');
-if (app) {
-  const heading = document.createElement('h1');
-  heading.textContent = TITLE;
-  app.append(heading);
+const root = document.getElementById('app');
+if (root) {
+  mountApp(root, { levels: STUB_LEVELS, storage: browserStorage() });
 }

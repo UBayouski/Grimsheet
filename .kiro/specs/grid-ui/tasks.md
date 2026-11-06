@@ -24,7 +24,7 @@ Rules that apply to every task:
 |---|---|---|---|
 | 1 | IDE, sequential (1.2 uses the tooling of 1.1) | 1.1 test tooling, 1.2 types and strings | None for 1.1 and 1.2 (can start before game-rules Batch 5) |
 | 2 | Crew, parallel (disjoint files) | 2.1 key map, 2.2 confirmation, 2.4 progress (early); 2.3 messages (later) | Batch 1 for 2.1, 2.2 and 2.4 (can start before game-rules Batch 5); Batch 1 and game-rules Batch 5 for 2.3 (it imports `REFUSAL_REASONS`, `DamageLog` and `Refusal` from the game barrel) |
-| 3 | IDE, strictly sequential (3.2 and 3.3 both edit `controller.ts` and `controller.test.ts`) | 3.1 view model; 3.2 controller part A; 3.3 controller part B | Batches 1, 2 and game-rules Batch 5 |
+| 3 | Crew, one run, in order (3.2 and 3.3 both edit `controller.ts` and `controller.test.ts`) | 3.1 view model; 3.2 controller part A; 3.3 controller part B | Batches 1, 2 and game-rules Batch 5 |
 | 4 | Crew, parallel (disjoint files) | 4.1 renderer and CSS (early); 4.2 fixture and stub levels (later) | Batch 1 for 4.1 (can start before game-rules Batch 5, alongside Batch 2); game-rules Batch 5 for 4.2 (its validity test calls `startRun` and `applyAction`) |
 | 5 | IDE, sequential | 5.1 app and barrel; 5.2 entry points; 5.3 module scan | Batch 3, 4.1 and 4.2 |
 | 6 | Crew for 6.1 and 6.2 (disjoint files), IDE for 6.3 | 6.1 win-and-persist flow, 6.2 edit-and-fix flow, 6.3 final checkpoint | Batch 5 |
@@ -48,7 +48,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 14.2, 6.2, 10.3, 10.4, 2.5, 11.4, 9.3, 7.4, Decisions 5 and 20_
 
-- [ ] 2. Pure helper modules
+- [x] 2. Pure helper modules
   - [x] 2.1 [Batch 2] [Crew] [can start before game-rules Batch 5] Create `key-map.ts` with tests
     - Files: create `src/ui/key-map.ts`, `src/ui/key-map.test.ts`
     - Export `mapKey(input, context)` implementing the 21-row table of the design top to bottom, first match wins, returning `{ command, preventDefault }` or `undefined`; letters compare through `toLowerCase()`; Meta counts as Ctrl; modifier-only keys (`Shift`, `Control`, `Alt`, `Meta`, `CapsLock`) always return `undefined` and never cancel a confirmation; no browser global is referenced
@@ -64,7 +64,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 10.3, 10.4, 2.4, Decision 9_
 
-  - [ ] 2.3 [Batch 2] [Crew] [needs game-rules Batch 5] Create `messages.ts` with tests
+  - [x] 2.3 [Batch 2] [Crew] [needs game-rules Batch 5] Create `messages.ts` with tests
     - Files: create `src/ui/messages.ts`, `src/ui/messages.test.ts`
     - Blocked until the game barrel exists because it imports the types `DamageLog` and `Refusal` and the runtime list `REFUSAL_REASONS` from `../game/index` (the `REFUSAL_REASONS` test loops over the real list)
     - Export `damageSummary(log)` ("-<total> HP: <part>; <part>" in log order, empty string for an empty log), `refusalMessage(refusal, action)` (`undefined` for `blocked` and `occupied` when the Action was a move, `STRINGS.lockedText` for `locked`, the game's message otherwise), `endMessage('won', isLast)`, `terrainWord(cellText)` and `cellLabel(entity, address, cellText)`
@@ -80,15 +80,15 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 2.1, 2.2, 2.3, Decisions 10, 21 and 22_
 
-- [ ] 3. View model and controller
-  - [ ] 3.1 [Batch 3] [IDE] [needs game-rules Batch 5] Create `view-model.ts` with tests
+- [x] 3. View model and controller
+  - [x] 3.1 [Batch 3] [Crew] [needs game-rules Batch 5] Create `view-model.ts` with tests
     - Files: create `src/ui/view-model.ts`, `src/ui/view-model.test.ts`
     - Export `viewOf(state, env)` (total; builds every derived field of the design: `screen`, `tabs` with `enabled` and `current`, `nameBox`, `formula` with `readOnly`, `locked` and `alert`, `status` with the label from `tabLabel(run.level)` and HP clamped at 0, `message`, `banner` on the lost screen, `buttons`, `activeCell`, and the 19 rows of `CellView`), `changedAddresses(prev, next)` (compares `formatValue` text and Value kind for the 228 rendered addresses; empty set when `prev` is undefined), `moveSelection(address, dir)` (clamped to columns A to L and rows 1 to 20, skipping row 13) and nothing else (`ERROR_CLASS` lives in `render.ts`, task 4.1). Imports `cellValue`, `cellRawText`, `isCellLocked`, `cellName`, `isPlaying` and `canUndo` from `../game/index`, `formatValue`, `parseAddress` and `formatAddress` from `../engine/index`, and `tabLabel` from `../model/index`
     - Tests use an inline Level_Document (a small valid level built in the test file): 19 rows in order; hero and monster cells with entity data and labels; name box with and without a Cell_Name; locked cells; `errorKind` set for an error Value; HP clamped at 0; tabs `enabled` by the cleared-or-first-uncleared rule and `current` on one tab only; Undo disabled on `won` and `lost`; `formula.readOnly` when locked or not playing, `formula.locked` only when locked; exactly one selected cell; `viewOf` with `run: undefined` gives empty cells and disabled Undo and Recover; equal states give equal view models; `changedAddresses` for a moved terrain Value, an error kind change, a same-Value Raw_Text change (not marked) and `prev` undefined; `moveSelection` at all four edges and across row 13 both ways
     - Acceptance: `npm run verify` passes
     - _Requirements: 3.1, 3.2, 3.4, 4.2, 4.3, 4.4, 4.5, 5.1, 5.3, 6.1, 6.2, 9.1, 11.1, 11.2, 11.3, 2.2, 2.3, 10.1, 10.2, 10.4, Decisions 10, 11 and 22_
 
-  - [ ] 3.2 [Batch 3] [IDE] [needs game-rules Batch 5] Create `controller.ts` part A: start, turns, tabs and confirmation
+  - [x] 3.2 [Batch 3] [Crew] [needs game-rules Batch 5] Create `controller.ts` part A: start, turns, tabs and confirmation
     - Files: create `src/ui/controller.ts`, `src/ui/controller.test.ts`; edit `src/ui/types.ts` (the only edit after 1.2)
     - Add `AppState` to `types.ts` (all fields `readonly`; `run` is `RunState | undefined`, with `RunState` as a type import from `../game/index`). Also add a compile-time check in `controller.test.ts` that the local `Direction` and `Status` of `types.ts` and the game's are mutually assignable
     - Export `createInitialState(env, progress)`, `step(state, event, env)` and `keyContext(state, env, focus)`. Implement in this task: `startLevel` (calls `startRun`; on `ok: false` sets `STRINGS.loadFailed` and keeps the previous run, selection and progress; on success resets the selection to the hero, clears edit, alert, pending and changed, sets the Message to the level hint, sets `progress.current`, and emits `save-progress` and `focus grid`), the start index through `startIndexFor` (never a disabled level; an empty list or a failed start gives `run: undefined`), `accept` (run replaced, `changedAddresses`, Message from the Damage_Log summary, `Undone.`, `Edited.`, the level hint for a quiet move or wait, the won message, the damage summary kept on a loss, progress and a `save-progress` effect on a win), `move` and `wait` (silent for `blocked` and `occupied`, the game's message for any other Refusal, state object unchanged on a refusal), `undo`, `select-move`, `cell-click` (ignores row 13 and bad addresses), `restart`, `tab` (disabled tab ignored, current tab as restart) and `next-level` (won screen only), Rule P with `decide` and `promptFor` (confirm by the same command, by `confirm`, by a `tab` for the pending level; cancel and `dismiss-pending` restore the Message; any other event clears the prompt and applies no Action), immediate restart and switch on the won and lost screens, and the `edit` fields left untouched for part B
@@ -96,7 +96,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 2.1, 2.3, 2.4, 2.5, 5.2, 5.4, 8.5, 8.6, 9.2, 9.3, 9.4, 10.3, 10.4, 11.1, 11.2, 11.3, 11.4, 12.2, Decisions 7, 8, 9, 10, 11, 12 and 18_
 
-  - [ ] 3.3 [Batch 3] [IDE] [needs game-rules Batch 5] Add Edit_Mode to `controller.ts` (part B)
+  - [x] 3.3 [Batch 3] [Crew] [needs game-rules Batch 5] Add Edit_Mode to `controller.ts` (part B)
     - Files: edit `src/ui/controller.ts`, edit `src/ui/controller.test.ts` (no other files)
     - Implement the edit transitions of the design table: `edit-start` (locked cell gives `STRINGS.lockedText` and no Edit_Mode; unlocked cell sets `edit` with the Raw_Text and emits `focus formula-bar` and `select-formula-text`), `cell-dblclick` (select, then as `edit-start`), `formula-focus` (enters Edit_Mode only when playing and not already editing; idempotent when it is raised again by the focus effect; locked message for a locked cell), `formula-input`, `edit-commit` (calls `applyAction` with an `edit` Action; accepted leaves Edit_Mode, clears `alert`, runs `accept` with `Edited.` and emits `focus grid`; refusals follow the table: `parse-error` goes only to `alert` and leaves the Message byte for byte unchanged; `no-ink`, `bad-address` keep Edit_Mode and the typed text and set the Message; `unchanged`, `reserved-row`, `not-playing`, `invalid-action`, `internal-error` leave Edit_Mode and set the Message; `locked` leaves and sets `STRINGS.lockedText`; the keep list is the constant `KEEP_EDIT`), `edit-cancel` (no Action, no ink, `focus grid`), and `formula-blur` (with an edit it is a click-away cancel with no Action and no ink; with no edit it returns the same state object and does not clear a pending confirmation). Moving the Selection or clicking a cell clears `alert`. The effects list is returned in order and `step` stays pure so that `app.ts` can store and render the new state before it runs the effects (re-entrancy: a `focus` effect can raise `formula-focus` or `formula-blur` synchronously)
     - Tests: edit commit accepted (ink falls by 1, `Edited.` or the damage summary, `focus grid` effect, Edit_Mode left); each edit refusal reason against the table (Edit_Mode kept or left, Message, `alert`), with `parse-error` leaving `message` unchanged and every other reason leaving `alert` empty; locked `edit-start` and locked `formula-focus` show the locked text; `cell-dblclick` on an unlocked and a locked cell; `edit-cancel` costs no ink; `formula-blur` with an edit cancels with no Action; `formula-blur` after a committed edit or after Escape returns the same state object; a stray `formula-blur` does not clear a pending confirmation; the click-away order, `formula-blur` then `cell-click`, gives cancel then selection with no ink spent; `formula-focus` while editing returns the same state; an edit that changes a Value sets the changed set; an `edit` while the Status is not `playing` is refused and leaves Edit_Mode; `select-move` clears `alert`
@@ -119,15 +119,15 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 15.2, 2.1, Decision 3_
 
-- [ ] 5. App, entry points and module scan
-  - [ ] 5.1 [Batch 5] [IDE] Create `app.ts`, the `index.ts` barrel and the app tests
+- [x] 5. App, entry points and module scan
+  - [x] 5.1 [Batch 5] [IDE] Create `app.ts`, the `index.ts` barrel and the app tests
     - Files: create `src/ui/app.ts`, `src/ui/index.ts`, `src/ui/app.test.ts` (starts with `// @vitest-environment happy-dom`)
     - `app.ts` exports `mountApp(root, options)` and `browserStorage()`. `browserStorage` wraps `localStorage` and falls back to an in-memory `StorageLike` when reading the global throws; it is the only place that names `localStorage`. `mountApp` describes the levels, loads Progress through the store, builds the initial state, calls `createView`, and installs the listeners: `keydown` on the document through `mapKey` and `keyContext` (call `preventDefault` only when `mapKey` says so), `click`, `dblclick`, `input`, `focus` and `blur` as in the design event wiring table, including `dismiss-pending` for a click on anything that is not a button, the Formula_Bar or a Grid_Cell. A `focusKind` helper classifies `input`, `textarea`, `select` and content-editable targets as `text`, `button` as `button`, everything else as `other`. One `dispatch` function wraps `step`, `viewOf` and `render` in `try/catch`; on a throw it keeps the previous state and sets "Something went wrong."; it stores and renders the new state before running effects (`focus` with `preventScroll`, `select-formula-text`, `save-progress` through the store, each guarded). `destroy()` removes every listener and empties the root. `index.ts` has named exports only: `mountApp`, `browserStorage` and the types `MountOptions`, `AppHandle`, `StorageLike`, `Progress`
     - Tests (import fixtures from `../../tests/fixtures/levels` and use a fake storage): initial render; ArrowRight on `document` moves the hero; Ctrl+Arrow moves the Selection; a click selects; Enter enters Edit_Mode with the Formula_Bar as the active element; typing then Enter commits and ink falls; a parse error shows in `#formula-alert` while `#message` keeps its earlier text; a non-parse refusal shows in `#message` and leaves `#formula-alert` empty; Escape cancels and the blur it causes changes nothing; clicking a cell while editing cancels the edit (ink unchanged) and selects that cell; a disabled tab has `disabled` and clicking it does nothing; saved Progress that names a disabled level starts the first uncleared level; keys typed in the Formula_Bar do not move the hero; keys on a focused button are ignored; a click on Undo while a prompt shows clears the prompt without undoing; Recover prompt then confirm; `data-screen` follows the Status through a win; `destroy()` stops key handling; a handler forced to throw shows "Something went wrong." and the page still responds; storage that throws on read and on write does not break the app; `index.ts` exports exactly the expected runtime names
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 2.4, 2.5, 5.1, 5.2, 7.1, 7.3, 7.4, 7.5, 7.6, 7.7, 8.3, 8.4, 10.1, 10.2, 10.3, 11.1, 11.4, 12.2, 12.4, 13.1, 14.1, 14.3, Decisions 3, 13, 15, 17 and 19_
 
-  - [ ] 5.2 [Batch 5] [IDE] Wire the entry points
+  - [x] 5.2 [Batch 5] [IDE] Wire the entry points
     - Files: edit `src/main.ts`; create `tests/fixtures/index.html`, `tests/fixtures/main.ts`
     - `src/main.ts` imports `mountApp` and `browserStorage` from `./ui/index`, `STUB_LEVELS` from `./stub-levels` and `./styles/grid-ui.css`, calls `document.getElementById('app')`, and when the root exists calls `mountApp(root, { levels: STUB_LEVELS, storage: browserStorage() })`; it names no other browser global. `tests/fixtures/main.ts` does the same with `FIXTURE_LEVELS` from `./levels` and the CSS from `../../src/styles/grid-ui.css`. `tests/fixtures/index.html` has a `#app` element and loads `tests/fixtures/main.ts`. No change to `playwright.config.ts`. The existing `src/title.ts` stays
     - Tests: the existing `title.test.ts` and `index.html` smoke flow keep passing; the scan of both entry files is added in 5.3
@@ -135,28 +135,28 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.1, 14.1, 15.2, 15.3, Decisions 3 and 13_
 
-  - [ ] 5.3 [Batch 5] [IDE] Create the `src/ui` module scan
+  - [x] 5.3 [Batch 5] [IDE] Create the `src/ui` module scan
     - Files: create `src/ui/module.test.ts` (Node environment, no docblock)
     - Modelled on `src/model/module.test.ts` and `src/game/module.test.ts`. Reads the non-test `.ts` files in `src/ui/` plus `src/main.ts` and `tests/fixtures/main.ts`, strips comments and string literals, and checks: the file list equals the design table (`types`, `strings`, `key-map`, `confirmation`, `messages`, `progress`, `view-model`, `controller`, `render`, `app`, `index`) with no subdirectories; `index.ts` has named exports only and exports exactly `mountApp`, `browserStorage` and the types `MountOptions`, `AppHandle`, `StorageLike`, `Progress`, with no default export anywhere; pure files (all except `app.ts` and `render.ts`) mention none of `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `location`, `AudioContext`, `HTMLElement`, `HTMLInputElement`, `Element`, `Event`, `KeyboardEvent`, `MouseEvent`; `render.ts` and `app.ts` may use `document`, only `app.ts` may name `localStorage`, and neither names `window`, `sessionStorage`, `fetch` or `XMLHttpRequest`; `src/main.ts` and `tests/fixtures/main.ts` use `document` only as `document.getElementById`, name none of `window`, `localStorage`, `sessionStorage`, `AudioContext`, `navigator`, `location`, `fetch`, import `mountApp` and `browserStorage` from `./ui/index` or `../../src/ui/index` and never a deeper `src/ui` path, and call `browserStorage()`; all files avoid `eval`, `new Function`, `Math.random`, `Date.now`, `new Date`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` and `http://` or `https://` in string literals; imports resolve only inside `src/ui/` or to `../game/index`, `../model/index` and `../engine/index`, and none points to `src/levels/`; no AI tool name other than Kiro in any `src/ui` file, `src/styles/grid-ui.css`, `src/main.ts`, `src/stub-levels.ts`, `tests/fixtures` or the grid-ui spec files, using a deny-list assembled from string fragments so the test file does not spell the names; the CSS file has no `url(`, `@import` or `http`; a self-check proves the scanner flags a sample bad snippet; no file under `src/game/`, `src/model/` or `src/engine/` imports from `src/ui/`
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 14.1, 15.3, Decisions 6 and 13_
 
-- [ ] 6. End-to-end flows and final check
-  - [ ] 6.1 [Batch 6] [Crew] Write the win-and-persist flow
+- [x] 6. End-to-end flows and final check
+  - [x] 6.1 [Batch 6] [Crew] Write the win-and-persist flow
     - Files: create `tests/e2e/win-and-persist.spec.ts`
     - Flow 1 of the design against `/tests/fixtures/index.html`: the first tab is current and the second is disabled; press ArrowRight twice; `#app` has `data-screen="won"`, `#message` reads "Changes saved.", and `localStorage` holds `grimsheet.progress` with `01-fixture-corridor` in `cleared`; press `N`; the second tab has `aria-current="page"` and is enabled; reload and the second tab is still current and the first tab is enabled. Use `page.evaluate` for the storage read; no fixed sleeps
     - Tests: the spec is the test; if `npx playwright install chromium` is needed, run it and report; if the environment cannot run Playwright, say so and do not mark the task done
     - Acceptance: `npm run verify` passes and `npm run e2e` passes
     - _Requirements: 15.2, 2.1, 2.2, 2.3, 8.1, 8.2, 10.4, 12.1, 12.2_
 
-  - [ ] 6.2 [Batch 6] [Crew] Write the edit-and-fix flow
+  - [x] 6.2 [Batch 6] [Crew] Write the edit-and-fix flow
     - Files: create `tests/e2e/edit-and-fix.spec.ts`
     - Flow 2 of the design: `page.addInitScript` writes `{"version":1,"cleared":["01-fixture-corridor"],"current":"02-fixture-lab"}` under `grimsheet.progress` and the test never reloads; the page starts the second level; click `[data-address="B15"]`, press Enter and check the Formula_Bar is focused; type `=1+` and press Enter; `#formula-alert` starts with `Col `, the status bar still shows `Ink 3/3` and the Formula_Bar is still focused; replace the text with `"S"` and press Enter; the status bar shows `Ink 2/3` and the grid has focus. Use web-first assertions; no fixed sleeps
     - Tests: the spec is the test; same Playwright setup note as 6.1
     - Acceptance: `npm run verify` passes and `npm run e2e` passes
     - _Requirements: 15.2, 6.3, 7.1, 7.3, 7.4, 7.5, 13.1_
 
-  - [ ] 6.3 [Batch 6] [IDE] Final checkpoint
+  - [x] 6.3 [Batch 6] [IDE] Final checkpoint
     - Files: edit `.kiro/specs/grid-ui/tasks.md` to tick the checkboxes; no source edits unless a defect is found
     - Run `npm run verify` and `npm run e2e`; confirm both report zero failures
     - Confirm with `git status` and `git diff` that only `src/ui/`, `src/styles/`, `src/main.ts`, `src/stub-levels.ts`, `tests/fixtures/`, `tests/e2e/`, `package.json`, `package-lock.json`, `eslint.config.js` and the grid-ui spec files changed, with no change under `src/game/`, `src/model/` or `src/engine/`, and that nothing is committed

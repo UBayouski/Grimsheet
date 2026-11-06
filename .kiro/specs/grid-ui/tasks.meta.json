@@ -50,6 +50,105 @@
         "chatSessionId": "sess_7868691a-127e-45e0-852d-7d0b6a1ea531",
         "timestamp": 1793998924853
       }
+    ],
+    "5.1 [Batch 5] [IDE] Create `app.ts`, the `index.ts` barrel and the app tests": [
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999295617
+      },
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999297980
+      },
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999510077
+      }
+    ],
+    "5.2 [Batch 5] [IDE] Wire the entry points": [
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999512049
+      },
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999640850
+      }
+    ],
+    "5.3 [Batch 5] [IDE] Create the `src/ui` module scan": [
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999642751
+      },
+      {
+        "executionId": "dddf8048-2ef8-4416-8891-dffb36fd4c4e",
+        "chatSessionId": "sess_6fc1075a-c308-4265-b742-4903c04f23f7",
+        "timestamp": 1793999767090
+      }
+    ],
+    "6.1 [Batch 6] [Crew] Write the win-and-persist flow": [
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000019893
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000022477
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000199138
+      }
+    ],
+    "6.2 [Batch 6] [Crew] Write the edit-and-fix flow": [
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000020050
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000022990
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000199505
+      }
+    ],
+    "6.3 [Batch 6] [IDE] Final checkpoint": [
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000020158
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000201685
+      },
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000382214
+      }
+    ],
+    "6. End-to-end flows and final check": [
+      {
+        "executionId": "b44b5712-09ea-4ade-b196-11b6db8921ff",
+        "chatSessionId": "sess_5dcaa265-f3a0-4ab6-bc3a-6a9d086ca522",
+        "timestamp": 1794000382458
+      }
     ]
   }
 }
