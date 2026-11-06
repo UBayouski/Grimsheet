@@ -20,6 +20,11 @@ function positionOf(address: string): Position {
   };
 }
 
+/** Maps -0 to 0 so a Level never holds negative zero. */
+function noNegativeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
 function isGlyph(text: string): boolean {
   return text.length === 1 && GLYPHS.includes(text);
 }
@@ -87,9 +92,9 @@ export function normalize(doc: LevelDocument): LevelDocument {
     id: doc.id,
     title: doc.title,
     hint: doc.hint,
-    startingHp: doc.startingHp,
-    ink: doc.ink,
-    seed: doc.seed,
+    startingHp: noNegativeZero(doc.startingHp),
+    ink: noNegativeZero(doc.ink),
+    seed: noNegativeZero(doc.seed),
     hero: { at: doc.hero.at.toUpperCase() },
     monsters,
     map: mapRows,

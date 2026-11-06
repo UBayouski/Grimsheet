@@ -601,3 +601,29 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: I ran none of the repros. The agent read the code and test titles only, and said so. Coverage claims rest on test titles, not test bodies.
 - The agent numbered its findings by section, so M5 (the unused collector `has()`) sits in its low section. The counts above follow its own table: 2 high, 5 medium, 6 low.
 - Nothing was fixed and nothing was committed. Each finding still needs a decision.
+- Decision afterwards: six findings were fixed in the next entry (the two high ones, the internal-error message, the derived errors, -0, the unused has()). The other seven are accepted, not fixed: the Level built from raw input (M1), a non-plain value inside a field reporting not-an-object (M4), the missing hostile-input tests (T1) and the unconfirmed test coverage (T2) all concern Proxies, getters, cycles, sparse arrays or non-plain values, and JSON text cannot produce those; the surrogate clamp (L2) is cosmetic; the error-order drift (L3) is harmless; and engine internals are imported only by test files (L5), as the design intends.
+
+## 2026-11-06 — sheet-model: review fixes, tasks 5.1 and 5.2, spec closed
+
+Surface: IDE
+
+Features: spec, pbt, agent
+
+What I asked for: Fix five findings from the src/model review, each with a test that fails on the current code. Accept the rest with a written reason. Then run tasks 5.1 and 5.2 of the sheet-model spec, with the module scan covering non-test files only, like `src/engine/constraints.test.ts`. Run `npm run verify` and report counts. Do not commit.
+
+What Kiro did:
+- Fixed, test first (8 new tests failed on the old code, one of them in `serializer.test.ts`):
+  - The outer `catch` in `loadLevel` and `loadLevelText` is now a bare `catch` that returns one `internal-error` with the fixed design message. On the old code a revoked Proxy made the loader itself throw, because `instanceof` on a revoked Proxy throws.
+  - The node guard now checks child counts against the 100,000-node budget before visiting them and never walks sparse holes. `new Array(10_000_000)` took 1284 ms before the fix and now finishes well under a second. The self-referencing array already ended fast through `too-deep`, so its test is a regression test.
+  - A `raw` that is not a string no longer produces derived label and rule-cell errors. Both example documents gave 2 errors before and give 1 now.
+  - `-0` in `ink`, `seed` and `startingHp` is normalized to `0`, so `"ink": -0` round-trips.
+  - The unused collector `has()` and its helpers are deleted.
+- Task 5.1: `src/model/index.ts` (named exports only, no default), `src/model/module.test.ts` (exact export set, scan of non-test files, scanner self-check, short end-to-end flow) and one added sanity check in `testing/arbitraries.test.ts` (generated invalid documents are rejected). The scan found no violations.
+- Task 5.2: `npm run verify` passes with 30 test files and 640 tests, typecheck and lint clean. The engine changed only through the earlier export commit (`validateCellName` in `index.ts`, and `index.test.ts`), with no engine changes in the working tree. A search of `src/model` and the sheet-model spec files found no AI tool name.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug confirmed: the review's top finding was real. The totality properties could not reach it because their generators only make JSON-compatible values.
+- Decision: seven review findings are accepted, with reasons in the review entry above. You wrote "the other eight", but by my count six findings were fixed (item 1 covers two) and seven remain, so the list there has seven.
+- Not verified: the module scan's string stripping would mis-handle a regex literal containing a quote character. No current model file has one.
+- The sheet-model spec is closed with every task in the plan done. The next spec in the brief is `game-rules`.
+- Nothing was committed. The working tree holds the four edited model files, `testing/arbitraries.test.ts`, and the new `index.ts` and `module.test.ts`.

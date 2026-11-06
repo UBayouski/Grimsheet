@@ -139,6 +139,17 @@ describe('invalidDocumentArbitrary', () => {
   });
 });
 
+describe('invalidDocumentArbitrary loads', () => {
+  it('every generated invalid document loads with ok: false', () => {
+    assertProperty(
+      fc.property(invalidDocumentArbitrary, ({ doc }) => {
+        expect(loadLevel(doc, seededRandom(1)).ok).toBe(false);
+      }),
+      100,
+    );
+  });
+});
+
 describe('mutatedDocumentArbitrary and jsonValueArbitrary', () => {
   it('produce plain JSON-compatible values', () => {
     assertProperty(

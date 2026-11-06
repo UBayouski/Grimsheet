@@ -33,32 +33,42 @@ function isPlainObject(value: object): boolean {
  * The root has depth 1. Rejects non-plain objects, depth over 100 and over 100,000 nodes.
  */
 export function guardValue(root: unknown): GuardResult {
-  const stack: { value: unknown; depth: number }[] = [{ value: root, depth: 1 }];
-  let nodes = 0;
+  // Nodes are counted when they are discovered, before their children are visited, so the
+  // budget bounds both time and memory even for huge sparse or self-referencing arrays.
+  const tooLarge: GuardResult = {
+    ok: false,
+    code: 'too-large',
+    message: `The document has more than ${MAX_NODES} values.`,
+  };
+  if (typeof root !== 'object' || root === null) return { ok: true };
+  const stack: { value: object; depth: number }[] = [{ value: root, depth: 1 }];
+  let nodes = 1;
   while (stack.length > 0) {
     const item = stack.pop();
     if (item === undefined) break;
-    nodes += 1;
-    if (nodes > MAX_NODES) {
-      return { ok: false, code: 'too-large', message: `The document has more than ${MAX_NODES} values.` };
-    }
     const { value, depth } = item;
-    if (typeof value !== 'object' || value === null) continue;
     if (depth > MAX_DEPTH) {
       return { ok: false, code: 'too-deep', message: `The document is nested deeper than ${MAX_DEPTH} levels.` };
     }
+    let children: readonly unknown[];
     if (Array.isArray(value)) {
-      for (const child of value as unknown[]) stack.push({ value: child, depth: depth + 1 });
+      if (nodes + value.length > MAX_NODES) return tooLarge;
+      children = Array.from({ length: value.length }, (_, i) => (value as unknown[])[i]);
     } else if (isPlainObject(value)) {
       const record = value as Record<string, unknown>;
-      for (const key of Object.keys(record)) stack.push({ value: record[key], depth: depth + 1 });
+      const keys = Object.keys(record);
+      if (nodes + keys.length > MAX_NODES) return tooLarge;
+      children = keys.map((key) => record[key]);
     } else {
       return { ok: false, code: 'not-an-object', message: 'The document holds a value that is not plain JSON.' };
+    }
+    nodes += children.length;
+    for (const child of children) {
+      if (typeof child === 'object' && child !== null) stack.push({ value: child, depth: depth + 1 });
     }
   }
   return { ok: true };
 }
-
 /** Clamps a message to 1..300 characters. */
 export function clampMessage(message: string): string {
   if (message.length === 0) return '(no message)';
@@ -79,17 +89,8 @@ export function quote(text: string): string {
   return `"${escaped}${truncated ? '…' : ''}"`;
 }
 
-function pathMatches(path: string, prefix: string): boolean {
-  if (prefix === '') return true;
-  if (path === prefix) return true;
-  if (!path.startsWith(prefix)) return false;
-  const next = path.charAt(prefix.length);
-  return next === '.' || next === '[';
-}
-
 export interface ErrorCollector {
   push(path: string, code: LoadErrorCode, message: string): void;
-  has(pathPrefix: string): boolean;
   readonly count: number;
   readonly dropped: number;
   finish(): readonly LoadError[];
@@ -98,16 +99,11 @@ export interface ErrorCollector {
 /** Collects up to 50 errors; counts the rest exactly and adds a too-many-errors marker. */
 export function createErrorCollector(): ErrorCollector {
   const kept: LoadError[] = [];
-  const allPaths: string[] = [];
   let dropped = 0;
   return {
     push(path, code, message) {
-      allPaths.push(path);
       if (kept.length < MAX_ERRORS) kept.push(makeError(path, code, message));
       else dropped += 1;
-    },
-    has(pathPrefix) {
-      return allPaths.some((p) => pathMatches(p, pathPrefix));
     },
     get count() {
       return kept.length + dropped;
@@ -453,6 +449,8 @@ export interface CellsInfo {
   readonly names: ReadonlyMap<string, string>;
   /** Address to the index of its Cell_Spec. */
   readonly indexByAddress: ReadonlyMap<string, number>;
+  /** Addresses whose Cell_Spec raw is not a string; checks that depend on their text are skipped. */
+  readonly failedRaw: ReadonlySet<string>;
 }
 
 const NAME_FAILURES: Readonly<Record<NameCheckFailure, string>> = {
@@ -470,7 +468,8 @@ export function checkCells(doc: unknown, errors: ErrorCollector): CellsInfo {
   const effective = new Map<string, string>();
   const names = new Map<string, string>();
   const indexByAddress = new Map<string, number>();
-  const info: CellsInfo = { effective, names, indexByAddress };
+  const failedRaw = new Set<string>();
+  const info: CellsInfo = { effective, names, indexByAddress, failedRaw };
   if (!isPlainRecord(doc)) return info;
 
   const map = doc['map'];
@@ -550,6 +549,8 @@ export function checkCells(doc: unknown, errors: ErrorCollector): CellsInfo {
         }
       }
       if (address !== undefined) effective.set(address, raw);
+    } else if (address !== undefined) {
+      failedRaw.add(address);
     }
 
     const name = entry['name'];
@@ -581,11 +582,13 @@ export function checkCells(doc: unknown, errors: ErrorCollector): CellsInfo {
   for (const n of namedIndexes) {
     if (n.row < PANEL_FIRST_ROW) continue;
     const path = `cells[${n.index}].name`;
+    if (info.failedRaw.has(n.address)) continue;
     if (n.col === 1) {
       errors.push(path, 'missing-label', `Name ${n.name} is in column A, which has no label cell.`);
       continue;
     }
     const labelAddress = `${COLUMN_LETTERS.charAt(n.col - 2)}${n.row}`;
+    if (info.failedRaw.has(labelAddress)) continue;
     const label = effective.get(labelAddress) ?? '';
     if (label === '' || label.startsWith('=')) {
       errors.push(
@@ -656,6 +659,7 @@ function checkRule(
     );
     return;
   }
+  if (info.failedRaw.has(address)) return;
   const parsed = parseAddress(address);
   const row = parsed.ok ? parsed.point.row : 0;
   const raw = info.effective.get(address) ?? '';
@@ -908,11 +912,12 @@ export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
 
     const level: Level = deepFreeze(normalize(doc as LevelDocument));
     return { ok: true, level, sheet };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : 'unknown failure';
-    return { ok: false, errors: [makeError('', 'internal-error', `The loader failed unexpectedly: ${reason}`)] };
+  } catch {
+    return { ok: false, errors: [makeError('', 'internal-error', INTERNAL_FAULT)] };
   }
 }
+
+const INTERNAL_FAULT = 'The level could not be read because of an internal fault.';
 
 export const MAX_TEXT_LENGTH = 200_000;
 
@@ -958,8 +963,7 @@ export function loadLevelText(text: string, random: RandomSource): LoadResult {
       throw error;
     }
     return loadLevel(doc, random);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : 'unknown failure';
-    return { ok: false, errors: [makeError('', 'internal-error', `The loader failed unexpectedly: ${reason}`)] };
+  } catch {
+    return { ok: false, errors: [makeError('', 'internal-error', INTERNAL_FAULT)] };
   }
 }

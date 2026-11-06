@@ -8,10 +8,12 @@ import {
   checkEntities,
   checkPlacement,
   createErrorCollector,
+  guardValue,
   loadLevel,
   loadLevelText,
   quote,
 } from './loader';
+import { serializeLevelText } from './serializer';
 import type { LoadError, LoadErrorCode, LoadResult } from './types';
 
 const random = (): number => 0.5;
@@ -343,7 +345,7 @@ describe('loadLevel: safety', () => {
     const errors = errorsOf(loadLevel(doc, random));
     expect(errors).toHaveLength(1);
     expect(errors[0]?.code).toBe('internal-error');
-    expect(errors[0]?.message).toContain('boom');
+    expect(errors[0]?.message).toBe('The level could not be read because of an internal fault.');
   });
 
   it('refuses non-plain values such as a Date or a class instance', () => {
@@ -1262,5 +1264,129 @@ describe('loadLevelText: a valid document', () => {
     const fromValue = loaded(doc);
     if (!fromText.ok) throw new Error('expected a load');
     expect(fromText.level).toEqual(fromValue.level);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review fixes: never-throw catch, bounded guard, failed raw, negative zero
+// ---------------------------------------------------------------------------
+const INTERNAL_FAULT = 'The level could not be read because of an internal fault.';
+
+function revokedProxy(): object {
+  const r = Proxy.revocable({}, {});
+  r.revoke();
+  return r.proxy;
+}
+
+function expectInternalFault(result: LoadResult): void {
+  const errors = errorsOf(result);
+  expect(errors).toHaveLength(1);
+  expect(errors[0]?.code).toBe('internal-error');
+  expect(errors[0]?.path).toBe('');
+  expect(errors[0]?.message).toBe(INTERNAL_FAULT);
+}
+
+describe('loadLevel: the outer catch never inspects the thrown value', () => {
+  it('handles a revoked Proxy as the document', () => {
+    expect(() => loadLevel(revokedProxy(), random)).not.toThrow();
+    expectInternalFault(loadLevel(revokedProxy(), random));
+  });
+
+  it('handles a getter that throws a revoked Proxy', () => {
+    const make = (): unknown => ({
+      get title(): string {
+        throw revokedProxy();
+      },
+    });
+    expect(() => loadLevel(make(), random)).not.toThrow();
+    expectInternalFault(loadLevel(make(), random));
+  });
+
+  it('handles loadLevelText input whose property access throws', () => {
+    const hostile = {
+      get length(): number {
+        throw revokedProxy();
+      },
+    } as unknown as string;
+    expect(() => loadLevelText(hostile, random)).not.toThrow();
+    expectInternalFault(loadLevelText(hostile, random));
+  });
+});
+
+describe('guardValue: bounded work', () => {
+  it('stops a ten-million-slot sparse array quickly', () => {
+    const start = performance.now();
+    const result = guardValue(new Array(10_000_000));
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(['too-large', 'too-deep']).toContain(result.code);
+  });
+
+  it('stops a self-referencing array quickly', () => {
+    const a: unknown[] = [];
+    for (let i = 0; i < 50_000; i += 1) a.push(a);
+    const start = performance.now();
+    const result = guardValue(a);
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(['too-large', 'too-deep']).toContain(result.code);
+  });
+
+  it('allows exactly 100,000 nodes and refuses 100,001', () => {
+    expect(guardValue(new Array<number>(99_999).fill(1)).ok).toBe(true);
+    const over = guardValue(new Array<number>(100_000).fill(1));
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.code).toBe('too-large');
+  });
+
+  it('still reports depth 101 as too-deep and depth 100 as fine', () => {
+    const nest = (n: number): unknown => {
+      let v: unknown = 1;
+      for (let i = 1; i < n; i += 1) v = [v];
+      return v;
+    };
+    expect(guardValue(nest(100)).ok).toBe(true);
+    const deep = guardValue(nest(102));
+    expect(deep.ok).toBe(false);
+    if (!deep.ok) expect(deep.code).toBe('too-deep');
+  });
+});
+
+describe('loadLevel: a wrong-type raw does not cause derived errors', () => {
+  it('skips the label check when the label raw has the wrong type', () => {
+    const errors = errorsOf(
+      loadLevel(withCells([{ address: 'A14', raw: 5 }, { address: 'B14', raw: '3', name: 'DMG' }]), random),
+    );
+    expect(errors.map((e) => [e.code, e.path])).toEqual([['wrong-type', 'cells[0].raw']]);
+  });
+
+  it('skips the rule-cell check when the rule raw has the wrong type', () => {
+    const doc = {
+      ...baseDoc(),
+      cells: [
+        { address: 'A15', raw: 'Attack' },
+        { address: 'B15', raw: '1', name: 'ATK_B' },
+        { address: 'A16', raw: 'Move' },
+        { address: 'B16', raw: 5, name: 'MOVE_B' },
+      ],
+      monsters: [{ id: 'M1', at: 'C3', move: 'MOVE_B', atk: 'ATK_B' }],
+    };
+    const errors = errorsOf(loadLevel(doc, random));
+    expect(errors.map((e) => [e.code, e.path])).toEqual([['wrong-type', 'cells[3].raw']]);
+  });
+});
+
+describe('loadLevelText: negative zero', () => {
+  it('loads -0 ink and -0 seed as 0 and round-trips', () => {
+    const text = JSON.stringify(playableDoc()).replace('"ink":3', '"ink":-0').replace('"seed":7', '"seed":-0');
+    expect(text).toContain('"ink":-0');
+    expect(text).toContain('"seed":-0');
+    const result = loadLevelText(text, random);
+    if (!result.ok) throw new Error(JSON.stringify(result.errors));
+    expect(Object.is(result.level.ink, 0)).toBe(true);
+    expect(Object.is(result.level.seed, 0)).toBe(true);
+    const again = loadLevelText(serializeLevelText(result.level), random);
+    if (!again.ok) throw new Error('expected a load');
+    expect(again.level).toEqual(result.level);
   });
 });

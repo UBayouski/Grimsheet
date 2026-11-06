@@ -195,3 +195,13 @@ describe('normalize', () => {
     expect(JSON.stringify(level)).toBe(before);
   });
 });
+
+describe('normalize: negative zero', () => {
+  it('maps -0 to 0 for every number field', () => {
+    const out = normalize(makeLevel({ ink: -0, seed: -0, startingHp: -0, schemaVersion: -0 as unknown as 1 }));
+    expect(Object.is(out.ink, 0)).toBe(true);
+    expect(Object.is(out.seed, 0)).toBe(true);
+    expect(Object.is(out.startingHp, 0)).toBe(true);
+    expect(Object.is(out.schemaVersion, 1)).toBe(true);
+  });
+});

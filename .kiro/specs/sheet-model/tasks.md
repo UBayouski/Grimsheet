@@ -112,8 +112,8 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - **Validates: Requirements 5.2, 5.9, 5.11, 5.14, 7.2, 7.3, 7.7, 7.8, 7.9, 7.10, 8.1, 13.1, 13.2, 13.3, 13.4, 13.5**
 
-- [ ] 5. Public API and constraints
-  - [ ] 5.1 [Batch 5] [IDE] Create `index.ts` barrel, module scan and loader sanity checks
+- [x] 5. Public API and constraints
+  - [x] 5.1 [Batch 5] [IDE] Create `index.ts` barrel, module scan and loader sanity checks
     - Files: create `src/model/index.ts`, `src/model/module.test.ts`; edit `src/model/testing/arbitraries.test.ts` (adds loader sanity checks, now allowed because the loader exists)
     - Single owner of `index.ts`: named exports only, no default export: `loadLevel`, `loadLevelText`, `serializeLevel`, `serializeLevelText`, `tabLabel`, `LOAD_ERROR_CODES`, and the types `Level`, `LevelDocument`, `CellSpec`, `MonsterSpec`, `LoadError`, `LoadErrorCode`, `LoadResult`, `RandomSource` (`export type` for types); `normalize` and the generators are not exported
     - `module.test.ts` imports `* as model from './index'` and asserts the exact set of runtime export names and no `default`; reads every non-test `.ts` file in `src/model/` (excluding `*.test.ts`, `*.prop.test.ts` and `testing/`), strips comments and string literals, and asserts no `document`, `window`, `localStorage`, `sessionStorage`, `navigator`, `fetch`, `XMLHttpRequest`, `Math.random`, `Date.now`, `new Date`, `eval`, `new Function`, no import of `src/game` or `src/ui`, no engine import other than `../engine` or `../engine/index`, and no copy of the Cell_Name or Address regular expressions; includes a self-check that the scanner flags a sample bad snippet; a short end-to-end flow loads a small valid document and calls `tabLabel`
@@ -121,7 +121,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 1.5, 1.6, 14.3, 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
 
-  - [ ] 5.2 [Batch 5] [IDE] Final checkpoint
+  - [x] 5.2 [Batch 5] [IDE] Final checkpoint
     - Files: none edited unless a defect is found
     - Run `npm run verify`; confirm under Node 22 or later it reports zero failures and zero DOM-related errors
     - Confirm with `git status` and `git diff` that the engine changed only in `src/engine/index.ts` and `src/engine/index.test.ts`, and that nothing is committed
