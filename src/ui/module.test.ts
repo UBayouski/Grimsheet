@@ -10,6 +10,7 @@ const EXPECTED_MODULES = [
   'app',
   'confirmation',
   'controller',
+  'error-look',
   'index',
   'key-map',
   'messages',

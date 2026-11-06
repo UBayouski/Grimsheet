@@ -46,4 +46,9 @@ export const STRINGS = {
     empty: 'empty',
   },
   unreadableLevel: 'Unreadable level',
+  errorCauseFallback: 'This cell holds an error, but its cause could not be read.',
+  ghostNote: (count: number): string =>
+    count === 1
+      ? 'A ghost haunts the one cell of a circular reference.'
+      : `A ghost drifts along ${count} cells of a circular reference.`,
 } as const;

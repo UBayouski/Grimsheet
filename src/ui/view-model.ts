@@ -1,8 +1,17 @@
 import { formatAddress, formatValue, parseAddress } from '../engine/index';
 import type { Value } from '../engine/index';
-import { canUndo, cellName, cellRawText, cellValue, isCellLocked, isPlaying } from '../game/index';
+import {
+  canUndo,
+  cellName,
+  cellRawText,
+  cellValue,
+  describeCellError,
+  isCellLocked,
+  isPlaying,
+} from '../game/index';
 import type { RunState } from '../game/index';
 import { tabLabel } from '../model/index';
+import { cycleCellsOf } from './error-look';
 import { isTabEnabled } from './progress';
 import { STRINGS } from './strings';
 import type { CellView, Direction, Env, Progress, TabView, ViewModel } from './types';
@@ -60,11 +69,16 @@ function entityAt(
   return monster === undefined ? undefined : { type: 'monster', id: monster.id };
 }
 
-function cellViewOf(state: ViewState, col: number, row: number): CellView {
+function cellViewOf(
+  state: ViewState,
+  col: number,
+  row: number,
+  address: string,
+  value: Value | undefined,
+): CellView {
   const run = state.run;
-  const address = addressOf(col, row);
-  const value: Value | undefined = run === undefined ? undefined : cellValue(run, address);
   const text = value === undefined ? '' : formatValue(value);
+  const isError = value !== undefined && value.kind === 'error';
   const entity = entityAt(run, address);
   let ariaLabel: string | undefined;
   if (entity !== undefined) {
@@ -77,7 +91,11 @@ function cellViewOf(state: ViewState, col: number, row: number): CellView {
     col,
     region: row <= LAST_MAP_ROW ? 'map' : 'rules',
     text,
-    errorKind: value !== undefined && value.kind === 'error' ? value.error : undefined,
+    errorKind: isError ? value.error : undefined,
+    cause:
+      isError && run !== undefined
+        ? (describeCellError(run, address) ?? STRINGS.errorCauseFallback)
+        : undefined,
     name: run === undefined ? undefined : cellName(run, address),
     locked: run === undefined ? false : isCellLocked(run, address) === true,
     entity,
@@ -107,9 +125,27 @@ export function viewOf(state: ViewState, env: Env): ViewModel {
   const playing = run !== undefined && isPlaying(run);
   const rawText = run === undefined ? undefined : cellRawText(run, selection);
 
+  const cellValues: { readonly address: string; readonly value: Value | undefined }[] = [];
+  let selectedCell: CellView | undefined;
   const rows = RENDERED_ROWS.map((row) =>
-    Array.from({ length: COLUMNS }, (_, i) => cellViewOf(state, i + 1, row)),
+    Array.from({ length: COLUMNS }, (_, i) => {
+      const col = i + 1;
+      const address = addressOf(col, row);
+      const value: Value | undefined = run === undefined ? undefined : cellValue(run, address);
+      cellValues.push({ address, value });
+      const cell = cellViewOf(state, col, row, address, value);
+      if (cell.address === selection) selectedCell = cell;
+      return cell;
+    }),
   );
+
+  const ghostCells = cycleCellsOf(cellValues);
+  const explanation =
+    selectedCell !== undefined &&
+    selectedCell.cause !== undefined &&
+    selectedCell.errorKind !== undefined
+      ? { text: selectedCell.cause, kind: selectedCell.errorKind }
+      : undefined;
 
   const entry = env.entries[state.levelIndex];
   const label = run === undefined ? (entry?.label ?? '') : tabLabel(run.level);
@@ -145,6 +181,8 @@ export function viewOf(state: ViewState, env: Env): ViewModel {
     },
     activeCell: selection,
     rows,
+    explanation,
+    ghostCells,
   };
 }
 

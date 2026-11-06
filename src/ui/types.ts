@@ -10,9 +10,16 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
+export interface MediaQueryLike {
+  readonly matches: boolean;
+  addEventListener?(type: 'change', listener: () => void): void;
+  removeEventListener?(type: 'change', listener: () => void): void;
+}
+
 export interface MountOptions {
   readonly levels: readonly unknown[];
   readonly storage: StorageLike;
+  readonly matchMedia?: (query: string) => MediaQueryLike;
 }
 
 export interface AppHandle {
@@ -114,6 +121,8 @@ export interface CellView {
   readonly region: 'map' | 'rules';
   readonly text: string;
   readonly errorKind: ErrorKind | undefined;
+  /** Defined exactly when `errorKind` is defined (invariant held by the view model). */
+  readonly cause: string | undefined;
   readonly name: string | undefined;
   readonly locked: boolean;
   readonly entity:
@@ -159,4 +168,6 @@ export interface ViewModel {
   };
   readonly activeCell: string;
   readonly rows: readonly (readonly CellView[])[];
+  readonly explanation: { readonly text: string; readonly kind: ErrorKind } | undefined;
+  readonly ghostCells: readonly string[];
 }

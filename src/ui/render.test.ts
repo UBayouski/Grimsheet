@@ -17,6 +17,7 @@ function cell(row: number, col: number, over: Partial<CellView> = {}): CellView 
     region: row < 13 ? 'map' : 'rules',
     text: '.',
     errorKind: undefined,
+    cause: undefined,
     name: undefined,
     locked: false,
     entity: undefined,
@@ -55,6 +56,8 @@ function makeVm(
     buttons: { undoEnabled: true, recoverEnabled: true, nextVisible: false },
     activeCell: 'B3',
     rows,
+    explanation: undefined,
+    ghostCells: [],
     ...vmOver,
   };
 }

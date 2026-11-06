@@ -1,15 +1,9 @@
 import type { ErrorKind } from '../engine/index';
+import { ERROR_CLASS } from './error-look';
 import { STRINGS } from './strings';
 import type { CellView, TabView, ViewModel } from './types';
 
-/** Error kind to the CSS class that styles its monster. The view model carries the kind only. */
-export const ERROR_CLASS: Readonly<Record<ErrorKind, string>> = {
-  '#REF!': 'cell-error-ref',
-  '#NAME?': 'cell-error-name',
-  '#DIV/0!': 'cell-error-div0',
-  '#VALUE!': 'cell-error-value',
-  '#CYCLE!': 'cell-error-cycle',
-};
+export { ERROR_CLASS } from './error-look';
 
 export interface View {
   update(viewModel: ViewModel): void;

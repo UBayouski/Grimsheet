@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, startRun } from '../game/index';
+import { applyAction, describeCellError, startRun } from '../game/index';
 import type { Action, RunState } from '../game/index';
 import type { LevelDocument } from '../model/index';
 import { changedAddresses, moveSelection, viewOf } from './view-model';

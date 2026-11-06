@@ -50,6 +50,15 @@ describe('STRINGS', () => {
     expect(STRINGS.entity.monster('M1')).toBe('Monster M1');
   });
 
+  it('formats the ghost note for one cell and for many', () => {
+    expect(STRINGS.ghostNote(1)).toBe('A ghost haunts the one cell of a circular reference.');
+    expect(STRINGS.ghostNote(2)).toBe('A ghost drifts along 2 cells of a circular reference.');
+  });
+
+  it('has a non-empty error cause fallback', () => {
+    expect(STRINGS.errorCauseFallback).not.toBe('');
+  });
+
   it('has no empty string anywhere', () => {
     const found: [string, string][] = [];
     collect(STRINGS, 'STRINGS', found);

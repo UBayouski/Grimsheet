@@ -1,0 +1,43 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 [Batch 1] [IDE] Create `error-look.ts` and move `ERROR_CLASS`": [
+      {
+        "executionId": "6fb1525e-8c42-4ce1-8204-ca13eb093122",
+        "chatSessionId": "sess_4269617c-8951-4b70-bff1-dcd8690ee769",
+        "timestamp": 1794007315657
+      },
+      {
+        "executionId": "6fb1525e-8c42-4ce1-8204-ca13eb093122",
+        "chatSessionId": "sess_4269617c-8951-4b70-bff1-dcd8690ee769",
+        "timestamp": 1794007691426
+      }
+    ],
+    "1.2 [Batch 1] [IDE] Extend `types.ts` and `strings.ts`": [
+      {
+        "executionId": "6fb1525e-8c42-4ce1-8204-ca13eb093122",
+        "chatSessionId": "sess_4269617c-8951-4b70-bff1-dcd8690ee769",
+        "timestamp": 1794007698488
+      },
+      {
+        "executionId": "6fb1525e-8c42-4ce1-8204-ca13eb093122",
+        "chatSessionId": "sess_4269617c-8951-4b70-bff1-dcd8690ee769",
+        "timestamp": 1794007954548
+      }
+    ],
+    "1. Pure core, types and strings": [
+      {
+        "executionId": "6fb1525e-8c42-4ce1-8204-ca13eb093122",
+        "chatSessionId": "sess_4269617c-8951-4b70-bff1-dcd8690ee769",
+        "timestamp": 1794007954975
+      }
+    ],
+    "2.1 [Batch 2] [IDE] Add `cause`, `explanation` and `ghostCells` to the view model": [
+      {
+        "executionId": "a69ec522-2ac4-418c-862a-26988ae2d538",
+        "chatSessionId": "sess_4c383c82-dd30-4a06-9024-d31dad248e3f",
+        "timestamp": 1794008134721
+      }
+    ]
+  }
+}
