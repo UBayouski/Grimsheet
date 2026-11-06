@@ -127,3 +127,25 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught: the planner's ordering fault repeated even with an explicit instruction, so a Task Runner plan has to be checked for where verification sits before it runs.
 - Decision: I used chat mode for this batch because it was quicker to start than reviewing and running a plan.
 - Comparison of the two Kiro Crew modes: the Task Runner gives isolation and a per-step history, while chat mode is quicker to start but leaves review and commits to the author.
+
+## 2026-11-05 — formula-engine Batch 3 run in Kiro Crew's Task Runner
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: Run Batch 3 of the formula-engine spec as a Kiro Crew Task Runner task: task 2.2 `parser.ts` and task 3.1 `functions.ts`, each with tests. I told the planner to reuse `makeParseError` and `describeChar` from the tokenizer in the parser.
+
+What Kiro did:
+- The run used branch `kirocrew/task/plan_1793930905332355600` in a separate worktree. 7 of 7 steps passed in about 8 minutes, and I merged the branch into `main`.
+- The planner put the final verification last this time. In Batches 1 and 2 it had put verification before some test-writing steps.
+- The parser reuses `makeParseError` and `describeChar` from the tokenizer, as I had instructed.
+- Four files changed: `parser.ts` and `functions.ts`, each with its test file.
+- I re-ran the combined suite outside Kiro Crew before merging: 10 test files, 140 tests passing, typecheck and lint clean. After the merge I ran `npm test` and `npm run check` again with the same result.
+- Kiro Crew's own per-step verification reported "not configured", because no Task Runner test command was set.
+- I ticked tasks 2.2 and 3.1 in `.kiro/specs/formula-engine/tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Attribution: from this run on, Kiro Crew's step commits carry a separate "Kiro Crew" git author. A repo-local conditional git include sets it, and it applies only inside linked worktrees. The history now shows which commits Kiro Crew made, which was not true for Batch 1, where its commits carried my identity.
+- Gap found: with no test command set, Kiro Crew's per-step verification checked nothing. My re-run outside Kiro Crew is still the only real check of the combined result. Setting the Task Runner test command would close this gap.
+- Time: two independent tasks ran in a separate worktree in about 8 minutes while the main checkout stayed free.

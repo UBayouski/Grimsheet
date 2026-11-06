@@ -83,7 +83,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `tokenizer.test.ts` (operator, column, number, string, `$`, tab and newline cases); `npm run check` passes
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11_
 
-  - [ ] 2.2 [Batch 3] Create `parser.ts` with tests
+  - [x] 2.2 [Batch 3] Create `parser.ts` with tests
     - Files: create `src/engine/parser.ts`, `src/engine/parser.test.ts`
     - Export `ParseResult`, `parseFormula` using the grammar in the design: precedence, left associativity, grouping, Range only as a direct function argument, names unchecked, unknown functions accepted
     - Error columns: unexpected token at its column, end of input at length + 1, leftover token, lowest column wins when a lexical error follows a syntax error, `Col N: <message>.` format with messages of at most 80 characters
@@ -101,7 +101,7 @@ Rules that apply to every task:
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
 
 - [ ] 3. Functions and evaluator
-  - [ ] 3.1 [Batch 3] Create `functions.ts` with tests
+  - [x] 3.1 [Batch 3] Create `functions.ts` with tests
     - Files: create `src/engine/functions.ts`, `src/engine/functions.test.ts`
     - Export the function table: name, arity (`min`, `max`), argument modes, and pure helpers on checked arguments (`SUM`/`MIN`/`MAX` aggregation with empty-argument results, `ABS`, `MOD` with divisor sign and rounding guard, `TOWARD` direction with vertical tie rule, `ROW`, `COL`, `DIST`, `AND`, `OR`, `NOT`)
     - No dependency on `evaluator.ts` (the evaluator will consume this table)
