@@ -649,3 +649,10 @@ What changed because of it (time saved, bug caught, decision made):
 - Lesson: read the branch history before merging, since the final step committed `monsters.ts` and the tasks.md ticks.
 - Time: three independent tasks ran side by side in a separate worktree while the main checkout stayed free.
 - Not verified: I did not diff the copied Batch 1 files against the IDE versions myself.
+## 2026-11-06 - game-rules Batch 4: property tests (Crew run)
+
+- Task 4.1: `src/game/determinism.prop.test.ts` (Property 1).
+- Task 4.2: `src/game/undo.prop.test.ts` (Properties 2 and 3).
+- Task 4.3: `src/game/invariants.prop.test.ts` (Properties 4 to 7).
+- Task 4 verification: `npm run verify` passes with 40 test files and 804 tests, typecheck and lint clean. The three property files pass twice with different FC_SEED values (3 files, 7 tests each).
+- Note: `turn.ts` and `turn.test.ts` were committed inside the step 2 commit (74c0125) by an earlier step, not in this task.
