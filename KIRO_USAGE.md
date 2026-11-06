@@ -149,3 +149,24 @@ What changed because of it (time saved, bug caught, decision made):
 - Attribution: from this run on, Kiro Crew's step commits carry a separate "Kiro Crew" git author. A repo-local conditional git include sets it, and it applies only inside linked worktrees. The history now shows which commits Kiro Crew made, which was not true for Batch 1, where its commits carried my identity.
 - Gap found: with no test command set, Kiro Crew's per-step verification checked nothing. My re-run outside Kiro Crew is still the only real check of the combined result. Setting the Task Runner test command would close this gap.
 - Time: two independent tasks ran in a separate worktree in about 8 minutes while the main checkout stayed free.
+
+## 2026-11-05 — formula-engine Batch 4 run in Kiro Crew's Task Runner
+
+Surface: Crew
+
+Features: spec
+
+What I asked for: Run Batch 4 of the formula-engine spec as a Kiro Crew Task Runner task: task 2.3 `printer.ts`, task 3.2 `evaluator.ts` core and task 4.1 `graph.ts`, each with tests. The instructions were that the evaluator's function-call handling be a stub returning `#NAME?` until task 3.3, and that `graph.ts` take plain `GraphCell` input and not import the sheet.
+
+What Kiro did:
+- The run used branch `kirocrew/task/plan_1793931651705181600`. 8 of 8 steps passed in about 10 minutes, with seven commits authored by "Kiro Crew". I merged the branch into `main`.
+- The evaluator's call stub returns `#NAME?` as instructed. `graph.ts` takes plain `GraphCell` input and imports only `address` and `ast`, with no sheet import.
+- The commit history shows the final-verification step (step 8) ran before the printer, evaluator and graph test files were written, although the run summary lists it last. The commit order was: `graph.ts`, `evaluator.ts`, `printer.ts`, final verification, then `printer.test.ts`, `evaluator.test.ts` and `graph.test.ts`.
+- That verification step also changed 37 lines of `evaluator.ts` (25 added, 12 removed) instead of only checking. The tests written afterwards pass against that version.
+- I re-ran the combined suite outside Kiro Crew before merging: 13 test files, 243 tests passing, typecheck and lint clean. After the merge I ran `npm test` and `npm run check` again with the same result.
+- I ticked tasks 2.3, 3.2 and 4.1, and parent task 2, in `.kiro/specs/formula-engine/tasks.md`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Lesson: the run summary shows plan order and the commit history shows execution order, so I review the history, not the summary.
+- Bug caught: a step labelled "verification" rewrote code before the tests that cover it existed. The evaluator edit was not checked by its own tests at the time it was made. It was checked only by the tests written afterwards and by my re-run.
+- Time: three independent tasks ran in a separate worktree in about 10 minutes while the main checkout stayed free.

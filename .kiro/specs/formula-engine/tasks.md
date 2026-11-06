@@ -75,7 +75,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `context.test.ts`; `npm run check` passes
     - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 2. Tokenizer, parser and printer
+- [x] 2. Tokenizer, parser and printer
   - [x] 2.1 [Batch 2] Create `tokenizer.ts` with tests
     - Files: create `src/engine/tokenizer.ts`, `src/engine/tokenizer.test.ts`
     - Export `TokenKind`, `Token`, `ParseError`, `tokenize` (strict) and `scan` (partial tokens plus first error)
@@ -92,7 +92,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `parser.test.ts`; `npm run check` passes
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 6.1, 6.2, 6.3, 6.4, 9.20, 12.1, 12.6, 14.4_
 
-  - [ ] 2.3 [Batch 4] Create `printer.ts` with tests
+  - [x] 2.3 [Batch 4] Create `printer.ts` with tests
     - Files: create `src/engine/printer.ts`, `src/engine/printer.test.ts`
     - Export `PrintResult`, `printFormula` with the precedence-level parenthesization from the design, one space around binary operators, `, ` between arguments, upper case, string escaping, `formatNumber` for numbers
     - Refuse (no partial text) non-finite numbers, negative number nodes, a Range outside a direct call argument, bad `col` or `row`, unknown kinds, missing children, trees taller than `MAX_DEPTH`
@@ -109,7 +109,7 @@ Rules that apply to every task:
     - Acceptance: `npm test` passes including `functions.test.ts`; `npm run check` passes
     - _Requirements: 9.5, 9.6, 9.7, 9.8, 9.9, 9.11, 9.12, 9.13, 9.14, 9.15, 9.16, 9.18_
 
-  - [ ] 3.2 [Batch 4] Create `evaluator.ts` core (operands, references, operators) with tests
+  - [x] 3.2 [Batch 4] Create `evaluator.ts` core (operands, references, operators) with tests
     - Files: create `src/engine/evaluator.ts`, `src/engine/evaluator.test.ts`
     - Export `CellView`, `EvalEnv`, `evaluateAst`. Implement literals, cell references (in-sheet `ref`, out-of-sheet `#REF!`), ranges (bounds check, normalization), names (`HERO`, `SELF`, Cell_Name, unknown name `#REF!`), `deref` with the Rule_Cell `#VALUE!` cause, the empty-Cell coercion table, unary minus, arithmetic, `&`, case-insensitive comparison, `#DIV/0!` including `-0`, non-finite results to `#VALUE!`, `pickError` for operand errors, per-call `try/catch`
     - `call` nodes go through a single internal `evaluateCall` stub that returns `#NAME?`; task 3.3 replaces it
@@ -126,7 +126,7 @@ Rules that apply to every task:
     - _Requirements: 8.9, 8.11, 9.5, 9.6, 9.7, 9.8, 9.9, 9.10, 9.11, 9.12, 9.13, 9.14, 9.15, 9.17, 9.18, 9.19, 9.23, 9.24, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 13.3, 13.9_
 
 - [ ] 4. Graph, sheet, recalculation and per-monster evaluation
-  - [ ] 4.1 [Batch 4] Create `graph.ts` with tests
+  - [x] 4.1 [Batch 4] Create `graph.ts` with tests
     - Files: create `src/engine/graph.ts`, `src/engine/graph.test.ts`
     - Export `DependencyGraph`, `GraphCell`, `extractDependencies`, `buildGraph` (takes `GraphCell[]`, a name resolver and the hero index), `findCycleCells` (iterative Tarjan: two or more members, or one member with a self-edge), `topologicalOrder` (Kahn over the condensation, smallest reading index first, members of a cycle emitted together)
     - Edges: in-sheet references, Range members when both endpoints are in the Sheet, Cell_Names, `HERO` in value position for non-Rule_Cells; no edges for out-of-sheet references, unknown names or a Range with an out-of-sheet endpoint; edges come from text, so untaken `IF` branches count
