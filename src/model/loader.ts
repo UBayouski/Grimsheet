@@ -594,6 +594,135 @@ export function checkCells(doc: unknown, errors: ErrorCollector): CellsInfo {
   return info;
 }
 
+// ---------------------------------------------------------------------------
+// Entity checks (task 3.3)
+// ---------------------------------------------------------------------------
+
+export const MAX_MONSTER_ID_LENGTH = 8;
+export const PANEL_LAST_ROW = 20;
+const MONSTER_ID_PATTERN = /^M[1-9][0-9]*$/;
+
+/** Returns the canonical address when `value` is a valid Address in rows 1 to 12. */
+function mapAddress(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const parsed = parseAddress(value);
+  if (!parsed.ok || parsed.point.row > MAP_ROWS) return undefined;
+  return parsed.canonical;
+}
+
+/** True when a Cell_Spec carries `name` (case-insensitive) but did not register it as a valid name. */
+function nameFailedElsewhere(doc: Fields, upper: string, info: CellsInfo): boolean {
+  const cells = doc['cells'];
+  if (!Array.isArray(cells)) return false;
+  for (const entry of cells as unknown[]) {
+    if (!isPlainRecord(entry)) continue;
+    const name = entry['name'];
+    if (typeof name === 'string' && name.toUpperCase() === upper && !info.names.has(upper)) return true;
+  }
+  return false;
+}
+
+function checkRule(
+  errors: ErrorCollector,
+  doc: Fields,
+  info: CellsInfo,
+  entry: Fields,
+  index: number,
+  idLabel: string,
+  field: 'move' | 'atk',
+): void {
+  const value = entry[field];
+  if (typeof value !== 'string') return;
+  const path = `monsters[${index}].${field}`;
+  const upper = value.toUpperCase();
+  const address = info.names.get(upper);
+  if (address === undefined) {
+    if (nameFailedElsewhere(doc, upper, info)) return;
+    errors.push(
+      path,
+      'unknown-rule',
+      `monster ${idLabel}: ${field} rule ${quote(value).slice(1, -1)} is not a named cell`,
+    );
+    return;
+  }
+  const parsed = parseAddress(address);
+  const row = parsed.ok ? parsed.point.row : 0;
+  const raw = info.effective.get(address) ?? '';
+  if (row < PANEL_FIRST_ROW || row > PANEL_LAST_ROW || raw === '') {
+    errors.push(
+      path,
+      'bad-rule-cell',
+      `monster ${idLabel}: ${field} rule ${upper} names ${address}, but rule cells must be non-empty and in rows 14 to 20.`,
+    );
+  }
+}
+
+/**
+ * Checks the hero and monster specs against the map and the named cells.
+ * Reads the document only. Entries that failed their shape check are skipped.
+ */
+export function checkEntities(doc: unknown, errors: ErrorCollector, info: CellsInfo): void {
+  if (!isPlainRecord(doc)) return;
+
+  const occupied = new Map<string, string>();
+  const hero = doc['hero'];
+  if (isPlainRecord(hero) && typeof hero['at'] === 'string') {
+    const at = mapAddress(hero['at']);
+    if (at === undefined) {
+      errors.push('hero.at', 'bad-address', 'The hero must start in the map area, rows 1 to 12.');
+    } else {
+      occupied.set(at, 'the hero');
+    }
+  }
+
+  const monsters = doc['monsters'];
+  if (!Array.isArray(monsters)) return;
+  const list = monsters as unknown[];
+  if (list.length > MAX_MONSTERS) return;
+
+  const seenIds = new Set<string>();
+  for (let i = 0; i < list.length; i += 1) {
+    const entry = list[i];
+    if (!isPlainRecord(entry)) continue;
+    const path = `monsters[${i}]`;
+
+    const id = entry['id'];
+    let idLabel = `monsters[${i}]`;
+    if (typeof id === 'string') {
+      if (!MONSTER_ID_PATTERN.test(id) || id.length > MAX_MONSTER_ID_LENGTH) {
+        errors.push(
+          `${path}.id`,
+          'bad-monster-id',
+          `Monster id ${quote(id)} must be M followed by digits without a leading zero, at most ${MAX_MONSTER_ID_LENGTH} characters.`,
+        );
+      } else {
+        idLabel = id;
+        if (seenIds.has(id)) {
+          errors.push(`${path}.id`, 'duplicate-monster-id', `Monster id ${id} is already used by an earlier monster.`);
+        }
+        seenIds.add(id);
+      }
+    }
+
+    if (typeof entry['at'] === 'string') {
+      const at = mapAddress(entry['at']);
+      if (at === undefined) {
+        errors.push(`${path}.at`, 'bad-address', `Monster ${idLabel} must start in the map area, rows 1 to 12.`);
+      } else {
+        const holder = occupied.get(at);
+        if (holder !== undefined) {
+          errors.push(`${path}.at`, 'entity-overlap', `Monster ${idLabel} starts on ${at}, where ${holder} already stands.`);
+        } else {
+          occupied.set(at, `monster ${idLabel}`);
+        }
+      }
+    }
+
+    checkRule(errors, doc, info, entry, i, idLabel, 'move');
+    checkRule(errors, doc, info, entry, i, idLabel, 'atk');
+  }
+}
+
 /**
  * Validates a Level_Document. Never throws and never mutates the input.
  * Later tasks extend this with cell, entity and build stages.
@@ -607,7 +736,8 @@ export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
     }
     const errors = createErrorCollector();
     checkDocument(doc, errors);
-    checkCells(doc, errors);
+    const info = checkCells(doc, errors);
+    checkEntities(doc, errors, info);
     if (errors.count > 0) return { ok: false, errors: errors.finish() };
     return {
       ok: false,
