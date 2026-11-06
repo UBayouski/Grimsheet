@@ -80,6 +80,11 @@
         "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
         "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
         "timestamp": 1794008929721
+      },
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009149203
       }
     ],
     "3.2 [Batch 3] [Crew] Create the e2e fixture": [
@@ -87,6 +92,11 @@
         "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
         "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
         "timestamp": 1794008930644
+      },
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009150178
       }
     ],
     "3.3 [Batch 3] [Crew] Update `module.test.ts` and add the CSS imports": [
@@ -94,6 +104,35 @@
         "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
         "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
         "timestamp": 1794008931693
+      },
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009151242
+      },
+      {
+        "executionId": "a0911697-ca0f-46d1-9b29-a8049ff575b4",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009201432
+      },
+      {
+        "executionId": "a0911697-ca0f-46d1-9b29-a8049ff575b4",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009204434
+      }
+    ],
+    "3. Stylesheet, fixture and cross-spec edits": [
+      {
+        "executionId": "c834686d-6d49-4161-ac73-74ebc00523c1",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009151378
+      }
+    ],
+    "4.1 [Batch 4] [IDE] Write the Playwright flow": [
+      {
+        "executionId": "a0911697-ca0f-46d1-9b29-a8049ff575b4",
+        "chatSessionId": "sess_fdafe0c6-92ad-421a-99f4-6fd009a843e7",
+        "timestamp": 1794009214212
       }
     ]
   }

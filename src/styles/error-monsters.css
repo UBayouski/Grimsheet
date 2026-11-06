@@ -1,0 +1,270 @@
+/* Error monsters: the five error looks drawn as CSS shapes on pseudo-elements. No images, no fonts. */
+
+:root {
+  --error-ref-fg: #3b1d00;
+  --error-ref-bg: #f0d9b5;
+  --error-name-fg: #1a1a1a;
+  --error-name-bg: #d0d0d0;
+  --error-div0-fg: #ffffff;
+  --error-div0-bg: #000000;
+  --error-value-fg: #404040;
+  --error-value-bg: #c8c8c8;
+  --error-cycle-fg: #2a0a5e;
+  --error-cycle-bg: #e6dcff;
+  --error-div0-crack: #5a5a5a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --error-ref-fg: #f5deb3;
+    --error-ref-bg: #4a2a0a;
+    --error-name-fg: #f0f0f0;
+    --error-name-bg: #3a3a3a;
+    --error-div0-fg: #ffffff;
+    --error-div0-bg: #000000;
+    --error-value-fg: #e0e0e0;
+    --error-value-bg: #505050;
+    --error-cycle-fg: #e6dcff;
+    --error-cycle-bg: #3a1a7a;
+    --error-div0-crack: #5a5a5a;
+  }
+}
+
+/* Shared rules */
+.grid-table td.cell-error {
+  color: var(--err-fg);
+  background-color: var(--err-bg);
+}
+
+.grid-table td.cell-error .cell-text {
+  /* Requirement 1.2, D10: small text sits above the shape and masks the strokes behind it. */
+  position: relative;
+  z-index: 1;
+  font-size: 0.5rem;
+  padding: 0 1px;
+  background: var(--err-bg);
+}
+
+.cell-error::before {
+  /* generic grave: also the unknown-kind look */
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  inset: 3px 7px 2px;
+  border: 2px solid currentColor;
+  border-radius: 50% 50% 0 0 / 35% 35% 0 0;
+}
+
+/* Generic grave applies only to error cells with no kind class. */
+.cell-error:not([class*='cell-error-'])::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  inset: 3px 7px 2px;
+  border: 2px solid currentColor;
+  border-radius: 50% 50% 0 0 / 35% 35% 0 0;
+}
+
+.cell-error:not([class*='cell-error-']) {
+  --err-fg: var(--error-name-fg);
+  --err-bg: var(--error-name-bg);
+}
+
+/* #REF! coffin */
+.cell-error-ref {
+  --err-fg: var(--error-ref-fg);
+  --err-bg: var(--error-ref-bg);
+}
+
+.cell-error-ref::before {
+  inset: 2px 4px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(currentColor, currentColor);
+  clip-path: polygon(
+    30% 0,
+    70% 0,
+    100% 22%,
+    70% 100%,
+    30% 100%,
+    0 22%,
+    30% 0,
+    36% 10%,
+    12% 25%,
+    36% 90%,
+    64% 90%,
+    88% 25%,
+    66% 10%,
+    36% 10%,
+    30% 0
+  );
+}
+
+/* #NAME? tombstone with a blank engraved plate */
+.cell-error-name {
+  --err-fg: var(--error-name-fg);
+  --err-bg: var(--error-name-bg);
+}
+
+.cell-error-name::before {
+  inset: 3px 7px 2px;
+  border: 2px solid currentColor;
+  border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+  background: none;
+  clip-path: none;
+  box-shadow: inset 0 0 0 2px var(--err-bg), inset 0 0 0 3px currentColor;
+}
+
+/* #DIV/0! crack into the void */
+.cell-error-div0 {
+  --err-fg: var(--error-div0-fg);
+  --err-bg: var(--error-div0-bg);
+}
+
+.cell-error-div0::before {
+  inset: 0 auto;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 8px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 0;
+  background: var(--error-div0-crack);
+  clip-path: polygon(
+    40% 0,
+    60% 0,
+    45% 20%,
+    65% 40%,
+    40% 60%,
+    60% 80%,
+    45% 100%,
+    25% 100%,
+    45% 80%,
+    25% 60%,
+    50% 40%,
+    30% 20%
+  );
+}
+
+/* #VALUE! wilted grey cell */
+.cell-error-value {
+  --err-fg: var(--error-value-fg);
+  --err-bg: var(--error-value-bg);
+}
+
+.cell-error-value::before {
+  inset: 1px;
+  border: 2px dashed currentColor;
+  border-radius: 0 0 40% 40% / 0 0 60% 60%;
+  background: none;
+  clip-path: none;
+}
+
+.grid-table td.cell-error-value .cell-text {
+  font-style: italic;
+}
+
+/* #CYCLE! haunted cell */
+.cell-error-cycle {
+  --err-fg: var(--error-cycle-fg);
+  --err-bg: var(--error-cycle-bg);
+  background-image:
+    radial-gradient(circle at 82% 84%, currentColor 1.5px, transparent 2px),
+    radial-gradient(circle at 72% 72%, currentColor 1px, transparent 1.5px);
+}
+
+.cell-error-cycle::before {
+  inset: 2px;
+  border: 2px dotted currentColor;
+  border-radius: 40% 40% 12% 12%;
+  background: none;
+  clip-path: none;
+}
+
+.grid-table td.cell-error-cycle .cell-text {
+  text-decoration-style: wavy;
+}
+
+/* The ghost drifts on a Cycle_Cell. */
+td[data-ghost]::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 2px;
+  width: 14px;
+  height: 16px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 35% 40%, var(--error-cycle-bg) 1.5px, transparent 2px),
+    radial-gradient(circle at 65% 40%, var(--error-cycle-bg) 1.5px, transparent 2px),
+    linear-gradient(currentColor, currentColor);
+  clip-path: polygon(
+    0 100%,
+    0 40%,
+    20% 10%,
+    50% 0,
+    80% 10%,
+    100% 40%,
+    100% 100%,
+    83% 85%,
+    66% 100%,
+    50% 85%,
+    33% 100%,
+    16% 85%
+  );
+  animation: ghost-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes ghost-bob {
+  50% {
+    transform: translateX(-50%) translateY(-1px);
+  }
+}
+
+/* Layering (D14): the shape shows around an entity glyph; a halo keeps the glyph readable. */
+.grid-table td.cell-error .entity-glyph {
+  background: transparent;
+  text-shadow: 0 0 2px var(--err-bg), 0 0 2px var(--err-bg);
+}
+
+.grid-table td.cell-error .entity-glyph,
+.grid-table td.cell-error .padlock {
+  z-index: 2;
+}
+
+/* Screen-reader-only text for the ghost note. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  td[data-ghost]::after,
+  .cell-error::before {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .grid-table td.cell-error {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  td[data-ghost]::after {
+    --error-cycle-bg: Canvas;
+  }
+}
