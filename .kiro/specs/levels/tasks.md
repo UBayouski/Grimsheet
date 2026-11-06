@@ -31,8 +31,8 @@ Rules that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Repository config and shared helper
-  - [ ] 1.1 [Batch 1] [IDE] Create `.gitattributes` and `helpers.ts` with tests
+- [x] 1. Repository config and shared helper
+  - [x] 1.1 [Batch 1] [IDE] Create `.gitattributes` and `helpers.ts` with tests
     - Files: create `.gitattributes`, `src/levels/helpers.ts`, `src/levels/helpers.test.ts`; edit `eslint.config.js` only if `npm run lint` flags `helpers.ts`
     - `.gitattributes` holds exactly the lines `src/levels/*.json text eol=lf` and `tests/solutions/*.json text eol=lf`. Create it before any level file exists, so `core.autocrlf=true` cannot rewrite the JSON later. Later (task 4.1) `git ls-files --eol` confirms it
     - `helpers.ts` imports only `node:fs`, `../game/index`, `../model/index` and `../engine/index`, and exports the full API of the design: `LEVEL_IDS` (the five ids in order), `readLevelText`, `loadLevelFile` (uses `loadLevelText` with `createRandom(seedOf(doc))`, throws with each Load_Error printed as `path: code: message`), `readSolutionText`, `parseSolution(text)` (pure: `JSON.parse` plus the Requirement 9 shape checks, throwing with the file text's first bad field path such as `actions[3]: unexpected key "foo"`), `readSolution(id)` (wraps `parseSolution` around `readSolutionText`), `replay` (stops at the first refusal and records `refusedAt`), `finalSnapshot`, `stateKey` (exact joined text, `turn` excluded), `searchEditFree(doc, limits)` (breadth-first over `move N/S/E/W` and `wait`, defaults `{ maxDepth: 100, maxStates: 1000 }`, outcomes `exhausted`, `won`, `limit`), `describeLimit(result, levelId)` (the inconclusive message of the design), `walkableCount`, `manhattan`, `boardText` and `describeStep`

@@ -1,0 +1,2 @@
+src/levels/*.json text eol=lf
+tests/solutions/*.json text eol=lf
