@@ -448,3 +448,53 @@ export function loadLevel(doc: unknown, random: RandomSource): LoadResult {
     return { ok: false, errors: [makeError('', 'internal-error', `The loader failed unexpectedly: ${reason}`)] };
   }
 }
+
+export const MAX_TEXT_LENGTH = 200_000;
+
+function jsonPosition(message: string): string | undefined {
+  const at = /position (\d+)/.exec(message);
+  if (at?.[1] !== undefined) return `position ${at[1]}`;
+  const lineCol = /line (\d+) column (\d+)/.exec(message);
+  if (lineCol?.[1] !== undefined && lineCol[2] !== undefined) {
+    return `line ${lineCol[1]}, column ${lineCol[2]}`;
+  }
+  return undefined;
+}
+
+/**
+ * Parses JSON text and validates it. Never throws.
+ * Text over 200,000 characters is refused before parsing.
+ */
+export function loadLevelText(text: string, random: RandomSource): LoadResult {
+  try {
+    if (text.length > MAX_TEXT_LENGTH) {
+      return {
+        ok: false,
+        errors: [
+          makeError('', 'too-large', `The text has ${text.length} characters, but the maximum is ${MAX_TEXT_LENGTH}.`),
+        ],
+      };
+    }
+    let doc: unknown;
+    try {
+      doc = JSON.parse(text);
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return {
+          ok: false,
+          errors: [makeError('', 'too-deep', `The document is nested deeper than ${MAX_DEPTH} levels.`)],
+        };
+      }
+      if (error instanceof SyntaxError) {
+        const where = jsonPosition(error.message);
+        const message = where === undefined ? 'The text is not valid JSON.' : `The text is not valid JSON (at ${where}).`;
+        return { ok: false, errors: [makeError('', 'invalid-json', message)] };
+      }
+      throw error;
+    }
+    return loadLevel(doc, random);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : 'unknown failure';
+    return { ok: false, errors: [makeError('', 'internal-error', `The loader failed unexpectedly: ${reason}`)] };
+  }
+}
