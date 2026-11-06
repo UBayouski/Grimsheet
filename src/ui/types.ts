@@ -1,0 +1,143 @@
+import type { ErrorKind } from '../engine/index';
+
+/** Same literal unions the game uses, defined here so this file imports nothing from src/game/. */
+export type Direction = 'N' | 'S' | 'E' | 'W';
+export type Status = 'playing' | 'won' | 'lost';
+
+export interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export interface MountOptions {
+  readonly levels: readonly unknown[];
+  readonly storage: StorageLike;
+}
+
+export interface AppHandle {
+  destroy(): void;
+}
+
+export interface Progress {
+  readonly version: 1;
+  readonly cleared: readonly string[];
+  readonly current: string | null;
+}
+
+export interface LevelEntry {
+  readonly id: string;
+  readonly title: string;
+  readonly label: string;
+  readonly doc: unknown;
+}
+
+export interface KeyInput {
+  readonly key: string;
+  readonly ctrlKey: boolean;
+  readonly metaKey: boolean;
+  readonly altKey: boolean;
+  readonly shiftKey: boolean;
+  readonly composing: boolean;
+}
+
+export type FocusKind = 'text' | 'button' | 'other';
+
+export interface KeyContext {
+  readonly screen: Status | 'none';
+  readonly focus: FocusKind;
+  readonly editing: boolean;
+  readonly pending: 'restart' | 'switch' | undefined;
+  readonly hasNext: boolean;
+}
+
+export type KeyCommand =
+  | { readonly type: 'move'; readonly dir: Direction }
+  | { readonly type: 'wait' }
+  | { readonly type: 'undo' }
+  | { readonly type: 'restart' }
+  | { readonly type: 'next-level' }
+  | { readonly type: 'select-move'; readonly dir: Direction }
+  | { readonly type: 'edit-start' }
+  | { readonly type: 'edit-commit' }
+  | { readonly type: 'edit-cancel' }
+  | { readonly type: 'confirm' }
+  | { readonly type: 'cancel' };
+
+export interface Pending {
+  readonly kind: 'restart' | 'switch';
+  readonly levelIndex: number;
+  readonly restoreMessage: string;
+}
+
+export interface Env {
+  readonly entries: readonly LevelEntry[];
+}
+
+export type UiEvent =
+  | { readonly type: 'command'; readonly command: KeyCommand }
+  | { readonly type: 'tab'; readonly levelIndex: number }
+  | { readonly type: 'cell-click'; readonly address: string }
+  | { readonly type: 'cell-dblclick'; readonly address: string }
+  | { readonly type: 'formula-input'; readonly text: string }
+  | { readonly type: 'formula-focus' }
+  | { readonly type: 'formula-blur' }
+  | { readonly type: 'dismiss-pending' };
+
+export type Effect =
+  | { readonly type: 'focus'; readonly target: 'grid' | 'formula-bar' }
+  | { readonly type: 'select-formula-text' }
+  | { readonly type: 'save-progress'; readonly progress: Progress };
+
+export interface CellView {
+  readonly address: string;
+  readonly row: number;
+  readonly col: number;
+  readonly region: 'map' | 'rules';
+  readonly text: string;
+  readonly errorKind: ErrorKind | undefined;
+  readonly name: string | undefined;
+  readonly locked: boolean;
+  readonly entity:
+    | { readonly type: 'hero' }
+    | { readonly type: 'monster'; readonly id: string }
+    | undefined;
+  readonly selected: boolean;
+  readonly changed: boolean;
+  readonly ariaLabel: string | undefined;
+}
+
+export interface TabView {
+  readonly levelIndex: number;
+  readonly label: string;
+  readonly current: boolean;
+  readonly enabled: boolean;
+}
+
+export interface ViewModel {
+  readonly screen: Status;
+  readonly tabs: readonly TabView[];
+  readonly nameBox: string;
+  readonly formula: {
+    readonly text: string;
+    readonly readOnly: boolean;
+    readonly locked: boolean;
+    readonly alert: string;
+  };
+  readonly status: {
+    readonly label: string;
+    readonly hp: string;
+    readonly ink: string;
+    readonly turn: string;
+  };
+  readonly message: string;
+  readonly banner:
+    | { readonly kind: 'lost'; readonly title: string; readonly body: string }
+    | undefined;
+  readonly buttons: {
+    readonly undoEnabled: boolean;
+    readonly recoverEnabled: boolean;
+    readonly nextVisible: boolean;
+  };
+  readonly activeCell: string;
+  readonly rows: readonly (readonly CellView[])[];
+}
