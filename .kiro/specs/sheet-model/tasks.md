@@ -56,7 +56,7 @@ Rules that apply to every task:
     - Acceptance: `npm run verify` passes
     - _Requirements: 11.5, 11.6, 12.6, 12.7, 13.5_
 
-- [ ] 3. Loader
+- [x] 3. Loader
   - [x] 3.1 [Batch 3] [Crew] Create `loader.ts`: guard, collector, shape, metadata, map, text loader
     - Files: create `src/model/loader.ts`, `src/model/loader.test.ts`
     - Implement the iterative guard (not a plain object, depth over 100 gives `too-deep`, over 100,000 nodes gives `too-large`; explicit stack, no recursion, no writes); the error collector (`push`, `has(pathPrefix)`, cap of 50 with an exact dropped count and the `too-many-errors` marker); `makeError` (message clamped to 1 to 300 characters) and `quote` (at most 40 code points, escaped, ellipsis on truncation); `loadLevel(doc, random)` skeleton with the outer `try/catch` returning `internal-error`; root shape (missing fields, unknown fields with the allowed list, wrong types reported once, `cells` over 240 and `monsters` over 16, entry shapes for cells, monsters and `hero`); metadata checks; map checks; `loadLevelText` (over 200,000 characters gives `too-large` before parsing, `SyntaxError` gives `invalid-json` with position when available, `RangeError` gives `too-deep`, otherwise the same result as `loadLevel`)
