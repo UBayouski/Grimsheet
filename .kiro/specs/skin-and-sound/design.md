@@ -1096,7 +1096,7 @@ Playwright MCP, clean profile (start the dev server in the background; storage c
 | `01-title.png` | Clear storage, reload `/`. Screenshot with the title dialog open and Start focused. |
 | `02-level-play.png` | Click Start. Seed progress to level 3 (cleared 01, 02), reload, Start. Click `B17` (`KEY`), screenshot: NECRONOMICELL panel, formula bar with `=RUNE_ASH*RUNE_SALT`, padlocks only on the rules cells. |
 | `03-monster-formula.png` | Seed level 2 (cleared 01), reload, Start. Click `B14` (`MOVE_M1`). Screenshot with `=IF(DIST(HERO,SELF)<4,TOWARD(HERO),"-")` in the formula bar and the monster `M` on H6. |
-| `04-error-monster.png` | Seed level 4 (cleared 01 to 03), reload, Start. Click `F6` (the `#DIV/0!` cell); screenshot with the cause line under the formula bar. |
+| `04-error-monster.png` | Seed level 4 (cleared 01 to 03), reload, Start. Click `F6` (the `#DIV/0!` cell); screenshot with the cause line on the toolbar row below the formula bar. |
 | `05-death-dialog.png` | Seed level 5 (cleared 01 to 04), reload, Start. Press Space six times (the sheet is haunted from turn 0: HP 6 to 0, deterministic, verified with the headless play command). Screenshot with the "#REF! of the Dead" dialog and focus ring on Recover. |
 | `06-win-dialog.png` | Seed level 1, reload, Start. Press ArrowRight nine times (B6 to K6). Screenshot with the "Changes saved." dialog and Next level focused. |
 | `07-small-viewport.png` | Resize the viewport to **1366 by 768**. Clear storage, reload `/`, Start (level 1 in play). Scroll so the Status_Bar is at the viewport bottom; screenshot the full viewport showing the sticky Status_Bar (HP, Ink, Turn, Message) visible at the bottom while the top of the window is scrolled off. This is the only shot taken at 1366 by 768. |

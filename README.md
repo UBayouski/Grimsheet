@@ -184,7 +184,7 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 *The title dialog: Start hands the grid to the player.*
 
-![Level 4, The Trap Row: the #DIV/0! cell F6 selected, its formula in the formula bar, and the cause line "B15 (RATIO) divides by zero" under it.](docs/screenshots/04-error-monster.png)
+![Level 4, The Trap Row: the #DIV/0! cell F6 selected, its formula in the formula bar, and the cause line "B15 (RATIO) divides by zero" on the toolbar row below it.](docs/screenshots/04-error-monster.png)
 
 *A #DIV/0! error cell and its cause line, in plain English.*
 

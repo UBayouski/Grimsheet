@@ -157,7 +157,7 @@ export function createView(root: HTMLElement): View {
   formulaAlert.setAttribute('role', 'alert');
   const explanation = make(doc, 'p', 'cell-explanation', 'cell-explanation');
   explanation.hidden = true;
-  formulaRow.append(nameBox, formulaBar, formulaNote, formulaAlert, explanation);
+  formulaRow.append(nameBox, formulaBar, formulaNote, formulaAlert);
 
   const toolbar = make(doc, 'div', 'toolbar');
   const buttonFor = (control: string, label: string): HTMLButtonElement => {
@@ -173,7 +173,9 @@ export function createView(root: HTMLElement): View {
   nextButton.hidden = true;
   const soundButton = buttonFor('sound', STRINGS.buttons.sound);
   soundButton.setAttribute('aria-pressed', 'true');
-  toolbar.append(undoButton, recoverButton, nextButton, soundButton);
+  // The cause line lives in the toolbar row, in the free space between the buttons and Sound, so showing
+  // or hiding it never changes the window height (a line of its own in the formula row did).
+  toolbar.append(undoButton, recoverButton, nextButton, explanation, soundButton);
 
   const table = make(doc, 'table', 'grid-table', 'grid-table');
   table.setAttribute('role', 'grid');
@@ -365,6 +367,7 @@ export function createView(root: HTMLElement): View {
 
     setText(explanation, vm.explanation?.text ?? '');
     setAttr(explanation, 'data-error', vm.explanation?.kind);
+    setAttr(explanation, 'title', vm.explanation?.text);
     const explanationHidden = vm.explanation === undefined;
     if (explanation.hidden !== explanationHidden) explanation.hidden = explanationHidden;
 

@@ -210,9 +210,17 @@ body {
   color: var(--alert);
 }
 
+/* The cause line shares the toolbar row, between the buttons and Sound. It takes the spare width and
+   never wraps, so showing or hiding it cannot change the window height; a cause too long for the row
+   is clipped with an ellipsis (the full text stays in the DOM and in the title). */
 .cell-explanation {
-  flex: 1 0 100%;
-  margin: 0;
+  flex: 1 1 0;
+  align-self: center;
+  min-width: 0;
+  margin: 0 0.25rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .toolbar {

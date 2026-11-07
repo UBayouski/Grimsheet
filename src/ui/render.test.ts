@@ -278,12 +278,26 @@ describe('cell attributes', () => {
 });
 
 describe('explanation line', () => {
-  it('has no role and no aria-live and sits in the formula row', () => {
+  it('has no role and no aria-live and sits in the toolbar row, not the formula row', () => {
     createView(root).update(makeVm());
     const explanation = root.querySelector('#cell-explanation');
     expect(explanation?.hasAttribute('role')).toBe(false);
     expect(explanation?.hasAttribute('aria-live')).toBe(false);
     expect(explanation?.classList.contains('cell-explanation')).toBe(true);
+    // A line of its own in the formula row made the window taller (layout shift); the toolbar row has room.
+    expect(explanation?.parentElement?.classList.contains('toolbar')).toBe(true);
+    expect(root.querySelector('.formula-row #cell-explanation')).toBeNull();
+  });
+
+  it('keeps the full text in the title while shown and drops it when hidden', () => {
+    const view = createView(root);
+    view.update(makeVm({}, { explanation: { text: 'B15 (RATIO) divides by zero', kind: '#DIV/0!' } }));
+    const shown = root.querySelector<HTMLElement>('#cell-explanation');
+    expect(shown?.hidden).toBe(false);
+    expect(shown?.getAttribute('title')).toBe('B15 (RATIO) divides by zero');
+    view.update(makeVm());
+    expect(shown?.hidden).toBe(true);
+    expect(shown?.hasAttribute('title')).toBe(false);
   });
 
   it('fills text, data-error and hidden from the view model', () => {
