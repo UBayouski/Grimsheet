@@ -1105,3 +1105,32 @@ What changed because of it (time saved, bug caught, decision made):
 - Lesson, again: a Crew step can end with no file and no commit, or with files and no commit, and the summary reads the same in both cases. Checking the file list against the plan is the check that works.
 - The clipped error text passed every unit test and the first e2e fit check, because that check only looked at one cell in the map region. It was found by looking at the screenshots. The new check covers the rules region too.
 - Nothing was committed by this entry or by the README edit.
+
+## 2026-11-06 — skin follow-ups: vertical centring, animation-safe retakes, no layout shift
+
+Surface: IDE
+
+Features: vibe, mcp, steering
+
+What I asked for: Four follow-ups after the skin-and-sound checkpoint. The window should sit in the middle of tall screens and never be cut off on short ones. The first real use of the screenshot rule in `sheet-ui.md`, with five shots retaken. A retake of `06-win-dialog.png`, which was captured mid-animation. A fix for a layout shift found in `04-error-monster.png`: selecting an error cell made the page taller than 1024 px and moved the window sideways.
+
+What Kiro did:
+- Vertical centring: `#app` gets auto block margins inside a body that is a flex column at least one viewport tall. Spare height is split above and below the window. With no spare height the margins are 0 and the window sits at the top, so nothing is cut off. No `overflow` or `justify-content` was added, which keeps the sticky status bar working. It is tested at 1920x1200 and 2560x1440 (equal gap above and below, no scrolling) and at 1366x768 (nothing cut off at the top).
+- Screenshot rule, first use: the rule in `sheet-ui.md` ("Screenshots stay current") was applied for the first time. Five shots were retaken with the Playwright MCP from the fixed action lists in task 6.2, and each was looked at.
+- Animation-safe retakes:
+  - `06-win-dialog.png` had been captured mid-animation: the hero glyph was half-slid into K6 and B14 still showed the yellow value flash.
+  - I added an explicit wait to task 6.2 and to the steering rule: poll `document.getAnimations()` until no finite animation is still running, then shoot.
+  - The wait ignores the endless ghost drift (`ghost-bob … infinite`), because a literal "all animations finished" check would never pass on level 5.
+  - `06` was retaken with the wait. The hero now sits in K6 and B14 shows a plain 0.
+- Layout shift, cause: the cause line `#cell-explanation` was hidden until an error cell was selected, then wrapped onto its own line in the formula row. That added 26 px (the window grew from 1001.4 px to 1027.4 px and its `y` fell from 11.3 to 4), so a vertical scrollbar appeared and the window jumped about 7 px sideways.
+- Layout shift, fix: I moved `#cell-explanation` into the toolbar row, between the buttons and Sound. That row already has about 620 px of free space and its buttons are taller than the text, so the line adds 0 px of height. Its id is unchanged and it still has no role. It never wraps; a cause too long for the row is clipped with an ellipsis, and the full text stays in the DOM and in `title`. The longest real cause is 47 characters and fits. Reserving the line in the formula row would have cost 26 px on every screen, and the formula row has no room beside the "locked" note.
+- Layout shift, tests: a new `tests/e2e/layout-shift.spec.ts`. On level 4 the `#window` box is identical before and after selecting and deselecting F6, and `scrollHeight` is at most 1024. A second test selects every error cell on all five levels with the same checks. Both tests failed before the fix. A unit test in `render.test.ts` pins the toolbar as the line's parent.
+- Retakes after the fix: only `04-error-monster.png` moved, because no other shot shows a cause line. It was retaken with the animation wait and looked at. The window sits at the same x as the other shots, and the page is 1024 px tall with no scrollbar. The wording "under the formula bar" was updated in `README.md`, `docs/screenshots/README.md`, `design.md` and task 6.2.
+- End state: 1830 unit tests and 33 e2e tests, all passing, with typecheck and lint clean.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught: the first retake rule would have let a mid-animation frame into the gallery. `06` showed it, and the wait step is now part of both the task and the steering rule, so later retakes do it automatically.
+- Gap found in the wait step as first worded: waiting for every animation to finish would hang on any level with a `#CYCLE!` ghost, so the rule skips endless animations.
+- Bug caught: the layout shift was visible only as a scrollbar and a 7 px jump in one screenshot. No earlier test measured the window box while an error cell was selected, so the new e2e spec does.
+- Decision: the cause line moved to free space that already existed, not to reserved space with height taken from somewhere else, so no other screenshot moved.
+- Not committed.
