@@ -94,6 +94,8 @@ export function mapKey(input: KeyInput, context: KeyContext): KeyResult | undefi
   if (focus === 'button') {
     // 12
     if (key === 'Enter' || key === ' ') return undefined;
+    // 13a (D21)
+    if (screen === 'lost' && noCtrlAltMeta && letter === 'r') return result({ type: 'restart' }, true);
     // 13
     if (letter === 'u' || letter === 'r' || letter === 'n' || arrow !== undefined) return undefined;
   }

@@ -1,8 +1,10 @@
+import { createAudio } from './audio';
 import { createInitialState, keyContext, step } from './controller';
 import { GHOST_INTERVAL_MS, nextGhostCell, placeGhost, sameCells } from './error-look';
 import { mapKey } from './key-map';
 import { createProgressStore, describeLevels } from './progress';
 import { createView } from './render';
+import { readMuted, writeMuted } from './sound-events';
 import { STRINGS } from './strings';
 import type {
   AppHandle,
@@ -13,6 +15,7 @@ import type {
   KeyCommand,
   MediaQueryLike,
   MountOptions,
+  SoundPlayer,
   StorageLike,
   UiEvent,
   ViewModel,
@@ -74,6 +77,45 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   let state: AppState = createInitialState(env, store.load());
   let destroyed = false;
 
+  // Sound: a throwing factory falls back to a silent player.
+  const silent: SoundPlayer = { unlock: () => undefined, play: () => undefined, setMuted: () => undefined, destroy: () => undefined };
+  let audio: SoundPlayer;
+  try {
+    audio = (options.createAudio ?? (() => createAudio()))();
+  } catch {
+    audio = silent;
+  }
+  let muted = readMuted(options.storage);
+  audio.setMuted(muted);
+  view.setSound(!muted);
+
+  const GESTURES = ['keydown', 'pointerdown', 'click'] as const;
+  function removeGestures(): void {
+    for (const type of GESTURES) doc.removeEventListener(type, onGesture, true);
+  }
+  function onGesture(): void {
+    removeGestures();
+    if (destroyed) return;
+    try {
+      audio.unlock();
+    } catch {
+      // Sound must never break the game.
+    }
+  }
+  for (const type of GESTURES) doc.addEventListener(type, onGesture, true);
+
+  let titleOpen = options.showTitle === true;
+  let winOpen = false;
+  let shownScreen: string | undefined;
+
+  function focusSel(selector: string): void {
+    try {
+      root.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+    } catch {
+      // Focus failing must not break the app.
+    }
+  }
+
   // The ghost lives in closure variables, not in AppState. Its position changes on a timer that never
   // goes through `step` (no render, no controller call), so `step` and `viewOf` stay pure.
   let ghostCells: readonly string[] = [];
@@ -116,6 +158,24 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     view.setGhost(ghostAt);
     if (ghostCells.length < 2 || reduced) stopTimer();
     else if (changed || ghostTimer === undefined) startTimer();
+    syncDialogs(vm);
+  }
+
+  function syncDialogs(vm: ViewModel): void {
+    if (vm.screen === shownScreen) return;
+    const prev = shownScreen;
+    shownScreen = vm.screen;
+    winOpen = vm.screen === 'won';
+    view.setWinDialog(winOpen);
+    if (vm.screen === 'lost') focusSel('#end-recover');
+    else if (vm.screen === 'won') focusSel(vm.win?.hasNext === false ? '#win-ok' : '#win-next');
+    else if (prev === 'won' || prev === 'lost') focusSel('#grid-table');
+  }
+
+  function closeWin(): void {
+    winOpen = false;
+    view.setWinDialog(false);
+    focusSel('#grid-table');
   }
 
   const QUERY = '(prefers-reduced-motion: reduce)';
@@ -153,6 +213,10 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   paint(viewOf(state, env), state.run);
   // Startup effects (focus the grid) were dropped before; run them so play starts with the grid focused.
   runEffect({ type: 'focus', target: 'grid' });
+  if (titleOpen) {
+    view.showTitle();
+    focusSel('#title-start');
+  }
 
   function runEffect(effect: Effect): void {
     try {
@@ -186,6 +250,7 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   function dispatch(event: UiEvent): void {
     if (destroyed) return;
     let effects: readonly Effect[];
+    const prevFx = state.fx;
     try {
       const result = step(state, event, env);
       const vm = viewOf(result.state, env);
@@ -195,6 +260,13 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     } catch {
       fail();
       return;
+    }
+    if (state.fx !== prevFx) {
+      try {
+        audio.play(state.fx.cues);
+      } catch {
+        // Sound must never break the game.
+      }
     }
     for (const effect of effects) runEffect(effect);
   }
@@ -215,6 +287,13 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
   }
 
   const onKeyDown = guarded<KeyboardEvent>((e) => {
+    // While the title is open every key is left to the browser (Enter and Space click Start).
+    if (titleOpen) return;
+    if (winOpen && e.key === 'Escape' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      closeWin();
+      return;
+    }
     const context = keyContext(state, env, focusKind(e.target));
     const result = mapKey(
       {
@@ -238,6 +317,14 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
 
   const onClick = guarded<MouseEvent>((e) => {
     const target = e.target as Element | null;
+    if (titleOpen) {
+      if (target !== null && typeof target.closest === 'function' && target.closest('#title-start') !== null) {
+        titleOpen = false;
+        view.hideTitle();
+        focusSel('#grid-table');
+      }
+      return;
+    }
     if (target === null || typeof target.closest !== 'function' || !root.contains(target)) {
       dispatch({ type: 'dismiss-pending' });
       return;
@@ -246,6 +333,22 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     if (button !== null) {
       if (button.disabled) return;
       switch (button.getAttribute('data-control')) {
+        case 'sound':
+          muted = !muted;
+          writeMuted(options.storage, muted);
+          audio.setMuted(muted);
+          view.setSound(!muted);
+          dispatch({ type: 'dismiss-pending' });
+          break;
+        case 'recover-dialog':
+          command({ type: 'restart' });
+          break;
+        case 'win-next':
+          command({ type: 'next-level' });
+          break;
+        case 'win-ok':
+          closeWin();
+          break;
         case 'undo':
           command({ type: 'undo' });
           break;
@@ -301,6 +404,12 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
       if (destroyed) return;
       destroyed = true;
       stopTimer();
+      removeGestures();
+      try {
+        audio.destroy();
+      } catch {
+        // Ignore.
+      }
       motion?.removeEventListener?.('change', onMotion);
       doc.removeEventListener('keydown', onKeyDown);
       doc.removeEventListener('click', onClick);

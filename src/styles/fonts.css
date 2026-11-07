@@ -1,0 +1,7 @@
+@font-face {
+  font-family: 'VT323';
+  src: url('/fonts/vt323-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

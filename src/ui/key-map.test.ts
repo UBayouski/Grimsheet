@@ -112,6 +112,18 @@ const cases: Case[] = [
   miss('row 12: Space on a button is native', input(' '), ctx({ focus: 'button' })),
   // Row 13
   ...['u', 'r', 'n'].map((k) => miss(`row 13: ${k} on a button is native`, input(k), ctx({ focus: 'button', screen: 'won', hasNext: true }))),
+  // Row 13a
+  hit('row 13a: r on the lost Recover button restarts', input('r'), ctx({ focus: 'button', screen: 'lost' }), { type: 'restart' }),
+  hit('row 13a: R on the lost Recover button restarts', input('R', { shiftKey: true }), ctx({ focus: 'button', screen: 'lost' }), { type: 'restart' }),
+  miss('row 13a: Ctrl+r on the lost button is native', input('r', { ctrlKey: true }), ctx({ focus: 'button', screen: 'lost' })),
+  miss('row 13a: Command+r on the lost button is native', input('r', { metaKey: true }), ctx({ focus: 'button', screen: 'lost' })),
+  miss('row 13a: Alt+r on the lost button is native', input('r', { altKey: true }), ctx({ focus: 'button', screen: 'lost' })),
+  miss('row 13a: r on a button while playing is native', input('r'), ctx({ focus: 'button', screen: 'playing' })),
+  miss('row 13a: r on a button when won is native', input('r'), ctx({ focus: 'button', screen: 'won' })),
+  miss('row 13a: r in a text field on the lost screen is typing', input('r'), ctx({ focus: 'text', screen: 'lost' })),
+  miss('row 13a: Enter on the lost Recover button is native', input('Enter'), ctx({ focus: 'button', screen: 'lost' })),
+  miss('row 13a: Space on the lost Recover button is native', input(' '), ctx({ focus: 'button', screen: 'lost' })),
+  miss('row 13a: u on a button on the lost screen is native', input('u'), ctx({ focus: 'button', screen: 'lost' })),
   // Row 15
   hit('row 15: Space waits while playing', input(' '), ctx(), { type: 'wait' }),
   miss('row 15: Space does nothing when won', input(' '), ctx({ screen: 'won' })),

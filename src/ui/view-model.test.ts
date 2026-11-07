@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { applyAction, describeCellError, startRun } from '../game/index';
 import type { Action, RunState } from '../game/index';
 import type { LevelDocument } from '../model/index';
-import { changedAddresses, moveSelection, viewOf } from './view-model';
-import type { Env, LevelEntry, Progress } from './types';
+import { NO_FX } from './controller';
+import { STRINGS } from './strings';
+import { changedAddresses, moveSelection, slideDirection, viewOf } from './view-model';
+import type { Env, Fx, LevelEntry, Progress } from './types';
 
 const WALLS = '############';
 
@@ -77,6 +79,7 @@ interface TestState {
   alert: string;
   changed: ReadonlySet<string>;
   progress: Progress;
+  fx: Fx;
 }
 
 function stateOf(overrides: Partial<TestState> = {}): TestState {
@@ -89,6 +92,7 @@ function stateOf(overrides: Partial<TestState> = {}): TestState {
     alert: '',
     changed: new Set<string>(),
     progress: EMPTY_PROGRESS,
+    fx: NO_FX,
     ...overrides,
   };
 }
@@ -410,5 +414,49 @@ describe('moveSelection', () => {
   it('skips row 13 in both directions', () => {
     expect(moveSelection('C12', 'S')).toBe('C14');
     expect(moveSelection('C14', 'N')).toBe('C12');
+  });
+});
+
+describe('slideDirection', () => {
+  it.each([
+    ['B2', 'C2', 'E'],
+    ['C2', 'B2', 'W'],
+    ['B2', 'B3', 'S'],
+    ['B3', 'B2', 'N'],
+    ['B2', 'C3', undefined],
+    ['B2', 'D2', undefined],
+    ['B2', 'B2', undefined],
+    ['B2', 'nope', undefined],
+    ['??', 'B2', undefined],
+  ])('%s to %s gives %s', (from, to, expected) => {
+    expect(slideDirection(from as string, to as string)).toBe(expected);
+  });
+});
+
+describe('viewOf fx', () => {
+  it('sets slide on the hero cell only', () => {
+    const fx: Fx = { beat: 1, slide: 'E', damaged: true, cues: [] };
+    const vm = viewOf(stateOf({ fx }), ENV);
+    expect(cellAt(vm, 'B2').slide).toBe('E');
+    expect(vm.rows.flat().filter((c) => c.slide !== undefined)).toHaveLength(1);
+  });
+
+  it('copies beat and damaged', () => {
+    const fx: Fx = { beat: 1, slide: undefined, damaged: true, cues: [] };
+    const vm = viewOf(stateOf({ fx }), ENV);
+    expect(vm.beat).toBe(1);
+    expect(vm.damaged).toBe(true);
+  });
+
+  it('has win undefined while playing and lost', () => {
+    expect(viewOf(stateOf(), ENV).win).toBeUndefined();
+    expect(viewOf(stateOf({ run: lostRun() }), ENV).win).toBeUndefined();
+  });
+
+  it('has win defined on won, with wonLast on the last level', () => {
+    const first = viewOf(stateOf({ run: wonRun() }), ENV).win;
+    expect(first).toEqual({ title: STRINGS.titleBar, body: STRINGS.won, hasNext: true });
+    const last = viewOf(stateOf({ run: wonRun(), levelIndex: 2 }), ENV).win;
+    expect(last).toEqual({ title: STRINGS.titleBar, body: STRINGS.wonLast, hasNext: false });
   });
 });

@@ -39,9 +39,19 @@ describe('STRINGS', () => {
     expect(STRINGS.panelTitle).toBe('NECRONOMICELL');
   });
 
-  it('padlock is the single code point U+1F512', () => {
-    expect([...STRINGS.padlock]).toHaveLength(1);
-    expect(STRINGS.padlock.codePointAt(0)).toBe(0x1f512);
+  it('has the title texts and new button labels', () => {
+    expect(STRINGS.title.tagline).toBe('A roguelike where every monster is a formula.');
+    expect(STRINGS.title.premise).toBe(
+      "A workbook found on a dead accountant's floppy disk. Its formulas are alive.",
+    );
+    expect(STRINGS.title.controls).not.toBe('');
+    expect(STRINGS.buttons.ok).not.toBe('');
+    expect(STRINGS.buttons.sound).not.toBe('');
+    expect(STRINGS.buttons.start).not.toBe('');
+  });
+
+  it('has no padlock string; the padlock is drawn by CSS', () => {
+    expect('padlock' in STRINGS).toBe(false);
   });
 
   it('formats the damage and entity helpers', () => {

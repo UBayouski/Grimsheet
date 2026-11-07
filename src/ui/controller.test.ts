@@ -3,7 +3,7 @@ import type * as GameModule from '../game/index';
 import { applyAction, startRun } from '../game/index';
 import type { Direction as GameDirection, RunState, Status as GameStatus } from '../game/index';
 import type { LevelDocument } from '../model/index';
-import { KEEP_EDIT, createInitialState, keyContext, step } from './controller';
+import { KEEP_EDIT, NO_FX, createInitialState, keyContext, step } from './controller';
 import { describeLevels, isTabEnabled } from './progress';
 import { STRINGS } from './strings';
 import type {
@@ -885,5 +885,91 @@ describe('Edit_Mode', () => {
     const snapshot = { ...state };
     step(state, EDIT_COMMIT, ENV);
     expect(state).toEqual(snapshot);
+  });
+});
+
+describe('fx', () => {
+  const edit = (text: string): UiEvent[] => [
+    { type: 'cell-click', address: 'B14' },
+    command({ type: 'edit-start' }),
+    { type: 'formula-input', text },
+    command({ type: 'edit-commit' }),
+  ];
+
+  it('starts as NO_FX', () => {
+    expect(fresh().fx).toEqual(NO_FX);
+  });
+
+  it('slides N, S, E and W for moves', () => {
+    let state = fresh(); // B2
+    state = go(state, move('S'));
+    expect(state.fx.slide).toBe('S');
+    state = go(state, move('E'));
+    expect(state.fx.slide).toBe('E');
+    state = go(state, move('W'));
+    expect(state.fx.slide).toBe('W');
+    state = go(state, move('N'));
+    expect(state.fx.slide).toBe('N');
+  });
+
+  it('has no slide for an edit, a wait, an undo or a level start', () => {
+    const moved = go(fresh(), move('S'));
+    expect(moved.fx.slide).toBe('S');
+    expect(go(moved, WAIT).fx.slide).toBeUndefined();
+    expect(go(moved, UNDO).fx.slide).toBeUndefined();
+    expect(go(moved, ...edit('="x"')).fx.slide).toBeUndefined();
+    expect(go(moved, RESTART, CONFIRM).fx.slide).toBeUndefined();
+    expect(go(moved, RESTART, CONFIRM).fx.cues).toEqual([]);
+  });
+
+  it('alternates the beat and keeps it across a level start', () => {
+    let state = fresh();
+    expect(state.fx.beat).toBe(0);
+    state = go(state, move('S'));
+    expect(state.fx.beat).toBe(1);
+    state = go(state, move('E'));
+    expect(state.fx.beat).toBe(0);
+    state = go(state, move('S'));
+    expect(state.fx.beat).toBe(1);
+    state = go(state, RESTART, CONFIRM);
+    expect(state.fx.beat).toBe(1);
+  });
+
+  it('sets damaged after a trap hit and not after a quiet move', () => {
+    const env = trapEnv(7);
+    const start = createInitialState(env, NO_PROGRESS);
+    expect(stepIn(env, start, move('E')).fx.damaged).toBe(true);
+    expect(stepIn(env, start, move('S')).fx.damaged).toBe(false);
+  });
+
+  it('never marks an undo as damaged', () => {
+    const env = trapEnv(7);
+    const hit = stepIn(env, createInitialState(env, NO_PROGRESS), move('E'));
+    expect(stepIn(env, hit, UNDO).fx.damaged).toBe(false);
+  });
+
+  it('produces the cues of each kind of accepted Action', () => {
+    const base = fresh();
+    expect(go(base, move('S')).fx.cues).toEqual(['move']);
+    expect(go(base, ...edit('="x"')).fx.cues).toEqual(['edit']);
+    expect(go(base, WAIT).fx.cues).toEqual([]);
+    expect(go(base, move('S'), UNDO).fx.cues).toEqual([]);
+    expect(wonState().fx.cues).toEqual(['win']);
+    expect(lostState().fx.cues).toEqual(['death']);
+    const env = trapEnv(7);
+    const hit = stepIn(env, createInitialState(env, NO_PROGRESS), move('E'));
+    expect(hit.fx.cues).toEqual(['damage']);
+  });
+
+  it('keeps the same fx object when an Action is refused', () => {
+    const base = fresh();
+    expect(go(base, move('N')).fx).toBe(base.fx); // wall
+    const refusedEdit = go(
+      createInitialState({ entries: describeLevels([makeDoc({ ink: 0 })]) }, NO_PROGRESS),
+    );
+    const afterEdit = go(refusedEdit, ...edit('="x"'));
+    expect(afterEdit.fx).toBe(refusedEdit.fx);
+    const parseError = go(base, ...edit('=1+'));
+    expect(parseError.fx).toBe(base.fx);
   });
 });

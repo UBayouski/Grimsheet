@@ -4,7 +4,7 @@ import { FIXTURE_LEVELS } from '../../tests/fixtures/levels';
 import { mountApp } from './app';
 import * as barrel from './index';
 import { PROGRESS_KEY } from './progress';
-import type { AppHandle, StorageLike } from './types';
+import type { AppHandle, Cue, MountOptions, SoundPlayer, StorageLike } from './types';
 
 function fakeStorage(initial?: string): StorageLike & { data: Map<string, string> } {
   const data = new Map<string, string>();
@@ -293,6 +293,355 @@ describe('grid focus', () => {
     key(document, 'ArrowRight');
     const selected = q('[data-selected="true"]').getAttribute('id');
     expect(q('#grid-table').getAttribute('aria-activedescendant')).toBe(selected);
+  });
+});
+
+interface FakeSound extends SoundPlayer {
+  readonly calls: { unlock: number; destroy: number; muted: boolean[]; played: Cue[][] };
+}
+
+function fakeSound(): FakeSound {
+  const calls = { unlock: 0, destroy: 0, muted: [] as boolean[], played: [] as Cue[][] };
+  return {
+    calls,
+    unlock: () => {
+      calls.unlock += 1;
+    },
+    play: (cues) => {
+      calls.played.push([...cues]);
+    },
+    setMuted: (m) => {
+      calls.muted.push(m);
+    },
+    destroy: () => {
+      calls.destroy += 1;
+    },
+  };
+}
+
+function mountWith(
+  levels: readonly unknown[],
+  extra: Partial<MountOptions> = {},
+  storage: StorageLike = fakeStorage(),
+): HTMLElement {
+  root = document.createElement('div');
+  document.body.append(root);
+  handle = mountApp(root, { levels, storage, ...extra });
+  return root;
+}
+
+const WALLS = '############';
+const OPEN_ROW = '#..........#';
+function trapDoc(startingHp: number): unknown {
+  return {
+    schemaVersion: 1,
+    id: '01-fixture-trap',
+    title: 'Fixture Trap',
+    hint: 'Mind the trap.',
+    map: [WALLS, '#.^X.......#', ...Array.from({ length: 9 }, () => OPEN_ROW), WALLS],
+    cells: [
+      { address: 'A18', raw: 'Trap' },
+      { address: 'B18', raw: '=2', name: 'TRAP', locked: true },
+    ],
+    hero: { at: 'B2' },
+    monsters: [],
+    startingHp,
+    ink: 3,
+    seed: 3,
+  };
+}
+
+const winDialog = (): HTMLElement => q<HTMLElement>('#win-dialog');
+const flat = (sound: FakeSound): Cue[] => sound.calls.played.flat();
+
+describe('cues', () => {
+  it('plays the cue of each accepted Action and nothing for the others', () => {
+    const sound = fakeSound();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => sound });
+    key(document, 'ArrowLeft');
+    key(document, ' ');
+    key(document, 'ArrowRight', { ctrlKey: true });
+    click(q('[data-level-index="0"]'));
+    click(document.body);
+    expect(flat(sound)).toEqual([]);
+    key(document, 'ArrowRight');
+    expect(flat(sound)).toEqual(['move']);
+    key(document, 'u');
+    expect(flat(sound)).toEqual(['move']);
+  });
+
+  it('plays edit, damage, win and death', () => {
+    const edit = fakeSound();
+    mountWith(
+      FIXTURE_LEVELS,
+      { createAudio: () => edit },
+      fakeStorage(JSON.stringify({ version: 1, cleared: ['01-fixture-corridor'], current: '02-fixture-lab' })),
+    );
+    commitEdit('B15', '"x"');
+    expect(flat(edit)).toEqual(['edit']);
+    handle?.destroy();
+    root?.remove();
+
+    const hit = fakeSound();
+    mountWith([trapDoc(7)], { createAudio: () => hit });
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    expect(flat(hit)).toEqual(['damage', 'win']);
+    handle?.destroy();
+    root?.remove();
+
+    const dead = fakeSound();
+    mountWith([trapDoc(1)], { createAudio: () => dead });
+    key(document, 'ArrowRight');
+    expect(flat(dead)).toEqual(['death']);
+  });
+});
+
+describe('unlock', () => {
+  it('unlocks once on the first keydown', () => {
+    const sound = fakeSound();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => sound });
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight', { ctrlKey: true });
+    click(document.body);
+    expect(sound.calls.unlock).toBe(1);
+  });
+
+  it('unlocks on a pointerdown or a click first', () => {
+    const a = fakeSound();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => a });
+    document.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    key(document, ' ');
+    expect(a.calls.unlock).toBe(1);
+    handle?.destroy();
+    root?.remove();
+    const b = fakeSound();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => b });
+    click(document.body);
+    key(document, ' ');
+    expect(b.calls.unlock).toBe(1);
+  });
+
+  it('destroy calls the player destroy once and removes the gesture listeners', () => {
+    const sound = fakeSound();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => sound });
+    handle?.destroy();
+    handle?.destroy();
+    key(document, ' ');
+    click(document.body);
+    expect(sound.calls.destroy).toBe(1);
+    expect(sound.calls.unlock).toBe(0);
+  });
+
+  it('still mounts when createAudio throws', () => {
+    mountWith(FIXTURE_LEVELS, {
+      createAudio: () => {
+        throw new Error('no audio');
+      },
+    });
+    key(document, 'ArrowRight');
+    expect(heroAt()).toBe('C2');
+  });
+});
+
+describe('mute', () => {
+  it('toggles, persists and flips aria-pressed', () => {
+    const sound = fakeSound();
+    const storage = fakeStorage();
+    mountWith(FIXTURE_LEVELS, { createAudio: () => sound }, storage);
+    expect(button('sound').getAttribute('aria-pressed')).toBe('true');
+    click(button('sound'));
+    expect(storage.data.get('grimsheet.muted')).toBe('1');
+    expect(sound.calls.muted.at(-1)).toBe(true);
+    expect(button('sound').getAttribute('aria-pressed')).toBe('false');
+    click(button('sound'));
+    expect(storage.data.get('grimsheet.muted')).toBe('0');
+    expect(sound.calls.muted.at(-1)).toBe(false);
+    expect(button('sound').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('reads the stored value at mount', () => {
+    const sound = fakeSound();
+    const storage = fakeStorage();
+    storage.data.set('grimsheet.muted', '1');
+    mountWith(FIXTURE_LEVELS, { createAudio: () => sound }, storage);
+    expect(sound.calls.muted).toEqual([true]);
+    expect(button('sound').getAttribute('aria-pressed')).toBe('false');
+    handle?.destroy();
+    root?.remove();
+    const other = fakeSound();
+    const odd = fakeStorage();
+    odd.data.set('grimsheet.muted', 'x');
+    mountWith(FIXTURE_LEVELS, { createAudio: () => other }, odd);
+    expect(other.calls.muted).toEqual([false]);
+    expect(button('sound').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('still toggles when storage throws', () => {
+    const storage: StorageLike = {
+      getItem() {
+        throw new Error('no read');
+      },
+      setItem() {
+        throw new Error('no write');
+      },
+    };
+    mountWith(FIXTURE_LEVELS, { createAudio: () => fakeSound() }, storage);
+    click(button('sound'));
+    expect(button('sound').getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('title dialog', () => {
+  it('renders no title dialog by default', () => {
+    mount();
+    expect(root?.querySelector('#title-dialog')).toBeNull();
+  });
+
+  function open(): void {
+    mountWith(FIXTURE_LEVELS, { showTitle: true, createAudio: () => fakeSound() });
+  }
+
+  it('blocks game keys and focuses Start', () => {
+    open();
+    expect(root?.querySelector('#title-dialog')).not.toBeNull();
+    expect(q('#window').hasAttribute('inert')).toBe(true);
+    expect(document.activeElement).toBe(q('#title-start'));
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight', { ctrlKey: true });
+    expect(heroAt()).toBe('B2');
+    expect(selectedAt()).toBe('B2');
+  });
+
+  it('closes on a Start click without spending a turn', () => {
+    open();
+    click(q('#title-start'));
+    expect(root?.querySelector('#title-dialog')).toBeNull();
+    expect(q('#window').hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(q('#grid-table'));
+    expect(heroAt()).toBe('B2');
+    expect(text('.status-ink')).toContain('3');
+    key(document, 'ArrowRight');
+    expect(heroAt()).toBe('C2');
+  });
+
+  it.each(['Enter', ' '])('closes on %j via the native click, with no double handling', (k) => {
+    open();
+    const start = q('#title-start');
+    const event = key(start, k);
+    expect(event.defaultPrevented).toBe(false);
+    expect(root?.querySelector('#title-dialog')).not.toBeNull();
+    click(start);
+    expect(root?.querySelector('#title-dialog')).toBeNull();
+    expect(document.activeElement).toBe(q('#grid-table'));
+    expect(heroAt()).toBe('B2');
+    expect(text('.status-ink')).toContain('3');
+  });
+
+  it('ignores clicks on other controls while open', () => {
+    open();
+    click(cell('E5'));
+    expect(root?.querySelector('#title-dialog')).not.toBeNull();
+  });
+});
+
+describe('death dialog', () => {
+  function die(): void {
+    mountWith([trapDoc(1)], { createAudio: () => fakeSound() });
+    key(document, 'ArrowRight');
+    expect(root?.getAttribute('data-screen')).toBe('lost');
+  }
+
+  it('focuses Recover and restarts on click with focus on the grid', () => {
+    die();
+    expect(document.activeElement).toBe(q('#end-recover'));
+    click(q('#end-recover'));
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+    expect(heroAt()).toBe('B2');
+    expect(document.activeElement).toBe(q('#grid-table'));
+  });
+
+  it('restarts once on R with focus on the button', () => {
+    die();
+    const recover = q('#end-recover');
+    const event = key(recover, 'r');
+    expect(event.defaultPrevented).toBe(true);
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+    expect(heroAt()).toBe('B2');
+  });
+
+  it('leaves Enter to the native click, so it restarts exactly once', () => {
+    die();
+    const recover = q('#end-recover');
+    key(recover, 'Enter');
+    expect(root?.getAttribute('data-screen')).toBe('lost');
+    click(recover);
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+  });
+
+  it('does nothing for R on the toolbar Recover while playing without a confirmation', () => {
+    mount();
+    key(document, 'ArrowRight');
+    const recover = button('recover');
+    recover.focus();
+    key(recover, 'r');
+    expect(heroAt()).toBe('C2');
+  });
+});
+
+describe('win dialog', () => {
+  it('focuses Next, and OK on the last level', () => {
+    mount();
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    expect(document.activeElement).toBe(q('#win-next'));
+    handle?.destroy();
+    root?.remove();
+    mountWith([FIXTURE_LEVELS[0]]);
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    expect(document.activeElement).toBe(q('#win-ok'));
+  });
+
+  it('closes on Escape and on OK and focuses the grid', () => {
+    mountWith([FIXTURE_LEVELS[0]]);
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    expect(winDialog().hidden).toBe(false);
+    key(document, 'Escape', { ctrlKey: true });
+    expect(winDialog().hidden).toBe(false);
+    key(document, 'Escape');
+    expect(winDialog().hidden).toBe(true);
+    expect(document.activeElement).toBe(q('#grid-table'));
+    handle?.destroy();
+    root?.remove();
+    mountWith([FIXTURE_LEVELS[0]]);
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    click(q('#win-ok'));
+    expect(winDialog().hidden).toBe(true);
+    expect(document.activeElement).toBe(q('#grid-table'));
+  });
+
+  it('starts the next level from Next', () => {
+    const storage = fakeStorage();
+    mount(storage);
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    click(q('#win-next'));
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+    expect(text('.status-level')).toContain('Lab');
+    expect(winDialog().hidden).toBe(true);
+    expect(document.activeElement).toBe(q('#grid-table'));
+  });
+
+  it('still moves the selection with Ctrl+Arrow while open', () => {
+    mount();
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    const before = selectedAt();
+    key(q('#win-next'), 'ArrowRight', { ctrlKey: true });
+    expect(selectedAt()).not.toBe(before);
   });
 });
 

@@ -14,7 +14,7 @@ import { tabLabel } from '../model/index';
 import { cycleCellsOf } from './error-look';
 import { isTabEnabled } from './progress';
 import { STRINGS } from './strings';
-import type { CellView, Direction, Env, Progress, TabView, ViewModel } from './types';
+import type { CellView, Direction, Env, Fx, Progress, TabView, ViewModel } from './types';
 
 /** The part of the app state that `viewOf` reads. `AppState` satisfies it. */
 interface ViewState {
@@ -26,6 +26,7 @@ interface ViewState {
   readonly alert: string;
   readonly changed: ReadonlySet<string>;
   readonly progress: Progress;
+  readonly fx: Fx;
 }
 
 const COLUMNS = 12;
@@ -102,7 +103,22 @@ function cellViewOf(
     selected: address === state.selection,
     changed: state.changed.has(address),
     ariaLabel,
+    slide: entity !== undefined && entity.type === 'hero' ? state.fx.slide : undefined,
   };
+}
+
+/** Direction of a one-cell orthogonal step from `from` to `to`; undefined for anything else. */
+export function slideDirection(from: string, to: string): Direction | undefined {
+  const a = parseAddress(from);
+  const b = parseAddress(to);
+  if (!a.ok || !b.ok) return undefined;
+  const dc = b.point.col - a.point.col;
+  const dr = b.point.row - a.point.row;
+  if (dr === 0 && dc === 1) return 'E';
+  if (dr === 0 && dc === -1) return 'W';
+  if (dc === 0 && dr === 1) return 'S';
+  if (dc === 0 && dr === -1) return 'N';
+  return undefined;
 }
 
 function tabsOf(state: ViewState, env: Env): TabView[] {
@@ -183,6 +199,16 @@ export function viewOf(state: ViewState, env: Env): ViewModel {
     rows,
     explanation,
     ghostCells,
+    beat: state.fx.beat,
+    damaged: state.fx.damaged,
+    win:
+      screen === 'won'
+        ? {
+            title: STRINGS.titleBar,
+            body: state.levelIndex + 1 < env.entries.length ? STRINGS.won : STRINGS.wonLast,
+            hasNext: state.levelIndex + 1 < env.entries.length,
+          }
+        : undefined,
   };
 }
 

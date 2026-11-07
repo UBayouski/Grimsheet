@@ -1,0 +1,480 @@
+/* Chrome: the grey window, bevels, title bar, tabs, status bar, dialogs and focus ring.
+   Rule: .window, #window, .grimsheet-app, body and html never set a clipping value, because the sticky
+   status bar needs the page to be its scroll container. */
+
+:root {
+  --face: #c0c0c0;
+  --white: #ffffff;
+  --glow: #dfdfdf;
+  --shadow: #808080;
+  --dark: #000000;
+  --title-a: #000080;
+  --title-b: #1c4a9a;
+  --disabled: #4a4a4a;
+  --alert: #800000;
+  --ring: #000080;
+  --backdrop: #3f7f7f;
+  --flash: #fff2a8;
+  --flash-ring: #ffd600;
+  --font-ui: 'VT323', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+}
+
+html {
+  scroll-padding-bottom: 3.5rem;
+}
+
+body {
+  margin: 0;
+  padding: 0.25rem 0;
+  min-width: 54rem;
+  background: var(--backdrop);
+}
+
+.grimsheet-app {
+  position: relative;
+  width: 52rem;
+  margin: 0 auto;
+  font-family: var(--font-ui);
+  font-size: 1.25rem;
+  line-height: 1.1;
+  color: var(--dark);
+}
+
+.grimsheet-app button,
+.grimsheet-app input {
+  font: inherit;
+  color: inherit;
+}
+
+/* Window */
+.window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--white) var(--dark) var(--dark) var(--white);
+  box-shadow:
+    inset -1px -1px 0 var(--shadow),
+    0 0 0 1px var(--dark),
+    4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.title-bar,
+.dialog-title-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 2px 3px;
+  background: linear-gradient(90deg, var(--title-a), var(--title-b));
+  color: #ffffff;
+}
+
+.title-text,
+.dialog-title {
+  letter-spacing: 0.06em;
+}
+
+.window-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.wb {
+  position: relative;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 0.9rem;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--white) var(--dark) var(--dark) var(--white);
+  box-shadow: inset -1px -1px 0 var(--shadow);
+}
+
+.wb-min::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  height: 2px;
+  background: var(--dark);
+}
+
+.wb-max::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1px solid var(--dark);
+  border-top-width: 2px;
+}
+
+.wb-close::before,
+.wb-close::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 0.55rem;
+  margin-left: -1px;
+  background: var(--dark);
+  transform: rotate(45deg);
+}
+
+.wb-close::after {
+  transform: rotate(-45deg);
+}
+
+/* Raised bevel: buttons, tabs, headers */
+.toolbar button,
+.dialog button,
+.tab,
+.grid-table th {
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--white) var(--dark) var(--dark) var(--white);
+  box-shadow:
+    inset -1px -1px 0 var(--shadow),
+    inset 1px 1px 0 var(--glow);
+}
+
+/* Sunken bevel: fields and status spans */
+.name-box,
+.formula-bar,
+.status-bar > span,
+.message {
+  border: 2px solid;
+  border-color: var(--shadow) var(--white) var(--white) var(--shadow);
+  box-shadow:
+    inset 1px 1px 0 var(--dark),
+    inset -1px -1px 0 var(--glow);
+}
+
+/* Pressed bevel */
+.toolbar button:active,
+.dialog button:active,
+.tab:active,
+[data-control='sound'][aria-pressed='true'] {
+  border-color: var(--dark) var(--glow) var(--glow) var(--dark);
+  box-shadow: inset 1px 1px 0 var(--shadow);
+  padding: 1px 0 0 1px;
+}
+
+/* Formula row and toolbar */
+.formula-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px;
+}
+
+.name-box {
+  min-width: 6.5rem;
+  padding: 0 0.25rem;
+  background: var(--white);
+}
+
+.formula-bar {
+  flex: 1 1 12rem;
+  padding: 0 0.25rem;
+  background: var(--white);
+}
+
+.formula-note {
+  flex: 0 0 auto;
+}
+
+.formula-alert {
+  color: var(--alert);
+}
+
+.cell-explanation {
+  flex: 1 0 100%;
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 2px;
+}
+
+.toolbar button {
+  padding: 0 0.6rem;
+  min-height: 1.5rem;
+}
+
+.toolbar button:disabled {
+  color: var(--disabled);
+  border-style: dashed;
+  text-shadow: 1px 1px 0 var(--white);
+}
+
+.toolbar button[data-control='sound'] {
+  position: relative;
+  margin-left: auto;
+}
+
+/* Grid chrome */
+.grid-table {
+  margin: 4px auto;
+  background: var(--white);
+  box-shadow:
+    0 0 0 1px var(--shadow),
+    1px 1px 0 1px var(--white);
+}
+
+.grid-table th {
+  font-weight: 400;
+}
+
+.grid-table th,
+.grid-table td {
+  border-width: 1px;
+}
+
+.grid-table td {
+  border-color: var(--shadow);
+}
+
+.separator-row td {
+  background: var(--face);
+  letter-spacing: 0.15em;
+  font-weight: 400;
+}
+
+.grid-table td.cell:not(.cell-error)[data-region='map'] .cell-text,
+.grid-table .entity-glyph {
+  font-size: 1.75rem;
+}
+
+.grid-table td.cell[data-region='rules'] .cell-text {
+  font-size: 1.25rem;
+}
+
+.grid-table td.cell[data-col='A'] {
+  width: 7.5rem;
+}
+
+.grid-table td.cell[data-col='A'][data-region='rules'] {
+  text-align: left;
+  padding: 0 0 0 0.25rem;
+}
+
+.grid-table td.cell[data-col='A'][data-region='rules'] .cell-text {
+  font-size: 1rem;
+}
+
+/* Padlock: CSS shape, rules region only */
+.padlock {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 6px;
+  background: currentColor;
+}
+
+.padlock::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  bottom: 6px;
+  width: 4px;
+  height: 3px;
+  border: 1px solid currentColor;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Tabs: one row */
+.tab-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0 0.25rem;
+}
+
+.grimsheet-app .tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 1.125rem;
+  padding: 0 0.5rem;
+  border-top-width: 0;
+}
+
+.tab[aria-current='page'] {
+  position: relative;
+  top: -2px;
+  padding-bottom: 2px;
+  background: var(--white);
+}
+
+.tab:disabled {
+  color: var(--disabled);
+  border-style: dashed;
+  text-shadow: 1px 1px 0 var(--white);
+}
+
+/* Status bar: sticky, opaque, own dividers */
+.status-bar,
+#status-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 2px;
+  font-size: 1.125rem;
+  background: var(--face);
+  box-shadow: 0 -1px 0 var(--dark);
+}
+
+.status-bar > span {
+  padding: 0 0.6rem;
+  border-width: 0;
+  box-shadow: none;
+}
+
+.status-bar > span + span {
+  border-left: 1px solid var(--shadow);
+  box-shadow: -1px 0 0 var(--white);
+}
+
+.status-bar .message {
+  box-sizing: border-box;
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  padding: 0 0.5rem;
+}
+
+/* Dialogs */
+.dialog,
+.end-banner {
+  position: absolute;
+  z-index: 10;
+  width: 22rem;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--white) var(--dark) var(--dark) var(--white);
+  box-shadow:
+    inset -1px -1px 0 var(--shadow),
+    0 0 0 1px var(--dark),
+    4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.dialog-body {
+  padding: 0.75rem;
+}
+
+.dialog-body p {
+  margin: 0;
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.dialog button {
+  min-width: 6rem;
+}
+
+.dialog button[data-default] {
+  border-color: var(--dark);
+  box-shadow:
+    inset 0 0 0 1px var(--white),
+    inset -1px -1px 0 var(--shadow);
+}
+
+#screen-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#screen-overlay .dialog {
+  pointer-events: auto;
+}
+
+.title-dialog {
+  left: 50%;
+  top: 9rem;
+  width: 30rem;
+  transform: translateX(-50%);
+}
+
+.win-dialog,
+.end-banner {
+  right: 1rem;
+  bottom: 5.5rem;
+}
+
+.title-heading {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+.title-body {
+  background: var(--white) linear-gradient(#c8c8c8 1px, transparent 1px) 0 0 / 100% 1.6rem;
+}
+
+.title-body p {
+  margin: 0.25rem 0;
+}
+
+/* Mute toggle: pressed bevel is on, slash is off */
+[data-control='sound'][aria-pressed='false']::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 50%;
+  height: 2px;
+  background: var(--dark);
+  transform: rotate(-18deg);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.grid-table:focus-visible,
+.formula-bar:focus-visible {
+  outline-offset: 0;
+}
+
+@media (forced-colors: active) {
+  .window,
+  .dialog {
+    border: 2px solid CanvasText;
+  }
+
+  .padlock,
+  .padlock::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+    border-color: CanvasText;
+  }
+
+  [data-control='sound'][aria-pressed='false']::after {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}

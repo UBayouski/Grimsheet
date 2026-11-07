@@ -24,6 +24,7 @@ function cell(row: number, col: number, over: Partial<CellView> = {}): CellView 
     selected: false,
     changed: false,
     ariaLabel: undefined,
+    slide: undefined,
     ...over,
   };
 }
@@ -58,6 +59,9 @@ function makeVm(
     rows,
     explanation: undefined,
     ghostCells: [],
+    beat: 0,
+    damaged: false,
+    win: undefined,
     ...vmOver,
   };
 }
@@ -107,8 +111,8 @@ describe('skeleton', () => {
     expect(table?.getAttribute('tabindex')).toBe('0');
     expect(table?.getAttribute('aria-label')).toBe(STRINGS.gridLabel);
     expect(root.querySelector('#formula-alert')?.getAttribute('role')).toBe('alert');
-    expect(root.querySelector('#end-banner')?.getAttribute('role')).toBe('alert');
-    expect(root.querySelector('#screen-overlay')?.childElementCount).toBe(0);
+    expect(root.querySelector('#end-banner')?.getAttribute('role')).toBe('alertdialog');
+    expect(root.querySelector('#screen-overlay')?.childElementCount).toBe(1);
     const msg = root.querySelector('#message');
     expect(msg?.getAttribute('role')).toBe('status');
     expect(msg?.getAttribute('aria-live')).toBe('polite');
@@ -128,13 +132,16 @@ describe('fixed column widths', () => {
     // One column for the row headers plus A to L.
     expect(cols).toHaveLength(13);
     expect(cols[0]?.className).toBe('col-row-header');
-    expect(cols.slice(1).every((c) => c.className === 'col-cell')).toBe(true);
+    expect(cols[1]?.className).toBe('col-label');
+    expect(cols.slice(2).every((c) => c.className === 'col-cell')).toBe(true);
+    expect(cols.slice(2)).toHaveLength(11);
     // The colgroup comes first, so a table-layout: fixed table reads its widths from it.
     expect(table?.firstElementChild?.tagName).toBe('COLGROUP');
     root.remove();
 
     const css = readFileSync('src/styles/grid-ui.css', 'utf8');
     expect(css).toMatch(/col\.col-row-header\s*\{[^}]*width:\s*\d/);
+    expect(css).toMatch(/col\.col-label\s*\{[^}]*width:\s*7\.5rem/);
     expect(css).toMatch(/col\.col-cell\s*\{[^}]*width:\s*\d/);
   });
 
@@ -142,7 +149,7 @@ describe('fixed column widths', () => {
     const css = readFileSync('src/styles/grid-ui.css', 'utf8');
     const block = /\.grid-table\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
     expect(block).toMatch(/table-layout:\s*fixed/);
-    expect(block).toMatch(/(^|[;\s])width:\s*(?!auto)\S+/);
+    expect(block).toMatch(/(^|[;\s])width:\s*38rem/);
   });
 });
 
@@ -215,7 +222,7 @@ describe('cell attributes', () => {
     );
     const a1 = td('A1');
     expect(a1.querySelector('.entity-glyph')?.textContent).toBe('@');
-    expect(a1.querySelector('.padlock')?.textContent).toBe(STRINGS.padlock);
+    expect(a1.querySelector('.padlock')).toBeNull();
     expect(a1.getAttribute('aria-label')).toBe('Hero at A1 on floor');
     view.update(makeVm());
     expect(a1.querySelector('.entity-glyph')).toBeNull();
@@ -450,6 +457,157 @@ describe('chrome', () => {
   it('never sets a style attribute', () => {
     createView(root).update(makeVm({ A1: { entity: { type: 'hero' }, locked: true } }));
     expect(root.querySelectorAll('[style]')).toHaveLength(0);
+  });
+});
+
+function ids(parent: Element): string[] {
+  return Array.from(parent.children).map((c) => c.id || c.tagName.toLowerCase());
+}
+
+describe('window skeleton', () => {
+  it('has the window and overlay as the only root children, in order', () => {
+    createView(root).update(makeVm());
+    expect(ids(root)).toEqual(['window', 'screen-overlay']);
+    expect(root.classList.contains('grimsheet-app')).toBe(true);
+    const frame = root.querySelector('#window');
+    expect(frame?.classList.contains('window')).toBe(true);
+    expect(Array.from(frame?.children ?? []).map((c) => c.className || c.tagName)).toEqual([
+      'title-bar',
+      'formula-row',
+      'toolbar',
+      'grid-table',
+      'visually-hidden',
+      'end-banner dialog',
+      'tab-bar',
+      'status-bar',
+    ]);
+  });
+
+  it('has three decorative window buttons with no tabindex', () => {
+    createView(root).update(makeVm());
+    const group = root.querySelector('.title-bar .window-buttons');
+    expect(group?.getAttribute('aria-hidden')).toBe('true');
+    const wbs = group?.querySelectorAll('.wb') ?? [];
+    expect(wbs).toHaveLength(3);
+    for (const wb of wbs) expect(wb.hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('puts the sound toggle in the toolbar and flips aria-pressed', () => {
+    const view = createView(root);
+    const sound = root.querySelector('.toolbar [data-control="sound"]');
+    expect(sound?.getAttribute('type')).toBe('button');
+    expect(sound?.getAttribute('aria-pressed')).toBe('true');
+    view.setSound(false);
+    expect(sound?.getAttribute('aria-pressed')).toBe('false');
+    view.setSound(true);
+    expect(sound?.getAttribute('aria-pressed')).toBe('true');
+  });
+});
+
+describe('padlock', () => {
+  it('is not drawn on a locked map cell but locked attributes stay', () => {
+    createView(root).update(makeVm({ B3: { locked: true } }));
+    expect(td('B3').querySelector('.padlock')).toBeNull();
+    expect(td('B3').dataset['locked']).toBe('true');
+    expect(td('B3').getAttribute('aria-readonly')).toBe('true');
+  });
+
+  it('is an empty aria-hidden span on a locked rules cell and is removed when unlocked', () => {
+    const view = createView(root);
+    view.update(makeVm({ B14: { locked: true } }));
+    const lock = td('B14').querySelector('.padlock');
+    expect(lock?.getAttribute('aria-hidden')).toBe('true');
+    expect(lock?.textContent).toBe('');
+    view.update(makeVm());
+    expect(td('B14').querySelector('.padlock')).toBeNull();
+  });
+});
+
+describe('effects attributes', () => {
+  it('writes and removes data-beat, data-damaged and data-slide', () => {
+    const view = createView(root);
+    const hero = { entity: { type: 'hero' } as const, slide: 'E' as const };
+    view.update(makeVm({ C3: hero, D3: { entity: { type: 'monster', id: 'M1' }, slide: 'W' } }, { beat: 1, damaged: true }));
+    expect(root.dataset['beat']).toBe('1');
+    expect(root.querySelector('#grid-table')?.getAttribute('data-damaged')).toBe('true');
+    expect(td('C3').querySelector('.entity-glyph')?.getAttribute('data-slide')).toBe('E');
+    expect(td('D3').querySelector('.entity-glyph')?.hasAttribute('data-slide')).toBe(false);
+    view.update(makeVm({ C3: { entity: { type: 'hero' } } }, { beat: 0 }));
+    expect(root.dataset['beat']).toBe('0');
+    expect(root.querySelector('#grid-table')?.hasAttribute('data-damaged')).toBe(false);
+    expect(td('C3').querySelector('.entity-glyph')?.hasAttribute('data-slide')).toBe(false);
+  });
+});
+
+describe('dialogs', () => {
+  it('makes the death dialog an alertdialog with resolving references and one recover control', () => {
+    const view = createView(root);
+    view.update(
+      makeVm({}, { screen: 'lost', banner: { kind: 'lost', title: STRINGS.lostTitle, body: STRINGS.lostBody } }),
+    );
+    const banner = root.querySelector('#end-banner');
+    expect(banner?.getAttribute('role')).toBe('alertdialog');
+    for (const attr of ['aria-labelledby', 'aria-describedby']) {
+      const id = banner?.getAttribute(attr) ?? '';
+      expect(banner?.querySelector(`#${id}`)).not.toBeNull();
+    }
+    expect(root.querySelector('#banner-title')?.textContent).toBe(STRINGS.lostTitle);
+    expect(root.querySelector('#banner-body')?.textContent).toBe(STRINGS.lostBody);
+    const btn = root.querySelector('#end-recover');
+    expect(btn?.getAttribute('data-control')).toBe('recover-dialog');
+    expect(btn?.hasAttribute('data-default')).toBe(true);
+    expect(root.querySelectorAll('[data-control="recover"]')).toHaveLength(1);
+  });
+
+  it('fills the win dialog for hasNext true and false', () => {
+    const view = createView(root);
+    const next = root.querySelector<HTMLElement>('#win-next');
+    const ok = root.querySelector<HTMLElement>('#win-ok');
+    view.update(makeVm({}, { screen: 'won', win: { title: 'T1', body: STRINGS.won, hasNext: true } }));
+    expect(root.querySelector('#win-title')?.textContent).toBe('T1');
+    expect(root.querySelector('#win-body')?.textContent).toBe(STRINGS.won);
+    expect(next?.hidden).toBe(false);
+    expect(next?.hasAttribute('data-default')).toBe(true);
+    expect(ok?.hasAttribute('data-default')).toBe(false);
+    view.update(makeVm({}, { screen: 'won', win: { title: 'T2', body: STRINGS.wonLast, hasNext: false } }));
+    expect(root.querySelector('#win-body')?.textContent).toBe(STRINGS.wonLast);
+    expect(next?.hidden).toBe(true);
+    expect(next?.hasAttribute('data-default')).toBe(false);
+    expect(ok?.hasAttribute('data-default')).toBe(true);
+    expect(next?.getAttribute('data-control')).toBe('win-next');
+    expect(ok?.getAttribute('data-control')).toBe('win-ok');
+  });
+
+  it('shows markup in a win title as text and toggles hidden with setWinDialog', () => {
+    const view = createView(root);
+    view.update(makeVm({}, { win: { title: '<b>x</b>', body: 'y', hasNext: false } }));
+    expect(root.querySelector('#win-title')?.textContent).toBe('<b>x</b>');
+    expect(root.querySelector('#win-title b')).toBeNull();
+    const dlg = root.querySelector<HTMLElement>('#win-dialog');
+    expect(dlg?.hidden).toBe(true);
+    view.setWinDialog(true);
+    expect(dlg?.hidden).toBe(false);
+    view.setWinDialog(false);
+    expect(dlg?.hidden).toBe(true);
+  });
+
+  it('adds and removes the title dialog and inert', () => {
+    const view = createView(root);
+    view.update(makeVm());
+    const overlay = root.querySelector('#screen-overlay');
+    expect(overlay?.children).toHaveLength(1);
+    expect(overlay?.firstElementChild?.id).toBe('win-dialog');
+    view.showTitle();
+    view.showTitle();
+    const dlg = root.querySelector('#title-dialog');
+    expect(overlay?.querySelectorAll('#title-dialog')).toHaveLength(1);
+    expect(dlg?.getAttribute('role')).toBe('dialog');
+    expect(dlg?.getAttribute('aria-modal')).toBe('true');
+    expect(dlg?.querySelector('#title-start')?.getAttribute('data-control')).toBe('start');
+    expect(root.querySelector('#window')?.hasAttribute('inert')).toBe(true);
+    view.hideTitle();
+    expect(root.querySelector('#title-dialog')).toBeNull();
+    expect(root.querySelector('#window')?.hasAttribute('inert')).toBe(false);
   });
 });
 

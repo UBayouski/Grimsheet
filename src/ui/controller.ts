@@ -17,12 +17,14 @@ import type {
   Effect,
   Env,
   FocusKind,
+  Fx,
   KeyContext,
   Pending,
   Progress,
   UiEvent,
 } from './types';
-import { changedAddresses, moveSelection } from './view-model';
+import { cuesFor } from './sound-events';
+import { changedAddresses, moveSelection, slideDirection } from './view-model';
 
 export interface StepResult {
   readonly state: AppState;
@@ -41,6 +43,25 @@ const FOCUS_GRID: readonly Effect[] = [{ type: 'focus', target: 'grid' }];
 
 /** Edit refusals that keep Edit_Mode and the typed text. */
 export const KEEP_EDIT: readonly RefusalReason[] = ['parse-error', 'no-ink', 'bad-address'];
+
+export const NO_FX: Fx = { beat: 0, slide: undefined, damaged: false, cues: [] };
+
+/** Turn_Effects of one accepted Action. */
+export function nextFx(
+  prevFx: Fx,
+  prev: RunState,
+  run: RunState,
+  action: Action,
+  damaged: boolean,
+): Fx {
+  const hit = action.kind !== 'undo' && damaged;
+  return {
+    beat: prevFx.beat === 0 ? 1 : 0,
+    slide: action.kind === 'move' ? slideDirection(prev.hero, run.hero) : undefined,
+    damaged: hit,
+    cues: cuesFor({ kind: action.kind, status: run.status, damaged: hit }),
+  };
+}
 
 function unchanged(state: AppState): StepResult {
   return { state, effects: NO_EFFECTS };
@@ -81,6 +102,7 @@ function startLevel(state: AppState, index: number, env: Env): StepResult {
       changed: EMPTY_CHANGED,
       message: run.level.hint,
       progress,
+      fx: { beat: state.fx.beat, slide: undefined, damaged: false, cues: [] },
     },
     effects: [
       { type: 'save-progress', progress },
@@ -101,6 +123,7 @@ export function createInitialState(env: Env, progress: Progress): AppState {
     alert: '',
     changed: EMPTY_CHANGED,
     progress,
+    fx: NO_FX,
   };
   const started = startLevel(base, index, env).state;
   return started.run === undefined ? { ...started, message: STRINGS.loadFailed } : started;
@@ -123,6 +146,7 @@ function accept(
   result: Extract<ActionResult, { readonly ok: true }>,
   fallbackMessage: string,
   env: Env,
+  action: Action,
 ): StepResult {
   const run = result.state;
   const isLast = state.levelIndex + 1 >= env.entries.length;
@@ -149,6 +173,7 @@ function accept(
       message,
       alert: '',
       progress,
+      fx: nextFx(state.fx, prev, run, action, result.damage.length > 0),
     },
     effects,
   };
@@ -160,7 +185,7 @@ function turn(state: AppState, action: Action, env: Env): StepResult {
   const result = applyAction(run, action);
   if (result.ok) {
     const fallback = action.kind === 'undo' ? STRINGS.undone : run.level.hint;
-    return accept(state, run, result, fallback, env);
+    return accept(state, run, result, fallback, env, action);
   }
   const message = refusalMessage(result, action);
   if (message === undefined) return unchanged(state);
@@ -256,9 +281,10 @@ function commitEdit(state: AppState, env: Env): StepResult {
   const run = state.run;
   const edit = state.edit;
   if (run === undefined || edit === undefined) return unchanged(state);
-  const result = applyAction(run, { kind: 'edit', address: state.selection, raw: edit.text });
+  const action: Action = { kind: 'edit', address: state.selection, raw: edit.text };
+  const result = applyAction(run, action);
   if (result.ok) {
-    const accepted = accept({ ...state, edit: undefined }, run, result, STRINGS.edited, env);
+    const accepted = accept({ ...state, edit: undefined }, run, result, STRINGS.edited, env, action);
     return { state: accepted.state, effects: [...accepted.effects, ...FOCUS_GRID] };
   }
   if (result.reason === 'parse-error') {

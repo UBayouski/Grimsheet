@@ -16,10 +16,32 @@ export interface MediaQueryLike {
   removeEventListener?(type: 'change', listener: () => void): void;
 }
 
+export type Cue = 'move' | 'edit' | 'damage' | 'win' | 'death';
+
+/** Turn_Effects: set by the controller on every accepted Action. */
+export interface Fx {
+  readonly beat: 0 | 1;
+  /** Direction the hero travelled by exactly one cell; undefined otherwise. */
+  readonly slide: Direction | undefined;
+  readonly damaged: boolean;
+  readonly cues: readonly Cue[];
+}
+
+export interface SoundPlayer {
+  unlock(): void;
+  play(cues: readonly Cue[]): void;
+  setMuted(muted: boolean): void;
+  destroy(): void;
+}
+
 export interface MountOptions {
   readonly levels: readonly unknown[];
   readonly storage: StorageLike;
   readonly matchMedia?: (query: string) => MediaQueryLike;
+  /** Show the Title_Dialog after mounting. Absent or false: no title dialog. */
+  readonly showTitle?: boolean;
+  /** Test seam for the Sound_Player. */
+  readonly createAudio?: () => SoundPlayer;
 }
 
 export interface AppHandle {
@@ -97,6 +119,8 @@ export interface AppState {
   /** Changed_Marker addresses. */
   readonly changed: ReadonlySet<string>;
   readonly progress: Progress;
+  /** Turn_Effects of the last accepted Action. */
+  readonly fx: Fx;
 }
 
 export type UiEvent =
@@ -132,6 +156,8 @@ export interface CellView {
   readonly selected: boolean;
   readonly changed: boolean;
   readonly ariaLabel: string | undefined;
+  /** Direction the hero just slid in; set only on the hero cell. */
+  readonly slide: Direction | undefined;
 }
 
 export interface TabView {
@@ -170,4 +196,9 @@ export interface ViewModel {
   readonly rows: readonly (readonly CellView[])[];
   readonly explanation: { readonly text: string; readonly kind: ErrorKind } | undefined;
   readonly ghostCells: readonly string[];
+  readonly beat: 0 | 1;
+  readonly damaged: boolean;
+  readonly win:
+    | { readonly title: string; readonly body: string; readonly hasNext: boolean }
+    | undefined;
 }

@@ -6,11 +6,19 @@ export const STRINGS = {
   nameBoxLabel: 'Selected cell',
   formulaBarLabel: 'Formula bar',
   lockedText: 'This cell is locked and cannot be edited.',
-  padlock: '\u{1F512}',
   buttons: {
     undo: 'Undo',
     recover: 'Recover',
     next: 'Next level',
+    ok: 'OK',
+    sound: 'Sound',
+    start: 'Start',
+  },
+  title: {
+    tagline: 'A roguelike where every monster is a formula.',
+    premise: "A workbook found on a dead accountant's floppy disk. Its formulas are alive.",
+    controls:
+      'Arrows move. Space waits. Ctrl+Arrows pick a cell. Enter edits it. U undoes. R restarts.',
   },
   status: {
     hp: 'HP',

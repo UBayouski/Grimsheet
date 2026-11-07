@@ -8,6 +8,7 @@ const SRC = join(ROOT, 'src');
 
 const EXPECTED_MODULES = [
   'app',
+  'audio',
   'confirmation',
   'controller',
   'error-look',
@@ -16,16 +17,19 @@ const EXPECTED_MODULES = [
   'messages',
   'progress',
   'render',
+  'sound-events',
   'strings',
   'types',
   'view-model',
 ].map((n) => `${n}.ts`);
 
 const DOM_FILES = ['app.ts', 'render.ts'];
+const AUDIO_FILES = ['audio.ts'];
 
 const PURE_FORBIDDEN = [
   'document',
   'window',
+  'globalThis',
   'localStorage',
   'sessionStorage',
   'navigator',
@@ -39,7 +43,23 @@ const PURE_FORBIDDEN = [
   'MouseEvent',
 ];
 
-const DOM_FILE_FORBIDDEN = ['window', 'sessionStorage', 'fetch', 'XMLHttpRequest'];
+const DOM_FILE_FORBIDDEN = [
+  'window',
+  'sessionStorage',
+  'fetch',
+  'XMLHttpRequest',
+  'AudioContext',
+  'globalThis',
+];
+
+const AUDIO_FILE_FORBIDDEN = [
+  ...PURE_FORBIDDEN.filter((id) => id !== 'AudioContext' && id !== 'globalThis'),
+  'sessionStorage',
+  'fetch',
+  'XMLHttpRequest',
+];
+
+const PRODUCT_NAME = /\b(Microsoft|Windows|Excel|Lotus)\b/;
 
 const ENTRY_FORBIDDEN = [
   'window',
@@ -117,9 +137,13 @@ const UNIVERSAL_BAD: ReadonlyArray<readonly [string, RegExp]> = [
   ['outerHTML', /\bouterHTML\b/],
   ['insertAdjacentHTML', /\binsertAdjacentHTML\b/],
   ['document.write', /\bdocument\s*\.\s*write(ln)?\b/],
+  [
+    'style write',
+    /\.\s*style\s*(\.\s*\w+\s*=(?!=)|\[[^\]]*\]\s*=(?!=)|\.\s*(setProperty|removeProperty)\b|\.\s*cssText\b|=(?!=))/,
+  ],
 ];
 
-export type Kind = 'pure' | 'dom' | 'entry';
+export type Kind = 'pure' | 'dom' | 'audio' | 'entry';
 
 /** Scans one source file. `kind` selects the browser-global rules. */
 export function scanSource(source: string, kind: Kind, relPath = 'x.ts'): string[] {
@@ -135,6 +159,8 @@ export function scanSource(source: string, kind: Kind, relPath = 'x.ts'): string
   } else if (kind === 'dom') {
     for (const id of DOM_FILE_FORBIDDEN) if (mentions(code, id)) findings.push(id);
     if (relPath !== 'app.ts' && mentions(code, 'localStorage')) findings.push('localStorage');
+  } else if (kind === 'audio') {
+    for (const id of AUDIO_FILE_FORBIDDEN) if (mentions(code, id)) findings.push(id);
   } else {
     for (const id of ENTRY_FORBIDDEN) if (mentions(code, id)) findings.push(id);
     for (const m of code.matchAll(/(?<![\w$])document\b(?!\s*\.\s*getElementById\b)/g)) {
@@ -231,7 +257,11 @@ describe('ui public API', () => {
 
 describe('ui source constraints', () => {
   it.each(uiSourceNames.map((n) => [n] as const))('%s has no forbidden constructs', (name) => {
-    const kind: Kind = DOM_FILES.includes(name) ? 'dom' : 'pure';
+    const kind: Kind = DOM_FILES.includes(name)
+      ? 'dom'
+      : AUDIO_FILES.includes(name)
+        ? 'audio'
+        : 'pure';
     expect(scanSource(read(join(UI_DIR, name)), kind, name)).toEqual([]);
   });
 
@@ -248,6 +278,9 @@ describe('ui source constraints', () => {
         /import\s*\{[^}]*\bbrowserStorage\b[^}]*\}\s*from\s*['"][^'"]*ui\/index['"]/,
       );
       expect(stripCommentsAndStrings(source)).toMatch(/\bbrowserStorage\s*\(\s*\)/);
+      for (const sheet of ['fonts', 'chrome', 'motion']) {
+        expect(specs.some((s) => s.endsWith(`styles/${sheet}.css`))).toBe(true);
+      }
     },
   );
 });
@@ -257,8 +290,13 @@ describe('no AI tool names and no remote references', () => {
     ...listFiles(UI_DIR, (n) => n.endsWith('.ts')),
     join(SRC, 'styles', 'grid-ui.css'),
     join(SRC, 'styles', 'error-monsters.css'),
+    join(SRC, 'styles', 'fonts.css'),
+    join(SRC, 'styles', 'chrome.css'),
+    join(SRC, 'styles', 'motion.css'),
+    join(ROOT, 'index.html'),
     join(SRC, 'main.ts'),
     ...listFiles(join(ROOT, 'tests', 'fixtures'), () => true),
+    ...listFiles(join(ROOT, '.kiro', 'specs', 'skin-and-sound'), () => true),
     ...listFiles(join(ROOT, '.kiro', 'specs', 'grid-ui'), () => true),
     ...listFiles(join(ROOT, '.kiro', 'specs', 'error-monsters'), () => true),
   ];
@@ -271,13 +309,41 @@ describe('no AI tool names and no remote references', () => {
     },
   );
 
-  it.each(['grid-ui.css', 'error-monsters.css'])(
+  it.each(['grid-ui.css', 'error-monsters.css', 'chrome.css', 'motion.css'])(
     'keeps %s free of url(, @import and http',
     (name) => {
       const css = read(join(SRC, 'styles', name));
       expect(css).not.toMatch(/url\(/i);
       expect(css).not.toMatch(/@import/i);
       expect(css).not.toMatch(/http/i);
+    },
+  );
+
+  it('keeps fonts.css self-hosted: no @import, no http, local font urls only', () => {
+    const css = read(join(SRC, 'styles', 'fonts.css'));
+    expect(css).not.toMatch(/@import/i);
+    expect(css).not.toMatch(/http/i);
+    const urls = css.match(/url\(/gi) ?? [];
+    expect(urls.length).toBeGreaterThanOrEqual(1);
+    const good = css.match(/url\('\/fonts\/[a-z0-9-]+\.ttf'\)/g) ?? [];
+    expect(good).toHaveLength(urls.length);
+  });
+});
+
+describe('no real product names', () => {
+  const files: string[] = [
+    ...listFiles(UI_DIR, isSource),
+    ...['fonts', 'grid-ui', 'error-monsters', 'chrome', 'motion'].map((n) =>
+      join(SRC, 'styles', `${n}.css`),
+    ),
+    join(ROOT, 'index.html'),
+    ...listFiles(join(ROOT, 'tests', 'fixtures'), () => true),
+  ];
+
+  it.each(files.map((f) => [f.slice(ROOT.length + 1).replace(/\\/g, '/'), f] as const))(
+    '%s names no real product',
+    (_label, path) => {
+      expect(read(path).match(PRODUCT_NAME)).toBeNull();
     },
   );
 });
@@ -336,6 +402,19 @@ describe('scanner self-check', () => {
     expect(scanSource('document.getElementById("app");', 'entry')).toEqual([]);
     expect(scanSource('localStorage.a;', 'dom', 'render.ts')).toContain('localStorage');
     expect(scanSource('localStorage.a;', 'dom', 'app.ts')).toEqual([]);
+  });
+
+  it('flags a style write', () => {
+    expect(scanSource("el.style.color = 'x';", 'dom', 'render.ts')).toContain('style write');
+    expect(scanSource("el.style.setProperty('--a', 'b');", 'pure')).toContain('style write');
+    expect(scanSource('const s = el.style.color;', 'dom', 'render.ts')).toEqual([]);
+  });
+
+  it('applies the audio rules', () => {
+    expect(scanSource('const c = new globalThis.AudioContext();', 'audio', 'audio.ts')).toEqual([]);
+    expect(scanSource('document.title = "x";', 'audio', 'audio.ts')).toContain('document');
+    expect(scanSource('new AudioContext();', 'dom', 'render.ts')).toContain('AudioContext');
+    expect(scanSource('globalThis.a;', 'pure')).toContain('globalThis');
   });
 
   it('flags an AI tool name other than Kiro', () => {

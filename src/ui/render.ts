@@ -8,6 +8,14 @@ export { ERROR_CLASS } from './error-look';
 export interface View {
   update(viewModel: ViewModel): void;
   setGhost(address: string | undefined): void;
+  /** Sets aria-pressed on the Sound toggle. */
+  setSound(on: boolean): void;
+  /** Builds the title dialog on first call and makes the frame inert. */
+  showTitle(): void;
+  /** Removes the title dialog and the inert attribute. */
+  hideTitle(): void;
+  /** Shows or hides the win dialog; its text comes from update(). */
+  setWinDialog(open: boolean): void;
 }
 
 const COLUMNS = 12;
@@ -88,8 +96,10 @@ function updateCell(doc: Document, parts: CellParts, cell: CellView): void {
     setText(parts.glyph, cell.entity.type === 'hero' ? '@' : 'M');
   }
 
-  // Padlock: present only when locked.
-  if (!cell.locked) {
+  if (parts.glyph) setAttr(parts.glyph, 'data-slide', cell.entity?.type === 'hero' ? cell.slide : undefined);
+
+  // Padlock: drawn by CSS, only on locked cells of the rules panel.
+  if (!(cell.locked && cell.region === 'rules')) {
     if (parts.padlock) {
       parts.padlock.remove();
       parts.padlock = undefined;
@@ -97,7 +107,6 @@ function updateCell(doc: Document, parts: CellParts, cell: CellView): void {
   } else if (!parts.padlock) {
     const padlock = make(doc, 'span', 'padlock');
     padlock.setAttribute('aria-hidden', 'true');
-    padlock.textContent = STRINGS.padlock;
     td.append(padlock);
     parts.padlock = padlock;
   }
@@ -110,10 +119,25 @@ export function createView(root: HTMLElement): View {
   root.classList.add('grimsheet-app');
   root.textContent = '';
 
+  const windowButtons = (names: readonly string[]): HTMLSpanElement => {
+    const group = make(doc, 'span', 'window-buttons');
+    group.setAttribute('aria-hidden', 'true');
+    for (const name of names) group.append(make(doc, 'span', `wb ${name}`));
+    return group;
+  };
+  const dialogTitleBar = (titleClass: string, titleId?: string): HTMLDivElement => {
+    const bar = make(doc, 'div', 'dialog-title-bar');
+    const title = make(doc, 'span', titleClass, titleId);
+    bar.append(title, windowButtons(['wb-close']));
+    return bar;
+  };
+
+  const frame = make(doc, 'div', 'window', 'window');
+
   const header = make(doc, 'header', 'title-bar');
   const titleText = make(doc, 'span', 'title-text');
   titleText.textContent = STRINGS.titleBar;
-  header.append(titleText);
+  header.append(titleText, windowButtons(['wb-min', 'wb-max', 'wb-close']));
 
   const tabBar = make(doc, 'nav', 'tab-bar', 'tab-bar');
   tabBar.setAttribute('aria-label', STRINGS.tabBarLabel);
@@ -147,7 +171,9 @@ export function createView(root: HTMLElement): View {
   const recoverButton = buttonFor('recover', STRINGS.buttons.recover);
   const nextButton = buttonFor('next', STRINGS.buttons.next);
   nextButton.hidden = true;
-  toolbar.append(undoButton, recoverButton, nextButton);
+  const soundButton = buttonFor('sound', STRINGS.buttons.sound);
+  soundButton.setAttribute('aria-pressed', 'true');
+  toolbar.append(undoButton, recoverButton, nextButton, soundButton);
 
   const table = make(doc, 'table', 'grid-table', 'grid-table');
   table.setAttribute('role', 'grid');
@@ -159,8 +185,8 @@ export function createView(root: HTMLElement): View {
   // also gives the table an explicit width, so table-layout: fixed applies and a long cell text is
   // clipped instead of widening its column.
   const colgroup = make(doc, 'colgroup');
-  colgroup.append(make(doc, 'col', 'col-row-header'));
-  for (let col = 1; col <= COLUMNS; col++) {
+  colgroup.append(make(doc, 'col', 'col-row-header'), make(doc, 'col', 'col-label'));
+  for (let col = 2; col <= COLUMNS; col++) {
     colgroup.append(make(doc, 'col', 'col-cell'));
   }
 
@@ -214,12 +240,29 @@ export function createView(root: HTMLElement): View {
 
   const ghostNote = make(doc, 'p', 'visually-hidden', 'ghost-note');
 
-  const banner = make(doc, 'div', 'end-banner', 'end-banner');
-  banner.setAttribute('role', 'alert');
+  const dialogButton = (id: string, control: string, label: string): HTMLButtonElement => {
+    const b = make(doc, 'button', undefined, id);
+    b.type = 'button';
+    b.setAttribute('data-control', control);
+    b.textContent = label;
+    return b;
+  };
+
+  const banner = make(doc, 'div', 'end-banner dialog', 'end-banner');
+  banner.setAttribute('role', 'alertdialog');
+  banner.setAttribute('aria-labelledby', 'banner-title');
+  banner.setAttribute('aria-describedby', 'banner-body');
   banner.hidden = true;
-  const bannerTitle = make(doc, 'p', 'banner-title');
-  const bannerBody = make(doc, 'p', 'banner-body');
-  banner.append(bannerTitle, bannerBody);
+  const bannerBar = dialogTitleBar('banner-title dialog-title', 'banner-title');
+  const bannerTitle = bannerBar.firstElementChild as HTMLSpanElement;
+  const bannerBodyWrap = make(doc, 'div', 'dialog-body');
+  const bannerBody = make(doc, 'p', 'banner-body', 'banner-body');
+  const bannerRecover = dialogButton('end-recover', 'recover-dialog', STRINGS.buttons.recover);
+  bannerRecover.setAttribute('data-default', '');
+  const bannerButtons = make(doc, 'div', 'dialog-buttons');
+  bannerButtons.append(bannerRecover);
+  bannerBodyWrap.append(bannerBody, bannerButtons);
+  banner.append(bannerBar, bannerBodyWrap);
 
   const statusBar = make(doc, 'footer', 'status-bar', 'status-bar');
   const statusLevel = make(doc, 'span', 'status-level');
@@ -233,7 +276,25 @@ export function createView(root: HTMLElement): View {
 
   const overlay = make(doc, 'div', undefined, 'screen-overlay');
 
-  root.append(header, tabBar, formulaRow, toolbar, table, ghostNote, banner, statusBar, overlay);
+  const winDialog = make(doc, 'div', 'dialog win-dialog', 'win-dialog');
+  winDialog.setAttribute('role', 'dialog');
+  winDialog.setAttribute('aria-labelledby', 'win-title');
+  winDialog.setAttribute('aria-describedby', 'win-body');
+  winDialog.hidden = true;
+  const winBar = dialogTitleBar('dialog-title', 'win-title');
+  const winTitle = winBar.firstElementChild as HTMLSpanElement;
+  const winBodyWrap = make(doc, 'div', 'dialog-body');
+  const winBody = make(doc, 'p', undefined, 'win-body');
+  const winNext = dialogButton('win-next', 'win-next', STRINGS.buttons.next);
+  const winOk = dialogButton('win-ok', 'win-ok', STRINGS.buttons.ok);
+  const winButtons = make(doc, 'div', 'dialog-buttons');
+  winButtons.append(winNext, winOk);
+  winBodyWrap.append(winBody, winButtons);
+  winDialog.append(winBar, winBodyWrap);
+  overlay.append(winDialog);
+
+  frame.append(header, formulaRow, toolbar, table, ghostNote, banner, tabBar, statusBar);
+  root.append(frame, overlay);
 
   const tabButtons: HTMLButtonElement[] = [];
 
@@ -260,7 +321,17 @@ export function createView(root: HTMLElement): View {
 
   function update(vm: ViewModel): void {
     setAttr(root, 'data-screen', vm.screen);
+    setAttr(root, 'data-beat', String(vm.beat));
+    setAttr(table, 'data-damaged', vm.damaged ? 'true' : undefined);
     updateTabs(vm.tabs);
+
+    if (vm.win) {
+      setText(winTitle, vm.win.title);
+      setText(winBody, vm.win.body);
+      if (winNext.hidden !== !vm.win.hasNext) winNext.hidden = !vm.win.hasNext;
+      setAttr(winNext, 'data-default', vm.win.hasNext ? '' : undefined);
+      setAttr(winOk, 'data-default', vm.win.hasNext ? undefined : '');
+    }
 
     setText(nameBox, vm.nameBox);
     if (formulaBar.value !== vm.formula.text) formulaBar.value = vm.formula.text;
@@ -315,5 +386,51 @@ export function createView(root: HTMLElement): View {
     ghostAt = address;
   }
 
-  return { update, setGhost };
+  function setSound(on: boolean): void {
+    setAttr(soundButton, 'aria-pressed', on ? 'true' : 'false');
+  }
+
+  function setWinDialog(open: boolean): void {
+    if (winDialog.hidden !== !open) winDialog.hidden = !open;
+  }
+
+  let titleDialog: HTMLDivElement | undefined;
+
+  function showTitle(): void {
+    if (!titleDialog) {
+      const dlg = make(doc, 'div', 'dialog title-dialog', 'title-dialog');
+      dlg.setAttribute('role', 'dialog');
+      dlg.setAttribute('aria-modal', 'true');
+      dlg.setAttribute('aria-labelledby', 'title-heading');
+      dlg.setAttribute('aria-describedby', 'title-premise');
+      const bar = dialogTitleBar('dialog-title');
+      (bar.firstElementChild as HTMLSpanElement).textContent = STRINGS.titleBar;
+      const body = make(doc, 'div', 'dialog-body title-body');
+      const heading = make(doc, 'h1', 'title-heading', 'title-heading');
+      heading.textContent = STRINGS.titleBar;
+      const tagline = make(doc, 'p', 'title-tagline');
+      tagline.textContent = STRINGS.title.tagline;
+      const premise = make(doc, 'p', 'title-premise', 'title-premise');
+      premise.textContent = STRINGS.title.premise;
+      const controls = make(doc, 'p', 'title-controls');
+      controls.textContent = STRINGS.title.controls;
+      const buttons = make(doc, 'div', 'dialog-buttons');
+      const start = dialogButton('title-start', 'start', STRINGS.buttons.start);
+      start.setAttribute('data-default', '');
+      buttons.append(start);
+      body.append(heading, tagline, premise, controls, buttons);
+      dlg.append(bar, body);
+      titleDialog = dlg;
+    }
+    if (!titleDialog.isConnected) overlay.append(titleDialog);
+    setAttr(frame, 'inert', '');
+  }
+
+  function hideTitle(): void {
+    titleDialog?.remove();
+    titleDialog = undefined;
+    setAttr(frame, 'inert', undefined);
+  }
+
+  return { update, setGhost, setSound, showTitle, hideTitle, setWinDialog };
 }

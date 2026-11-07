@@ -1,0 +1,134 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 [Batch 1] [IDE] Add the shared types, the new strings and the pure sound module": [
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794017583311
+      },
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794017724323
+      }
+    ],
+    "1.2 [Batch 1] [IDE] Set `fx` in the controller and pass it through the view model": [
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794017726764
+      },
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794018021386
+      }
+    ],
+    "1.3 [Batch 1] [IDE] Add Key_Map row 13a so `R` restarts from the Death_Dialog button (D21)": [
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794018023630
+      },
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794018128816
+      }
+    ],
+    "1. Types, strings, sound mapper, controller, view model and Key_Map": [
+      {
+        "executionId": "d1beb296-36e7-43e0-9a21-b82f220ee19e",
+        "chatSessionId": "sess_0a0cd2c2-a528-4e10-bec0-b3a65c01c926",
+        "timestamp": 1794018129153
+      }
+    ],
+    "2.1 [Batch 2] [Crew] Create `audio.ts` with a fake-context test": [
+      {
+        "executionId": "2ff9c15f-3a67-4e47-9cd7-571c98c421bc",
+        "chatSessionId": "sess_6f0765b5-3ed2-4453-9970-b6b22342e000",
+        "timestamp": 1794018399245
+      },
+      {
+        "executionId": "2ff9c15f-3a67-4e47-9cd7-571c98c421bc",
+        "chatSessionId": "sess_6f0765b5-3ed2-4453-9970-b6b22342e000",
+        "timestamp": 1794018621140
+      }
+    ],
+    "2. Audio player and public assets": [
+      {
+        "executionId": "2ff9c15f-3a67-4e47-9cd7-571c98c421bc",
+        "chatSessionId": "sess_6f0765b5-3ed2-4453-9970-b6b22342e000",
+        "timestamp": 1794018621492
+      }
+    ],
+    "3.1 [Batch 3] [IDE] Rebuild the skeleton, padlocks and dialogs in `render.ts`": [
+      {
+        "executionId": "7fda8bf2-f2b6-4a5c-b49c-296d29ddebcb",
+        "chatSessionId": "sess_547d8a38-bedf-4837-98b7-cb85406ed033",
+        "timestamp": 1794018718158
+      },
+      {
+        "executionId": "7fda8bf2-f2b6-4a5c-b49c-296d29ddebcb",
+        "chatSessionId": "sess_547d8a38-bedf-4837-98b7-cb85406ed033",
+        "timestamp": 1794018955408
+      }
+    ],
+    "3.2 [Batch 3] [IDE] Wire sound, mute, the title dialog and the end dialogs in `app.ts`": [
+      {
+        "executionId": "7fda8bf2-f2b6-4a5c-b49c-296d29ddebcb",
+        "chatSessionId": "sess_547d8a38-bedf-4837-98b7-cb85406ed033",
+        "timestamp": 1794018957843
+      },
+      {
+        "executionId": "7fda8bf2-f2b6-4a5c-b49c-296d29ddebcb",
+        "chatSessionId": "sess_547d8a38-bedf-4837-98b7-cb85406ed033",
+        "timestamp": 1794019284269
+      }
+    ],
+    "3. Renderer and app wiring": [
+      {
+        "executionId": "7fda8bf2-f2b6-4a5c-b49c-296d29ddebcb",
+        "chatSessionId": "sess_547d8a38-bedf-4837-98b7-cb85406ed033",
+        "timestamp": 1794019284444
+      }
+    ],
+    "4.1 [Batch 4] [IDE] Write the stylesheets and prove them with a CSS test and a visual check": [
+      {
+        "executionId": "186560cd-3ccc-469e-abf6-4efac77bb778",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019346442
+      },
+      {
+        "executionId": "bca98f21-3256-4604-952c-65e32791aaba",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019493681
+      },
+      {
+        "executionId": "bca98f21-3256-4604-952c-65e32791aaba",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019756208
+      }
+    ],
+    "4.2 [Batch 4] [IDE] Update the entry points and the module scan": [
+      {
+        "executionId": "bca98f21-3256-4604-952c-65e32791aaba",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019758416
+      },
+      {
+        "executionId": "bca98f21-3256-4604-952c-65e32791aaba",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019925291
+      }
+    ],
+    "4. Stylesheets and entry points": [
+      {
+        "executionId": "bca98f21-3256-4604-952c-65e32791aaba",
+        "chatSessionId": "sess_996574dd-b5b3-45c5-b9e0-6100f4fe53a3",
+        "timestamp": 1794019925635
+      }
+    ]
+  }
+}

@@ -1,17 +1,4 @@
-/* Grid UI: minimal and functional. Skin comes later. */
-.grimsheet-app {
-  font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
-  background: #ffffff;
-  color: #000000;
-}
-
-@media (prefers-color-scheme: dark) {
-  .grimsheet-app {
-    background: #111111;
-    color: #ffffff;
-  }
-}
-
+/* Grid UI: structure and function. The skin lives in chrome.css. */
 .grimsheet-app [hidden] {
   display: none;
 }
@@ -41,12 +28,16 @@
   border-collapse: collapse;
   table-layout: fixed;
   /* An explicit width is what makes table-layout: fixed apply. Keep it equal to the sum of the <col>
-     widths set in render.ts: 3rem row headers + 12 * 2.5rem cells. */
-  width: 33rem;
+     widths set in render.ts: 3rem row headers + 7.5rem column A + 11 * 2.5rem cells. */
+  width: 38rem;
 }
 
 .grid-table col.col-row-header {
   width: 3rem;
+}
+
+.grid-table col.col-label {
+  width: 7.5rem;
 }
 
 .grid-table col.col-cell {
@@ -78,6 +69,7 @@
   overflow: hidden;
   text-overflow: clip;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .entity-glyph {
@@ -94,14 +86,6 @@
   visibility: hidden;
 }
 
-.padlock {
-  position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 0.6rem;
-  line-height: 1;
-}
-
 .grid-table td[data-selected='true'] {
   outline: 3px solid currentColor;
   outline-offset: -3px;
@@ -115,17 +99,6 @@
 :focus-visible {
   outline: 3px solid #0050d0;
   outline-offset: 2px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :focus-visible {
-    outline-color: #ffd000;
-  }
-}
-
-.end-banner {
-  padding: 0.5rem;
-  border: 2px solid currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {
