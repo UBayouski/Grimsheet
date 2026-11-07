@@ -35,26 +35,31 @@ Captured with the Playwright MCP on a Vite dev server, viewport 1280 by 800, on 
 
 ### Decisions
 
-Working assumptions, all marked **For review**. The requirements below are written against them. Change a decision and the affected criteria change with it.
+Decisions D1 to D21, all marked **Confirmed**. The requirements below are written against them. Change a decision and the affected criteria change with it.
 
 | # | Decision | Reason | Status |
 | --- | --- | --- | --- |
-| D1 | **Window buttons are decorative.** Three spans drawn by CSS, `aria-hidden="true"`, no handlers, not focusable. | A real close button would have to do something. Inert shapes add no keyboard stop and no false control. | For review |
-| D2 | **Sheet tabs move to the bottom by moving the `<nav id="tab-bar">` in `render.ts`**, to sit after the table and before the status bar. No CSS `order`. | Visual order, DOM order and Tab order stay equal. Cost: Tab order becomes toolbar, grid, tabs. The ids, `data-control`, `aria-current` and `disabled` rules are unchanged. | For review |
-| D3 | **Font: VT323** by Peter Hull, SIL OFL 1.1, from `google/fonts` `ofl/vt323`. One weight, monospace, subsets latin, latin-ext, vietnamese. See Requirement 2. | The only candidate checked that is monospace, pixel-style, open-licensed and covers all game glyphs. | For review |
-| D4 | **`@font-face` lives in a new `src/styles/fonts.css`.** It is the only stylesheet allowed to contain `url(`, and only as `url('/fonts/<name>.woff2')`. | Keeps the two existing stylesheet scans intact and makes the font exception one precise rule. | For review |
-| D5 | **Padlocks are not rendered for `data-region="map"`.** The span is built in `render.ts` only for locked cells of the rules region, and it is drawn by CSS (no emoji character). `data-locked` and `aria-readonly` stay on every locked cell. | The formula bar and the styling still need the lock state. Only the marker is noise. The BRIEF-era placeholder (grid-ui Decision 20) is replaced. | For review |
-| D6 | **Motion durations:** flash 400 ms, hero slide 120 ms, shake 300 ms. All are CSS animations. They replay by alternating two keyframe names selected by a one-bit `Beat` attribute on the App_Root, not by timers and not by forced reflow. | `data-changed` stays set on a cell across accepted Actions, so an attribute that does not change cannot restart an animation. Flipping the animation name does. | For review |
-| D7 | **The motion and sound signal is a new field `fx` on `AppState`**, set by the controller on every accepted Action: `{ beat, slide, damaged, cues }`. | The Damage_Log exists only on the Action_Result inside `accept` (grid-ui gap 1). `fx` keeps `step` pure and gives `app.ts` one place to read. | For review |
-| D8 | **Only the hero slides.** Monsters jump as they do today. | BRIEF section 8 says "the hero slides one cell". | For review |
-| D9 | **The title splash is a dialog in `#screen-overlay`, shown only when `MountOptions.showTitle` is true.** `src/main.ts` passes `true`. The fixture entries do not. It is shown on every page load, is not stored in Progress, and is held as a closure flag in `app.ts` (like the ghost), so `step`, `AppState` and the Key_Map are unchanged. | Playwright flows and `scripts/play.mjs` keep working unchanged. The Start click is also the first gesture that unlocks audio. | For review |
-| D10 | **Death dialog = the existing `#end-banner`, restyled.** It gains `role="alertdialog"`, its own Recover button and focus. It is non-modal so the sheet stays readable. The **win dialog** is built in `#screen-overlay`. | `#end-banner` is an existing hook. Players want to look at the sheet after dying. | For review |
-| D11 | **Sound defaults to on, and stays silent until the first user gesture.** The mute preference is in `localStorage` key `grimsheet.muted`, separate from Progress, through the same `StorageLike` seam. There is **no keyboard shortcut** for mute (the Key_Map is unchanged) and **no sound for refused moves or edits**. `wait` and `undo` are silent. | Lean. A blocked step into a wall is common, and a buzz on each would grate. The toggle is a Tab stop. | For review |
-| D12 | **One grey chrome theme, no dark variant.** The `prefers-color-scheme: dark` block of `grid-ui.css` is removed. The error-monsters colour pairs keep both light and dark values, because each is a self-contained foreground and background pair. | A late-1990s window is grey in every setting. | For review |
-| D13 | **Favicon is a hand-drawn file `public/favicon.svg`**, linked from `index.html` and the three fixture pages. | A file is simplest and works in dev and in the build. It is authored in the repo, not taken from outside. | For review |
-| D14 | **No sprites.** Glyphs (`@`, `M`) and the error-monsters CSS shapes stay. | BRIEF section 8 calls sprites optional. No image files keeps the build static and small. error-monsters Requirement 10 handed this decision to this spec. | For review |
-| D15 | **Property-based testing is not enabled.** | The Sound_Mapper is a small total function with five outputs; an example table covers it. The mute value is one character. The rest is CSS and DOM wiring. | For review |
-| D16 | **Screenshots use a 1280 by 1024 viewport**, not 800. | The window is about 940 px tall plus the status bar. At 800 px the status bar and the rules panel are cut off. | For review |
+| D1 | **Window buttons are decorative.** Three spans drawn by CSS, `aria-hidden="true"`, no handlers, not focusable. | A real close button would have to do something. Inert shapes add no keyboard stop and no false control. | Confirmed |
+| D2 | **Sheet tabs move to the bottom by moving the `<nav id="tab-bar">` in `render.ts`**, to sit after the table and before the status bar. No CSS `order`. | Visual order, DOM order and Tab order stay equal. Cost: Tab order becomes toolbar, grid, tabs. The ids, `data-control`, `aria-current` and `disabled` rules are unchanged. | Confirmed |
+| D3 | **Font: VT323** by Peter Hull, SIL OFL 1.1, from `google/fonts` `ofl/vt323`. One weight, monospace, subsets latin, latin-ext, vietnamese. See Requirement 2. | The only candidate checked that is monospace, pixel-style, open-licensed and covers all game glyphs. | Confirmed |
+| D4 | **`@font-face` lives in a new `src/styles/fonts.css`.** It is the only stylesheet allowed to contain `url(`, and only as `url('/fonts/<name>.ttf')`. | Keeps the two existing stylesheet scans intact and makes the font exception one precise rule. | Confirmed |
+| D5 | **Padlocks are not rendered for `data-region="map"`.** The span is built in `render.ts` only for locked cells of the rules region, and it is drawn by CSS (no emoji character). `data-locked` and `aria-readonly` stay on every locked cell. | The formula bar and the styling still need the lock state. Only the marker is noise. The BRIEF-era placeholder (grid-ui Decision 20) is replaced. | Confirmed |
+| D6 | **Motion durations:** flash 400 ms, hero slide 120 ms, shake 300 ms. All are CSS animations. They replay by alternating two keyframe names selected by a one-bit `Beat` attribute on the App_Root, not by timers and not by forced reflow. | `data-changed` stays set on a cell across accepted Actions, so an attribute that does not change cannot restart an animation. Flipping the animation name does. | Confirmed |
+| D7 | **The motion and sound signal is a new field `fx` on `AppState`**, set by the controller on every accepted Action: `{ beat, slide, damaged, cues }`. | The Damage_Log exists only on the Action_Result inside `accept` (grid-ui gap 1). `fx` keeps `step` pure and gives `app.ts` one place to read. | Confirmed |
+| D8 | **Only the hero slides.** Monsters jump as they do today. | BRIEF section 8 says "the hero slides one cell". | Confirmed |
+| D9 | **The title splash is a dialog in `#screen-overlay`, shown only when `MountOptions.showTitle` is true.** `src/main.ts` passes `true`. The fixture entries do not. It is shown on every page load, is not stored in Progress, and is held as a closure flag in `app.ts` (like the ghost), so `step`, `AppState` and the Key_Map are unchanged. | Playwright flows and `scripts/play.mjs` keep working unchanged. The Start click is also the first gesture that unlocks audio. | Confirmed |
+| D10 | **Death dialog = the existing `#end-banner`, restyled.** It gains `role="alertdialog"`, its own Recover button and focus. It is non-modal so the sheet stays readable. The **win dialog** is built in `#screen-overlay`. | `#end-banner` is an existing hook. Players want to look at the sheet after dying. | Confirmed |
+| D11 | **Sound defaults to on, and stays silent until the first user gesture.** The mute preference is in `localStorage` key `grimsheet.muted`, separate from Progress, through the same `StorageLike` seam. There is **no keyboard shortcut** for mute (the Key_Map is unchanged) and **no sound for refused moves or edits**. `wait` and `undo` are silent. | Lean. A blocked step into a wall is common, and a buzz on each would grate. The toggle is a Tab stop. | Confirmed |
+| D12 | **One grey chrome theme, no dark variant.** The `prefers-color-scheme: dark` block of `grid-ui.css` is removed. The error-monsters colour pairs keep both light and dark values, because each is a self-contained foreground and background pair. | A late-1990s window is grey in every setting. | Confirmed |
+| D13 | **Favicon is a hand-drawn file `public/favicon.svg`**, linked from `index.html` and the three fixture pages. | A file is simplest and works in dev and in the build. It is authored in the repo, not taken from outside. | Confirmed |
+| D14 | **No sprites.** Glyphs (`@`, `M`) and the error-monsters CSS shapes stay. | BRIEF section 8 calls sprites optional. No image files keeps the build static and small. error-monsters Requirement 10 handed this decision to this spec. | Confirmed |
+| D15 | **Property-based testing is not enabled.** | The Sound_Mapper is a small total function with five outputs; an example table covers it. The mute value is one character. The rest is CSS and DOM wiring. | Confirmed |
+| D16 | **Screenshots use a 1280 by 1024 viewport** (plus one small-viewport shot at 1366 by 768); layout checks run at 1280 by 1024 and also at 1366 by 768. | The window is about 940 px tall plus the status bar. At 800 px the status bar and the rules panel are cut off, so the full-window shots need 1024 px, and the 1366 by 768 check proves the sticky Status_Bar (D20) on a common laptop screen. | Confirmed |
+| D17 | **Column A gets its own width of 7.5rem** (the exact value is decided in the design from measurements with VT323), so rules-panel labels such as "Trap damage", "Move rule of M1", "Attack rule of M1" and "Divisor" are fully readable. Columns B to L stay 2.5rem square. It is a CSS rule on the column A cells (body cells with `data-col="A"` and the column A header cell, selected through the existing header structure), with no inline style. | Labels are clipped to four characters today at 2.5rem. Column A rows 1 to 12 are mostly the outer wall in all five levels, so widening it does not enlarge the playable map. | Confirmed |
+| D18 | **Font measurement comes first.** The design phase downloads VT323 from the source recorded in Requirement 2, renders the real grid with the Playwright MCP at 1280 by 1024, and measures the `#DIV/0!` text and the labels in VT323 before it fixes any size. If 0.5rem VT323 is not legible, the design picks the smallest legible size and adjusts the error text strip (the error-monsters CSS `font-size` and its Playwright fit check). The design reports what it measured. | The advance width and legibility of VT323 are unverified, and sizes chosen without measurement would be guesses. | Confirmed |
+| D19 | **Font format: ship the TTF unchanged.** `public/fonts/vt323-regular.ttf` and `public/fonts/OFL.txt`; `fonts.css` declares `src: url('/fonts/vt323-regular.ttf') format('truetype')`. No conversion, no new tool installed. | An unmodified file is not a Modified Version under OFL 1.1, so no Reserved Font Name question arises. | Confirmed |
+| D20 | **The Status_Bar is sticky at the bottom of the viewport** (`position: sticky; bottom: 0`), so HP, ink, turn and the Message are always visible. Playwright layout checks run at 1280 by 1024 and at 1366 by 768. | The window is taller than a 768 px laptop viewport, and the status values must not need a scroll. | Confirmed |
+| D21 | **On the lost screen, `R` restarts even when focus is on the Death_Dialog Recover button.** It is the same widening that exists in `key-map.ts` for a pending restart confirmation (grid-ui Key_Map row 13). The exact condition is left to the design. | Moving focus to the dialog button must not cost the `R` shortcut. | Confirmed |
 
 ## Glossary
 
@@ -99,6 +104,7 @@ Working assumptions, all marked **For review**. The requirements below are writt
 4. THE `render.ts` skeleton SHALL place the Tab_Bar after the Grid_Table and before the Status_Bar, so that visual order, DOM order and Tab order are the same.
 5. THE Status_Bar SHALL separate the level label, HP, ink, turn and Message with CSS-drawn dividers between the existing spans.
 6. WHILE the viewport is narrower than the window, THE Chrome SHALL let the page scroll horizontally so that no control is clipped.
+7. THE Status_Bar SHALL be sticky at the bottom of the viewport (`position: sticky; bottom: 0`), so that at 1366 by 768 and at 1280 by 1024 its bounding box lies within the viewport after every scroll position, which a Playwright scroll test verifies at both sizes.
 
 ### Requirement 2: Font
 
@@ -113,16 +119,16 @@ The chosen font:
 | License | SIL Open Font License 1.1 (text in `google/fonts` `ofl/vt323/OFL.txt`) |
 | Source | `https://github.com/google/fonts/tree/main/ofl/vt323` (file `VT323-Regular.ttf`); upstream `https://github.com/phoikoi/VT323`, the commit recorded by Google Fonts is `9bd4b3f69887fd960d51d07602db60a28a789145` |
 | Version | The name-table version string of the downloaded file is recorded in the design; this session did not download the file |
-| Files to ship | `public/fonts/vt323-regular.woff2` (lossless conversion of the TTF) and `public/fonts/OFL.txt` (unchanged) |
+| Files to ship | `public/fonts/vt323-regular.ttf` (the upstream `VT323-Regular.ttf` byte for byte, renamed to kebab-case) and `public/fonts/OFL.txt` (unchanged) |
 | Fallback stack | `'VT323', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace` |
 
-The OFL permits use, bundling and redistribution with software, requires each copy to carry the copyright notice and the license, and forbids selling the font by itself. A format change counts as a Modified Version under OFL 1.1, and a Modified Version may not use a Reserved Font Name. The `OFL.txt` published in `google/fonts` declares no Reserved Font Name, so the woff2 may keep the name. Older copies of the license for this family declare "VT323" as reserved. If the design finds a reserved name in the downloaded file, it ships the TTF unchanged instead. Candidates not chosen: Press Start 2P (8 px advance, too wide for a 40 px cell), Silkscreen and Pixelify Sans (not monospace).
+The OFL permits use, bundling and redistribution with software, requires each copy to carry the copyright notice and the license, and forbids selling the font by itself. The `OFL.txt` published in `google/fonts` declares no Reserved Font Name; older copies of the license for this family declare "VT323" as reserved, so the design confirms the finding against the downloaded file. The TTF is shipped unchanged (D19): no conversion and no new tool, so the file is not a Modified Version and no Reserved Font Name question arises. Candidates not chosen: Press Start 2P (8 px advance, too wide for a 40 px cell), Silkscreen and Pixelify Sans (not monospace).
 
 #### Acceptance Criteria
 
-1. THE Font_Stylesheet SHALL declare one `@font-face` for `VT323` with `src: url('/fonts/vt323-regular.woff2') format('woff2')`, `font-weight: 400`, `font-style: normal` and `font-display: swap`, and THE Skin SHALL use the Font_Stack for all app text including inputs and buttons.
-2. THE repository SHALL contain `public/fonts/vt323-regular.woff2` and `public/fonts/OFL.txt`, and the README SHALL credit the font with its name, designer, license and source URL.
-3. THE Module_Scan SHALL allow `url(` only in `fonts.css` and only in the form `url('/fonts/<kebab-name>.woff2')`, SHALL keep `@import` and `http` forbidden in every stylesheet, and SHALL keep `url(` forbidden in `grid-ui.css`, `error-monsters.css`, `chrome.css` and `motion.css`.
+1. THE Font_Stylesheet SHALL declare one `@font-face` for `VT323` with `src: url('/fonts/vt323-regular.ttf') format('truetype')`, `font-weight: 400`, `font-style: normal` and `font-display: swap`, and THE Skin SHALL use the Font_Stack for all app text including inputs and buttons.
+2. THE repository SHALL contain `public/fonts/vt323-regular.ttf` (unchanged from upstream) and `public/fonts/OFL.txt`, and the README SHALL carry the sentence "Font: VT323 by Peter Hull, SIL Open Font License 1.1, https://github.com/google/fonts/tree/main/ofl/vt323 (file shipped unchanged)."
+3. THE Module_Scan SHALL allow `url(` only in `fonts.css` and only in the form `url('/fonts/<kebab-name>.ttf')`, SHALL keep `@import` and `http` forbidden in every stylesheet, and SHALL keep `url(` forbidden in `grid-ui.css`, `error-monsters.css`, `chrome.css` and `motion.css`.
 4. WHEN the page loads, THE Skin SHALL cause no network request to any origin other than the page's own origin.
 
 ### Requirement 3: Padlocks
@@ -168,6 +174,10 @@ The OFL permits use, bundling and redistribution with software, requires each co
 2. WHEN the player activates the Recover button of the Death_Dialog, THE Grid_UI SHALL restart the level at once, as grid-ui Requirement 10 defines for the lost screen.
 3. WHEN `data-screen` becomes `won`, THE Win_Dialog SHALL show a dialog with the title bar `STRINGS.titleBar`, the body `STRINGS.won` (or `STRINGS.wonLast` on the last level) and a default button (Next level when a next level exists, otherwise OK), and SHALL move focus to that button.
 4. WHEN the player activates OK or presses Escape in the Win_Dialog, THE Grid_UI SHALL hide it and move focus to the Grid_Table, and WHILE either end dialog is shown, THE Grid_UI SHALL keep the sheet readable and Ctrl+Arrow selection working.
+
+5. WHILE `data-screen` is `lost`, WHEN the player presses `R` with keyboard focus on a button, THE Grid_UI SHALL restart the level at once, so that `R` works with focus on the Recover button of the Death_Dialog.
+
+The exact Key_Map condition is left to the design. The rule widens the grid-ui Key_Map table (row 13), so the tests are: a `key-map.test.ts` unit case (`R` with a focused button on the lost screen gives a restart, and on the playing screen still gives none) and a step in `tests/e2e/recover-restart.spec.ts` that dies, leaves focus on the Recover button, presses `R` and sees the level restart.
 
 ### Requirement 7: Sound
 
@@ -215,7 +225,10 @@ Full WCAG validation needs manual testing with assistive technologies and expert
 
 1. THE Skin SHALL give every text and background colour pair of the Chrome and the dialogs a contrast ratio of at least 4.5 to 1, and every focus ring, bevel edge that signals a state and toggle state mark a ratio of at least 3 to 1 against its neighbour, with the ratios computed and listed in the design.
 2. THE Skin SHALL keep a visible focus ring on every focusable element, including the new dialog buttons and the Mute_Toggle, and SHALL convey no state by colour alone.
-3. WHEN the font has loaded, THE Skin SHALL keep the `#DIV/0!` cell text inside its cell (`scrollWidth` at most `clientWidth`) and the rules-panel labels in column A readable, with the cell size raised if the design finds it necessary.
+3. WHEN the font has loaded, THE Skin SHALL keep the `#DIV/0!` cell text inside its cell (`scrollWidth` at most `clientWidth`), at the font size the design fixes from its VT323 measurements (D18).
+4. WHEN the font has loaded, THE Skin SHALL give column A of the Grid_Table a width of 7.5rem through a CSS rule on the column A cells (D17), with no inline style, so that the longest rules-panel label of the five levels (at most 24 characters) has `scrollWidth` at most `clientWidth`, and columns B to L SHALL stay 2.5rem square.
+
+The design sizes column A for the longest actual label in the five level files and decides whether labels longer than the column wrap or whether the column grows, only if needed.
 
 ### Requirement 10: Screenshots
 
@@ -223,7 +236,7 @@ Full WCAG validation needs manual testing with assistive technologies and expert
 
 #### Acceptance Criteria
 
-1. WHEN all other tasks of this spec are done, THE Screenshot_Set SHALL be captured with the Playwright MCP at a 1280 by 1024 viewport from a clean browser profile (no saved progress, no personal data) into `docs/screenshots/` as `01-title.png`, `02-level-play.png` (a level with the NECRONOMICELL panel visible), `03-monster-formula.png` (level 2 with `MOVE_M1` selected, its formula in the formula bar), `04-error-monster.png` (level 4 with an error cell and its cause line), `05-death-dialog.png` and `06-win-dialog.png`, together with a `docs/screenshots/README.md` that describes each file in one line.
+1. WHEN all other tasks of this spec are done, THE Screenshot_Set SHALL be captured with the Playwright MCP at a 1280 by 1024 viewport from a clean browser profile (no saved progress, no personal data) into `docs/screenshots/` as `01-title.png`, `02-level-play.png` (a level with the NECRONOMICELL panel visible), `03-monster-formula.png` (level 2 with `MOVE_M1` selected, its formula in the formula bar), `04-error-monster.png` (level 4 with an error cell and its cause line), `05-death-dialog.png` and `06-win-dialog.png`, plus `07-small-viewport.png` captured at 1366 by 768 (level 1 in play, the Status_Bar visible at the bottom of the viewport), together with a `docs/screenshots/README.md` that describes each of the seven files in one line.
 
 ### Requirement 11: Layering and Scope Boundary
 
@@ -247,14 +260,17 @@ What this spec changes in existing files:
 | `src/ui/view-model.ts` | Pass `fx` and the lock/region data to the renderer. |
 | `src/ui/strings.ts` | Add title texts, `buttons.ok`, `buttons.sound`, dialog labels. Remove `padlock`. |
 | `src/ui/module.test.ts` | New files, audio allowance, font `url(` rule, new stylesheets. |
-| `src/styles/grid-ui.css` | Remove the dark block; the fixed table width may change if the cell size changes. |
+| `src/ui/key-map.ts`, `src/ui/key-map.test.ts` | Grid-ui Key_Map row 13 gains an exception: on the lost screen `R` restarts when focus is on a button (D21). Unit test added. |
+| `tests/e2e/recover-restart.spec.ts`, `tests/e2e` grid-layout | A step presses `R` with focus on the Recover button; layout checks also run at 1366 by 768 with a scroll test for the sticky Status_Bar. |
+| `src/styles/grid-ui.css` | Remove the dark block; the fixed table width changes because column A is wider (D17). |
+| `src/styles/error-monsters.css` | The `#DIV/0!` text strip `font-size` may change after the VT323 measurement (D18). |
 | `index.html`, `tests/fixtures/*.html`, `src/main.ts`, `tests/fixtures/*main.ts` | Favicon link, font and new stylesheet imports; `main.ts` passes `showTitle: true`. |
 
-New files: `src/ui/sound-events.ts` (pure), `src/ui/audio.ts` (DOM side), `src/styles/fonts.css`, `src/styles/chrome.css`, `src/styles/motion.css`, `public/fonts/vt323-regular.woff2`, `public/fonts/OFL.txt`, `public/favicon.svg`, `docs/screenshots/`.
+New files: `src/ui/sound-events.ts` (pure), `src/ui/audio.ts` (DOM side), `src/styles/fonts.css`, `src/styles/chrome.css`, `src/styles/motion.css`, `public/fonts/vt323-regular.ttf`, `public/fonts/OFL.txt`, `public/favicon.svg`, `docs/screenshots/`.
 
-Existing tests that must change: `render.test.ts` (padlock cases around lines 211 to 222), `strings.test.ts` (padlock string, lines 42 to 44), `module.test.ts`, the view-model and controller tests that compare whole `AppState` values, and `tests/e2e/smoke.spec.ts` (title dialog on `/`). The Playwright specs `grid-layout`, `edit-and-fix`, `recover-restart` and `win-and-persist` read `#status-bar` and `#tab-bar button` by id and are expected to pass unchanged; the layout spec needs a re-check if the cell size changes.
+Existing tests that must change: `render.test.ts` (padlock cases around lines 211 to 222), `strings.test.ts` (padlock string, lines 42 to 44), `module.test.ts`, the view-model and controller tests that compare whole `AppState` values, and `tests/e2e/smoke.spec.ts` (title dialog on `/`). The Playwright specs `grid-layout`, `edit-and-fix`, `recover-restart` and `win-and-persist` read `#status-bar` and `#tab-bar button` by id and are expected to pass unchanged, except that the layout spec (`tests/e2e` grid-layout) is re-checked against the wider column A. The design also checks all five level maps with the wider column A: the hero starts on B6, and no level has an entity or a formula cell in column A of rows 1 to 12. If one exists, the design flags it. The error-monsters Playwright fit check is re-run if the error text size changes.
 
-What this spec does not touch: the engine, the model, the game, the level files, the error-monsters behaviour (looks, causes, ghost timer), the hosting setup beyond the favicon and font files in `public/` (the hosting `check:dist` script should be checked against the new `dist` contents).
+What this spec does not touch: the engine, the model, the game, the level files, the error-monsters behaviour (looks, causes, ghost timer), the hosting setup beyond the favicon and font files in `public/` (the hosting `check:dist` script keeps skipping font binaries and `OFL.txt` in its scans, and its presence check is for `dist/fonts/vt323-regular.ttf` and `dist/favicon.svg`).
 
 ## Gaps and Open Questions
 
@@ -262,11 +278,11 @@ The BRIEF does not decide these. Each has a working assumption above or a note h
 
 1. **Title screen wording.** The BRIEF gives the tagline (in `product.md`) and the premise (6a) but no splash layout or controls line. The texts in Requirement 5 are proposals.
 2. **Mute default, a mute key and a refusal sound.** Not in the BRIEF. D11 picks on, no key, no refusal sound. A key would change the grid-ui Key_Map table and its tests.
-3. **Focus on the Death_Dialog button disables `R` while it has focus**, because the Key_Map ignores game letters on a focused button (grid-ui Key_Map row 13). Enter and Space on the button restart instead. Alternative: do not move focus, which breaks dialog practice.
-4. **VT323 metrics are unverified.** Its advance width and legibility at 0.5rem were not measured because no font file was downloaded. The `#DIV/0!` text (7 characters in a 40 px cell) may need a larger cell. The panel labels are already clipped today at 2.5rem. The design measures and may raise the cell size (error-monsters design allowed it).
-5. **Status bar below the fold at 800 px.** The window is taller than 800 px. D16 handles the screenshots; the live page may need a tighter row height or a scroll rule for the window.
+3. **Resolved (D21, Requirement 6.5).** `R` restarts on the lost screen even with focus on the Recover button. The design chooses the exact Key_Map condition.
+4. **VT323 metrics are unverified, and the design measures them first.** No font file was downloaded in this session. D18 requires the design to measure the `#DIV/0!` text and the labels in VT323 before it fixes sizes, and D17 widens column A for the labels. Cells in columns B to L stay 2.5rem square.
+5. **Status bar below the fold at 800 px.** Resolved by D20 (sticky Status_Bar) and the 1366 by 768 checks. The design may still tighten the row height.
 6. **Slide is clipped.** `td.cell` has `overflow: hidden`, so a glyph sliding in from the neighbour's side is cut at the cell edge. The design decides whether to relax the overflow for the sliding cell or to slide a shorter distance.
-7. **Reserved Font Name.** See Requirement 2. The design checks the downloaded file before choosing woff2 or TTF.
+7. **Reserved Font Name.** See Requirement 2 and D19. The TTF ships unchanged, so the design only records the license finding from the downloaded file.
 8. **Playwright and animation.** The animations move only a glyph and the table for at most 300 ms. Playwright waits for stable elements, so a global `reducedMotion` setting is not recommended (the ghost test needs real motion). Sound cannot be checked in headless runs; the mapper and a fake `AudioContext` cover it.
 9. **Hosting.** Tasks 1.2 and later of the hosting spec are open. The build must copy `public/` to `dist/`; Vite does this by default.
 10. **Desktop colour behind the window.** The BRIEF fixes no page colour. The design picks one that meets the contrast floor for any text placed on it.
