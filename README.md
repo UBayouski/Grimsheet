@@ -182,6 +182,14 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 **MCP.** The Playwright MCP server in [`.kiro/settings/mcp.json`](.kiro/settings/mcp.json) was used to play levels in a real browser and take screenshots during UI work and the live playthrough.
 
+## Screenshots
+
+Screenshots of the skinned game will be listed in `docs/screenshots/README.md` once they are taken.
+
+## Credits
+
+Font: VT323 by Peter Hull, SIL Open Font License 1.1, https://github.com/google/fonts/tree/main/ofl/vt323 (file shipped unchanged).
+
 ## Disclosure
 
 Grimsheet was created from scratch during the Kiroween 2026 submission period. It uses standard open source libraries only; no other pre-existing code is incorporated.
