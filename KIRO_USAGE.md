@@ -1015,3 +1015,67 @@ What changed because of it (time saved, bug caught, decision made):
 - Kiro Web produced a complete first draft from the repo with no hand-writing, which was faster than starting the README by hand.
 - The review was necessary: a from-sources draft still had five concrete mistakes, each checkable against the code, and all five were fixed before merge rather than landing and being corrected later.
 - The correction happened on the PR as a second commit, so the history shows the draft and the fix separately.
+
+## 2026-11-06 — error-monsters Batches 1 to 3
+
+Surface: IDE
+
+Features: spec, hook
+
+What I asked for: Build the error-monsters spec. Batches 1 and 2 ran task by task from the IDE spec panel. Batch 3, planned for Kiro Crew, was instead run by the IDE as three parallel sub-agents.
+
+What Kiro did:
+- Batches 1 and 2 ran one task at a time in the spec panel ("Start task"), in the main checkout. The `PostFileSave` hook (`npm run test:fast`) was seen firing on each edit, so every file was checked on save as it was written.
+- Batch 3 (tasks 3.1 `error-monsters.css`, 3.2 the e2e fixture, 3.3 the `module.test.ts` and CSS-import edits) was planned as a Kiro Crew Task Runner batch, because its three tasks own disjoint files. I ran it from the IDE instead, as three parallel sub-agents working at the same time on their own files. There was no worktree and no branch: the sub-agents wrote straight into the main checkout. I changed the `[Crew]` labels on 3.1, 3.2 and 3.3 to `[IDE, parallel sub-agents]`.
+- Because the sub-agents were still writing when Batch 2 was committed, part of Batch 3 landed in the Batch 2 commit rather than a separate one. The history does not separate the two batches cleanly.
+
+What changed because of it (time saved, bug caught, decision made):
+- The IDE can run disjoint tasks in parallel sub-agents without Kiro Crew, which keeps everything in the main checkout with no merge step. The cost is the opposite of Crew's isolation: the writes interleave with whatever else is being committed, which is how part of Batch 3 ended up inside the Batch 2 commit.
+- The save hook firing on each edit in Batches 1 and 2 is the first time in this project I have seen it fire visibly during a spec-panel run.
+- Nothing about this entry is a code change; it records how the batches were run.
+
+## 2026-11-06 — Recover then R did not confirm (found in play)
+
+Surface: IDE, with the Playwright MCP on the live dev server
+
+Features: none
+
+What I asked for: Fix a bug found while playing. Clicking the Recover button shows the restart confirmation, but pressing R then did nothing. Enter worked (it re-clicked the focused button), and R, R from the grid worked.
+
+What Kiro did:
+- Cause: after the click, focus stays on the Recover button, so `focusKind` is `button`. In `key-map.ts` the pending-confirmation rules (rows 7 and 8) required `focus === 'other'`, so with focus on the button the confirming R fell through to row 9 (which passes Enter and Space to the button natively) and then row 10, which cancels on a game key such as `r`. So R cancelled the confirmation instead of confirming it.
+- Fix: while a restart confirmation is pending, `r` now confirms when focus is on the grid or on a button, but not in the formula bar (that focus is `text` and is handled earlier, where `r` is typed text). `Enter` still confirms a restart only from the grid: on a button it stays native (row 9) so the button's own click confirms, with no double confirm. The switch confirmation has no confirming letter (it confirms on `Enter`), so on a button its `Enter` stays native and re-clicks the tab button; nothing there needed widening. Row 13 and the rest of the table are unchanged.
+- Tests first: a key-map unit case (pending restart, focus button, `r` and `R` give the confirm event) and an app test (click Recover, focus the button, press `r`, the level restarts to B6 at turn 0 with full ink). Both failed on the old key-map (3 failures, including a switch-from-grid case I added), and pass on the fix. My first fix also widened `Enter` on a button and broke the existing "Enter on a button with pending is native" test (it would double-confirm); I split the rule so only `r` is widened to the button.
+- Added a Playwright e2e test (`tests/e2e/recover-restart.spec.ts`) over the fixture page: move, click Recover, assert the button has focus, press `r`, assert the restart.
+- Live check with the Playwright MCP on the real dev server (`npm run dev`, the real entry with the five levels): moved the hero to C6, clicked Recover (the confirmation showed and `document.activeElement` was the Recover button), pressed `r`, and the level restarted to B6 with Turn 0 and HP 3/3. This confirmed the fix against the shipped entry point, not only the fixture.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught in play, not by a test: the key table had a rule (row 13 and the pending rules) that read correctly in the abstract but left a real gap when a button kept focus after a click. The unit tests all used `focus: 'other'` for the pending cases, so none exercised the button-focus path that a real click produces.
+- The Playwright MCP check was worth running: it proved the fix on the real entry point and the real focus behaviour, which the happy-dom app test approximates but does not guarantee.
+- Nothing was committed.
+
+## 2026-11-06 — error-monsters Batch 4 and an eye pass on the real levels 4 and 5
+
+Surface: IDE
+
+Features: spec, mcp
+
+What I asked for: Finish the error-monsters spec: task 4.1 (one Playwright flow on the fixture page) and task 4.2 (final eye pass and checkpoint). Then log the result. After the first eye pass I corrected a claim in its report and asked for a second, short pass on the real levels, with nothing fixed.
+
+What Kiro did:
+- Task 3.3 showed as not started again in the task list after I had marked it complete. I checked the files first: the `module.test.ts` edit and the CSS import in `src/main.ts` were both on disk. I then set the status again rather than re-running the work.
+- Task 4.1 (sub-agent): wrote `tests/e2e/error-monsters.spec.ts`, one flow on `/tests/fixtures/errors.html` with `page.clock`. It checks the class and `data-error` of the five error cells and the `title` cause on B9. It moves the selection by Ctrl+Arrow and checks the explanation line for each kind. It checks that the ghost starts on J9, moves to K9 after 800 ms and never lands on the downstream cell L9. It checks that `#DIV/0!` fits its cell, that reduced motion holds the ghost and that turning it off lets the ghost drift again. The last step edits K9 to `0` and checks that no ghost is left. `npm run verify` (70 files, 1630 tests) and `npm run e2e` (6 of 6) passed.
+- Task 4.2 (sub-agent): `npm run verify` passed. A Playwright MCP eye pass on the fixture page looked at the five shapes in light, dark and forced grayscale. All five stayed distinct without colour, and the 0.5rem text fitted in every cell. It deleted its screenshots and listed what to hand to `skin-and-sound`: the font, the final palette and contrast, and sprites in place of the CSS shapes.
+- Wrong claim in that report: it said levels 4 and 5 have no pre-placed error cells. They do. Level 4 starts with `#DIV/0!` in F6 and in B15 (`RATIO`, which is `=LOAD/DIVISOR` with `DIVISOR` at 0). Level 5 starts with `#CYCLE!` in B18 (`HEX_A`) and B19 (`HEX_B`). The pass did not reach them because those tabs are locked until earlier levels are cleared, and it stopped at the locked tab instead of unlocking them. I checked both levels' JSON before the second pass.
+- Second eye pass (Playwright MCP, real dev server, nothing changed in the code): I wrote progress to `localStorage` under `grimsheet.progress` in the format of `src/ui/progress.ts` (`version` 1, a `cleared` list of level ids, a `current` id), with levels 1 to 3 cleared and level 4 current, then levels 1 to 4 cleared and level 5 current. I reloaded each time.
+  - Level 4: F6 and B15 both carry `cell-error-div0` and show `#DIV/0!`. Each is a black cell with a thin, jagged grey crack from top to bottom, the white `#DIV/0!` text on the text strip and the padlock at top right. The crack is visible but faint, and the text strip covers its middle. The hover text on both cells is `B15 (RATIO) divides by zero`, so F6 names its origin B15.
+  - Level 5: B18 and B19 both carry `cell-error-cycle` and show `#CYCLE!`, with a dotted rounded outline on a pale lilac cell. The ghost is a dark purple sprite in the lower left of the cell. I sampled `data-ghost` every 400 ms for 3.2 seconds: it sat on B18, then B19, then B18 again about every 800 ms, never on two cells at once. The hidden note reads `A ghost drifts along 2 cells of a circular reference.` and the hover text reads `B18 (HEX_A) is on a circular reference with B19`. This browser had reduced motion off.
+  - Looks: both read as intended. Two things for a human eye: the `#CYCLE!` text at 0.5rem is small, and in the full-page screenshot the ghost sits close to the lower edge of that text on the cell it is on. My close-up crops were only about 41 pixels square, so I could not judge the overlap more finely than that. Nothing was fixed.
+- Cleanup: closed the browser, stopped the dev server (it had to be started as a detached process, because the plain background run was blocked), and deleted my screenshots, the server logs and this pass's Playwright MCP files. `git status` shows no leftover files from the pass.
+
+What changed because of it (time saved, bug caught, decision made):
+- Bug caught in a report, not in code: the first eye pass said the real levels had no error cells at rest. I corrected it from my own knowledge of the levels and then confirmed it in the JSON and in the browser. The fixture page is still the better place to see all five kinds together, but it is not the only place.
+- The locked tabs were the reason, and seeding `localStorage` unlocks them without playing the levels. That is a cheap way to look at any later level.
+- The status reset on 3.3 was a tool-state fault, not a code fault: the files were right. I checked them before trusting the status.
+- Not covered: the hero was never moved, so no turn ran. I did not look at how the ghost and the crack behave with the hero standing on or beside them, and I did not test either level in the dark colour scheme or with reduced motion on.
+- Nothing was committed.

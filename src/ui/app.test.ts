@@ -205,6 +205,22 @@ describe('mountApp', () => {
     expect(heroAt()).toBe('B2');
   });
 
+  it('confirms the restart with R while focus is on the Recover button (found in play)', () => {
+    mount();
+    key(document, 'ArrowRight');
+    expect(heroAt()).toBe('C2');
+    const recover = button('recover');
+    click(recover);
+    recover.focus();
+    // The confirmation is pending and the Recover button holds focus, as after a real click.
+    expect(text('#message')).not.toBe('Walk to the exit.');
+    // Pressing R from the focused button must confirm the restart, not cancel it.
+    key(recover, 'r');
+    expect(heroAt()).toBe('B2');
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+    expect(text('.status-ink')).toContain('3');
+  });
+
   it('follows the Status through a win', () => {
     const storage = fakeStorage();
     mount(storage);

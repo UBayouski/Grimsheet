@@ -71,9 +71,17 @@ const cases: Case[] = [
   // Row 8
   hit('row 8: Enter confirms pending switch', input('Enter'), ctx({ pending: 'switch' }), { type: 'confirm' }),
   hit('row 8: r cancels pending switch (row 10)', input('r'), ctx({ pending: 'switch' }), { type: 'cancel' }),
+  // Row 7 with focus on a button: R confirms the restart even though a button holds focus
+  // (the Recover button keeps focus after its click). Regression: found in play.
+  hit('row 7: r confirms pending restart with focus on a button', input('r'), ctx({ pending: 'restart', focus: 'button' }), { type: 'confirm' }),
+  hit('row 7: R confirms pending restart with focus on a button', input('R', { shiftKey: true }), ctx({ pending: 'restart', focus: 'button' }), { type: 'confirm' }),
+  hit('row 7: Enter confirms pending restart from the grid', input('Enter'), ctx({ pending: 'restart', focus: 'other' }), { type: 'confirm' }),
+  hit('row 8: Enter confirms pending switch from the grid', input('Enter'), ctx({ pending: 'switch', focus: 'other' }), { type: 'confirm' }),
   // Row 9
   miss('row 9: Enter on a button with pending is native', input('Enter'), ctx({ pending: 'restart', focus: 'button' })),
   miss('row 9: Space on a button with pending is native', input(' '), ctx({ pending: 'switch', focus: 'button' })),
+  // r in the formula bar is typed text, never a confirm, even with a pending restart (row 5 beats it)
+  miss('row 5: r in the text field with pending restart is typing', input('r'), ctx({ pending: 'restart', focus: 'text' })),
   // Row 10
   hit('row 10: arrow with pending cancels and is prevented', input('ArrowDown'), ctx({ pending: 'restart' }), { type: 'cancel' }),
   hit('row 10: Space with pending cancels and is prevented', input(' '), ctx({ pending: 'switch' }), { type: 'cancel' }),

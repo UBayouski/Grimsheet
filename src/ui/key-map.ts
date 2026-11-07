@@ -67,11 +67,16 @@ export function mapKey(input: KeyInput, context: KeyContext): KeyResult | undefi
   if (pending !== undefined) {
     // 6
     if (key === 'Escape') return result({ type: 'cancel' }, true);
-    // 7
-    if (pending === 'restart' && focus === 'other' && noCtrlAltMeta && (letter === 'r' || key === 'Enter')) {
-      return result({ type: 'confirm' }, true);
+    // 7: a pending restart confirms. 'Enter' confirms from the grid ('other'); on a button it stays
+    // native (row 9) so the focused button's own click confirms, with no double confirm. The 'r'
+    // letter confirms from the grid and from a button (the Recover button keeps focus after its
+    // click), which is what row 9 would otherwise swallow. In the formula bar 'r' is text (row 5).
+    if (pending === 'restart' && noCtrlAltMeta) {
+      if (letter === 'r' && (focus === 'other' || focus === 'button')) return result({ type: 'confirm' }, true);
+      if (key === 'Enter' && focus === 'other') return result({ type: 'confirm' }, true);
     }
-    // 8
+    // 8: a pending switch confirms on 'Enter' from the grid. It has no confirming letter, so on a
+    // button 'Enter' stays native (row 9) and re-clicks the tab button.
     if (pending === 'switch' && focus === 'other' && noCtrlAltMeta && key === 'Enter') {
       return result({ type: 'confirm' }, true);
     }
