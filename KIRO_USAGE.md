@@ -1134,3 +1134,40 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught: the layout shift was visible only as a scrollbar and a 7 px jump in one screenshot. No earlier test measured the window box while an error cell was selected, so the new e2e spec does.
 - Decision: the cause line moved to free space that already existed, not to reserved space with height taken from somewhere else, so no other screenshot moved.
 - Not committed.
+
+## 2026-11-07 — Custom power: grimsheet-playtest
+
+Surface: CLI
+
+Features: power
+
+What I asked for: Use the official "Build a Power" power to make a custom power for this repo that wraps the headless play command, install it from the local folder, and use it for real. The real use: replay the five stored solutions in `tests/solutions/` and report won or not, end HP, ink spent and whether ink spent equals `minimalInk`, then try to win each level with zero edits. Report only; fix nothing in the game. `src/` and `scripts/play.mjs` stay untouched.
+
+What Kiro did:
+- Powers used: the "Build a Power" power (installed here as `power-builder`, skills `create-plugin` and `agent-plugins-reference`) and the new custom power `grimsheet-playtest`. Kiro CLI is 3.1.0. The first attempt looked for it as `build-a-power`, which is not a catalog name, and stopped as asked. Its catalog name is `power-builder`; I installed it from the powers catalog between the two attempts, and the retry used it from there.
+- Files created, following the structure `create-plugin` produces (an Agent Plugins layout, with no `POWER.md`):
+  - `powers/grimsheet-playtest/plugin.json`: name, version, description, author, MIT licence, keywords `playtest`, `replay level`, `solution`, `exploit`, `ink`, `grimsheet`.
+  - `powers/grimsheet-playtest/skills/play-level/SKILL.md`: the single skill. It covers building the bundle (`npm run build:play`), `--list`, `--level-info`, running an action list (`--actions-file`, inline JSON or stdin), and reading the result (`final.status`, `final.hp`, `start.ink - final.ink`, exit 2 for bad input).
+  - No `mcp.json`, because the power wraps a local command and needs no MCP server.
+- Skill checked against the real command: Kiro drafted the skill from `scripts/play.mjs`, then ran the flags against the real command. That caught two mistakes in the first draft. Inline JSON loses its inner quotes in Windows PowerShell (exit 2), so the skill now says to use `--actions-file` or stdin there. And my example edit action was made up; it now uses a real one from a stored solution.
+- Install: `kiro-cli powers install powers/grimsheet-playtest` from the local folder (absolute path). Kiro lists it as installed with the `play-level` skill. A reinstall over the top failed with EPERM, so I uninstalled and installed again to pick up the skill fixes.
+- Loaded by keyword, not named: in step 3 the request used only the words "replay", "stored solutions", "ink" and "exploit", and named no power and no file path. Kiro activated `grimsheet-playtest` from those keywords and read `play-level`. Caveat: this ran inside the same session that created the power, not a brand-new chat, so it shows the keywords match but is not a cold start; the cold-start check below covers that.
+- Replay of all five stored solutions (all won, nothing refused, ink spent equals `minimalInk` every time):
+  - 01-the-corridor: won, HP 3, ink spent 0, minimalInk 0, equal.
+  - 02-the-chaser: won, HP 3, ink spent 1, minimalInk 1, equal.
+  - 03-the-locked-crypt: won, HP 3, ink spent 2, minimalInk 2, equal.
+  - 04-the-trap-row: won, HP 5, ink spent 1, minimalInk 1, equal.
+  - 05-the-lich: won, HP 5, ink spent 2, minimalInk 2, equal.
+- Zero-edit probe (moves and waits only, 19 attempts across the five levels, not exhaustive):
+  - Level 1 falls with zero edits (nine moves east, HP 3). That is by design: its ink budget is 0 and its minimalInk is 0.
+  - Levels 2 to 5 did not fall. Level 2: the monster blocks the exit row or kills the hero (HP -1) on every route tried (straight, top row, bottom row, waiting, luring). Level 3: the wall at G6 stays `#` because KEY is 1520, not 1337. Level 4: F6 is `#DIV/0!` and crossing the trap columns costs 6 HP against 5. Level 5: the exit K4 needs LICH_HP <= 0 and the lich kills the hero first.
+  - No exploit found, so nothing to fix. Nothing in the game was changed.
+- Screenshots: nothing a player sees changed, so by the rule in `.kiro/steering/sheet-ui.md` no screenshot changes and none were retaken.
+- Cold-start check in a new chat: the request was "Replay the five stored Grimsheet solutions and report, per level, whether it was won, the end HP, and whether the ink spent matches the minimal ink recorded for that solution", with an instruction to name no power or file path until the installed powers had been checked. Kiro listed the installed powers and activated `grimsheet-playtest`, chosen by keyword (the request says "Grimsheet", "solutions", "replay" and "ink"), then read `play-level`. It rebuilt the play bundle and replayed the five stored solutions. All five were won, and ink spent equals `minimalInk` in each:
+  - 01-the-corridor: won, HP 3, ink spent 0, minimalInk 0, equal.
+  - 02-the-chaser: won, HP 3, ink spent 1, minimalInk 1, equal.
+  - 03-the-locked-crypt: won, HP 3, ink spent 2, minimalInk 2, equal.
+  - 04-the-trap-row: won, HP 5, ink spent 1, minimalInk 1, equal.
+  - 05-the-lich: won, HP 5, ink spent 2, minimalInk 2, equal.
+
+What changed because of it (time saved, bug caught, decision made): Replaying all five solutions and probing them is now one skill read plus one command per level, and the result fields to read are written down. Checking the skill against the real command caught the PowerShell quoting trap before anyone hit it. `npm run verify` still passes (74 test files, 1830 tests, typecheck and lint clean) and `powers/` is not ignored by `.gitignore`.

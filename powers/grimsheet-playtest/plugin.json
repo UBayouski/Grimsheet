@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "grimsheet-playtest",
+  "version": "1.0.0",
+  "description": "Replay and probe Grimsheet levels with the headless play command. Use to playtest a level, replay a stored solution, probe for exploits, or check how much ink a run spends.",
+  "author": {
+    "name": "Grimsheet"
+  },
+  "keywords": ["playtest", "replay level", "solution", "exploit", "ink", "grimsheet"],
+  "license": "MIT"
+}
