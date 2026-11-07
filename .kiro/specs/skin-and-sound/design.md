@@ -41,6 +41,7 @@ Layering is unchanged: `ui -> game -> model -> engine`. `sound-events.ts` is pur
 | D19 | Ship the TTF unchanged | `public/fonts/vt323-regular.ttf` (153,116 bytes, upstream byte for byte, renamed) and `public/fonts/OFL.txt`. `fonts.css` uses `format('truetype')`. No conversion, no new tool. |
 | D20 | Sticky Status_Bar | `position: sticky; bottom: 0` on `#status-bar`, a direct child of `#window`, which is not a scroll container. See "Sticky status bar". |
 | D21 | `R` restarts on the lost screen with focus on a button | One new Key_Map row (13a) in `key-map.ts`. See "Key_Map change (D21)". |
+| D22 | `R` restarts and `N` advances on the won screen with focus on a button | Extends Key_Map row 13a in `key-map.ts`: on the lost or won screen `r` restarts; on the won screen with a next level `n` advances. Row 13 is unchanged while playing. Found when the win dialog took focus and row 13 swallowed both keys. |
 
 ### Decisions made in this design
 

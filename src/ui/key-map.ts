@@ -94,8 +94,15 @@ export function mapKey(input: KeyInput, context: KeyContext): KeyResult | undefi
   if (focus === 'button') {
     // 12
     if (key === 'Enter' || key === ' ') return undefined;
-    // 13a (D21)
-    if (screen === 'lost' && noCtrlAltMeta && letter === 'r') return result({ type: 'restart' }, true);
+    // 13a (D21, D22): on the lost and won screens a dialog button holds focus, so row 13 would swallow
+    // the shortcuts. 'r' restarts on both; 'n' advances on the won screen when a next level exists.
+    // While playing, row 13 below still leaves 'r', 'n' and 'u' to the button.
+    if ((screen === 'lost' || screen === 'won') && noCtrlAltMeta && letter === 'r') {
+      return result({ type: 'restart' }, true);
+    }
+    if (screen === 'won' && context.hasNext && noCtrlAltMeta && letter === 'n') {
+      return result({ type: 'next-level' }, true);
+    }
     // 13
     if (letter === 'u' || letter === 'r' || letter === 'n' || arrow !== undefined) return undefined;
   }

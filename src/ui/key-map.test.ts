@@ -111,7 +111,12 @@ const cases: Case[] = [
   miss('row 12: Enter on a button is native', input('Enter'), ctx({ focus: 'button' })),
   miss('row 12: Space on a button is native', input(' '), ctx({ focus: 'button' })),
   // Row 13
-  ...['u', 'r', 'n'].map((k) => miss(`row 13: ${k} on a button is native`, input(k), ctx({ focus: 'button', screen: 'won', hasNext: true }))),
+  // On the won screen (D22) r and n are shortcuts even with a dialog button focused; u stays native.
+  miss('row 13: u on a button is native', input('u'), ctx({ focus: 'button', screen: 'won', hasNext: true })),
+  hit('row 13: r on a button when won restarts (D22)', input('r'), ctx({ focus: 'button', screen: 'won', hasNext: true }), { type: 'restart' }),
+  hit('row 13: n on a button when won advances (D22)', input('n'), ctx({ focus: 'button', screen: 'won', hasNext: true }), { type: 'next-level' }),
+  // While playing, row 13 is unchanged: all three letters stay with the button.
+  ...['u', 'r', 'n'].map((k) => miss(`row 13: ${k} on a button while playing is native`, input(k), ctx({ focus: 'button', hasNext: true }))),
   // Row 13a
   hit('row 13a: r on the lost Recover button restarts', input('r'), ctx({ focus: 'button', screen: 'lost' }), { type: 'restart' }),
   hit('row 13a: R on the lost Recover button restarts', input('R', { shiftKey: true }), ctx({ focus: 'button', screen: 'lost' }), { type: 'restart' }),
@@ -119,7 +124,18 @@ const cases: Case[] = [
   miss('row 13a: Command+r on the lost button is native', input('r', { metaKey: true }), ctx({ focus: 'button', screen: 'lost' })),
   miss('row 13a: Alt+r on the lost button is native', input('r', { altKey: true }), ctx({ focus: 'button', screen: 'lost' })),
   miss('row 13a: r on a button while playing is native', input('r'), ctx({ focus: 'button', screen: 'playing' })),
-  miss('row 13a: r on a button when won is native', input('r'), ctx({ focus: 'button', screen: 'won' })),
+  hit('row 13a: r on a button when won restarts (D22)', input('r'), ctx({ focus: 'button', screen: 'won' }), { type: 'restart' }),
+  hit('row 13a: R on a button when won restarts (D22)', input('R', { shiftKey: true }), ctx({ focus: 'button', screen: 'won' }), { type: 'restart' }),
+  miss('row 13a: Ctrl+r on a button when won is native', input('r', { ctrlKey: true }), ctx({ focus: 'button', screen: 'won' })),
+  hit('row 13a: n on a button when won advances (D22)', input('n'), ctx({ focus: 'button', screen: 'won', hasNext: true }), { type: 'next-level' }),
+  hit('row 13a: N on a button when won advances (D22)', input('N', { shiftKey: true }), ctx({ focus: 'button', screen: 'won', hasNext: true }), { type: 'next-level' }),
+  miss('row 13a: n on a button when won without a next level is native', input('n'), ctx({ focus: 'button', screen: 'won', hasNext: false })),
+  miss('row 13a: Ctrl+n on a button when won is native', input('n', { ctrlKey: true }), ctx({ focus: 'button', screen: 'won', hasNext: true })),
+  miss('row 13a: Command+n on a button when won is native', input('n', { metaKey: true }), ctx({ focus: 'button', screen: 'won', hasNext: true })),
+  miss('row 13a: Alt+n on a button when won is native', input('n', { altKey: true }), ctx({ focus: 'button', screen: 'won', hasNext: true })),
+  miss('row 13a: n on a button on the lost screen is native', input('n'), ctx({ focus: 'button', screen: 'lost', hasNext: true })),
+  miss('row 13a: n in a text field on the won screen is typing', input('n'), ctx({ focus: 'text', screen: 'won', hasNext: true })),
+  miss('row 13a: u on a button on the won screen is native', input('u'), ctx({ focus: 'button', screen: 'won', hasNext: true })),
   miss('row 13a: r in a text field on the lost screen is typing', input('r'), ctx({ focus: 'text', screen: 'lost' })),
   miss('row 13a: Enter on the lost Recover button is native', input('Enter'), ctx({ focus: 'button', screen: 'lost' })),
   miss('row 13a: Space on the lost Recover button is native', input(' '), ctx({ focus: 'button', screen: 'lost' })),

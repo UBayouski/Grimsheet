@@ -54,7 +54,8 @@
 .grid-table td.cell {
   position: relative;
   width: 2.5rem;
-  height: 2.5rem;
+  /* Collapsed borders add 1px to the row height, so subtract it to land on exactly 2.5rem. */
+  height: calc(2.5rem - 1px);
   overflow: hidden;
 }
 

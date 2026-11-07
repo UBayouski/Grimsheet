@@ -635,6 +635,21 @@ describe('win dialog', () => {
     expect(document.activeElement).toBe(q('#grid-table'));
   });
 
+  it('starts the next level on N while the Next button holds focus (D22)', () => {
+    mount();
+    key(document, 'ArrowRight');
+    key(document, 'ArrowRight');
+    expect(root?.getAttribute('data-screen')).toBe('won');
+    const next = q('#win-next');
+    expect(document.activeElement).toBe(next);
+    const event = key(next, 'n');
+    expect(event.defaultPrevented).toBe(true);
+    expect(root?.getAttribute('data-screen')).toBe('playing');
+    expect(text('.status-level')).toContain('Lab');
+    expect(winDialog().hidden).toBe(true);
+    expect(document.activeElement).toBe(q('#grid-table'));
+  });
+
   it('still moves the selection with Ctrl+Arrow while open', () => {
     mount();
     key(document, 'ArrowRight');
