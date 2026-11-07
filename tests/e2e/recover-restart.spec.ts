@@ -29,3 +29,44 @@ test('click Recover, press R, and the level restarts at turn 0 with full ink', a
   await expect(page.locator('#status-bar')).toContainText('Turn 0');
   await expect(page.locator('#status-bar')).toContainText('Ink 3/3');
 });
+
+const ERRORS_URL = '/tests/fixtures/errors.html';
+
+// Requirement 6.5: the death dialog focuses Recover; R and Enter each restart exactly once.
+test('die on the errors fixture, press R on the focused Recover, and the level restarts', async ({
+  page,
+}) => {
+  await page.goto(ERRORS_URL);
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-screen', 'playing');
+  await expect(page.locator('#status-bar')).toContainText('HP 9/9');
+
+  for (let i = 0; i < 9; i++) {
+    await page.keyboard.press('Space');
+  }
+  await expect(app).toHaveAttribute('data-screen', 'lost');
+  await expect(page.locator('#end-banner')).toBeVisible();
+  await expect(page.locator("[data-control='recover-dialog']")).toBeFocused();
+
+  await page.keyboard.press('r');
+
+  await expect(app).toHaveAttribute('data-screen', 'playing');
+  await expect(page.locator('#status-bar')).toContainText('Turn 0');
+  await expect(page.locator('#status-bar')).toContainText('HP 9/9');
+  await expect(page.locator('[data-entity="hero"]')).toHaveAttribute('data-address', 'B2');
+  await expect(page.locator('#end-banner')).toBeHidden();
+
+  // Die again on the same page and press Enter on the focused Recover button.
+  for (let i = 0; i < 9; i++) {
+    await page.keyboard.press('Space');
+  }
+  await expect(app).toHaveAttribute('data-screen', 'lost');
+  await expect(page.locator("[data-control='recover-dialog']")).toBeFocused();
+
+  await page.keyboard.press('Enter');
+
+  await expect(app).toHaveAttribute('data-screen', 'playing');
+  await expect(page.locator('#status-bar')).toContainText('Turn 0');
+  await expect(page.locator('#status-bar')).toContainText('HP 9/9');
+  await expect(page.locator('#end-banner')).toBeHidden();
+});

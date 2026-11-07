@@ -69,13 +69,30 @@ test('error cells show their look, cause, and a ghost that drifts, stops and hon
   await expect(page.locator('[data-ghost]')).toHaveCount(1);
   await expect(page.locator('#cell-L9')).not.toHaveAttribute('data-ghost', 'true');
 
-  // 5. The longest error text (#DIV/0!) fits its cell without clipping.
-  const fits = await page.evaluate(() => {
-    const el = document.querySelector('#cell-F9 .cell-text');
-    if (el === null) return null;
-    return el.scrollWidth <= el.clientWidth;
-  });
-  expect(fits).toBe(true);
+  // 5. Error text fits its cell (S11): the text box is no wider than the cell's inner width.
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => document.fonts.check('12px VT323'));
+  for (const address of ['F9', 'H9', 'J9']) {
+    const fit = await page.evaluate((addr) => {
+      const td = document.querySelector(`#cell-${addr}`);
+      const el = document.querySelector(`#cell-${addr} .cell-text`);
+      if (td === null || el === null) return null;
+      return {
+        textWidth: el.getBoundingClientRect().width,
+        cellInner: td.clientWidth,
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+      };
+    }, address);
+    expect(fit, `${address} has a text element`).not.toBeNull();
+    if (fit === null) continue;
+    expect(fit.textWidth, `${address} text box vs cell inner width`).toBeLessThanOrEqual(
+      fit.cellInner,
+    );
+    expect(fit.scrollWidth, `${address} scrollWidth vs clientWidth`).toBeLessThanOrEqual(
+      fit.clientWidth,
+    );
+  }
 
   // 6. Reduced motion holds the ghost still; the current position is kept, no stepping over time.
   await page.emulateMedia({ reducedMotion: 'reduce' });
