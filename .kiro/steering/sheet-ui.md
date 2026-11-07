@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: ["src/ui/**", "**/*.css"]
+fileMatchPattern: ["src/ui/**", "**/*.css", "src/levels/**", "index.html", "public/**"]
 ---
 
 # Sheet UI and visual design
@@ -35,3 +35,15 @@ Recover button that restarts the level.
 ## Accessibility
 Keyboard play (arrows, Space) must work fully. Provide visible focus, sufficient contrast, and text equivalents
 (`aria-label`) for glyph and sprite cells. Never convey state by color alone.
+
+## Screenshots stay current
+`docs/screenshots/` holds seven PNGs used in the README and the Devpost gallery. They must match the live build.
+- When a change alters what a player sees (layout, chrome, fonts, colours, strings, dialogs, level maps, labels or
+  hints), say in the task report which of the seven screenshots it affects, and retake those files before the work
+  is called done.
+- Retake with the Playwright MCP exactly as task 6.2 of `.kiro/specs/skin-and-sound/tasks.md` describes: same file
+  names, same action lists, 1280 by 1024 (`07-small-viewport.png` at 1366 by 768), clean profile, progress seeded
+  through `grimsheet.progress`. Before every shot, poll `document.getAnimations()` until no finite animation is still running (the endless ghost drift never finishes, so skip it), so no slide or flash is caught mid-frame. Look at every retaken image and update `docs/screenshots/README.md` if a caption
+  changed.
+- A change that is not visible (tests, engine internals with identical output, docs) needs no retake; say so.
+- Feature freeze is 2026-11-28: after the last visible change, retake all seven once more.

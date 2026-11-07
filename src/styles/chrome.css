@@ -28,6 +28,22 @@ body {
   padding: 0.25rem 0;
   min-width: 54rem;
   background: var(--backdrop);
+  /* Vertical centring: body is a column that is at least one viewport tall, and #app takes the spare
+     height through auto block margins. No overflow value is set here (S17), and no justify-content,
+     which would cut off the top of a window taller than the viewport. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* The padding above counts inside the minimum height. Without this the body is 0.5rem taller than
+     the viewport (a scrollbar on a tall screen) and the centring is off by that much. */
+  box-sizing: border-box;
+}
+
+/* With spare height the auto margins split it above and below; with none they are 0 and the window
+   sits at the top. Horizontal centring stays with .grimsheet-app (margin: 0 auto). */
+#app {
+  margin-block: auto;
 }
 
 .grimsheet-app {

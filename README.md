@@ -6,11 +6,7 @@ Play it: **https://grimsheet.onrender.com**
 
 A Kiroween 2026 entry (Frankenstein category).
 
-<!--
-  SCREENSHOTS: add once the error-monsters and skin-and-sound specs land.
-  Suggested: the title workbook (GRIMSHEET.XLS), a level mid-play with the NECRONOMICELL
-  rules panel, a monster formula selected in the formula bar, and the "#REF! of the Dead" death screen.
--->
+![Level 3, The Locked Crypt, in the GRIMSHEET.XLS window: the NECRONOMICELL rules panel below the map, and the formula =RUNE_ASH*RUNE_SALT of the KEY cell in the formula bar.](docs/screenshots/02-level-play.png)
 
 ## What it is
 
@@ -172,9 +168,9 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 **Surfaces.** The Kiro IDE was used to write and review every spec and diff. The Kiro Crew Task Runner ran independent task batches in parallel on their own branches, merged after review. Kiro Web opened pull requests for spec documentation, the hosting spec with the Render static-site setup, and this README. The Kiro CLI ran the read-only reviewer agent on engine changes.
 
-**Specs.** Seven spec folders in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels` and `hosting`, in the order of the brief. Five are complete — `formula-engine`, `sheet-model`, `game-rules`, `grid-ui` and `levels` — along with `hosting`; `error-monsters` is being implemented. The eighth spec from the brief, `skin-and-sound`, is planned but not yet written, so the live build still shows an unskinned grid.
+**Specs.** Eight spec folders in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels`, `hosting` and `skin-and-sound`. All eight are built and shipped in the live build. The last one, `skin-and-sound`, gave the game its look and sound: the VT323 font shipped unchanged, beveled window chrome, a sticky status bar, five Web Audio beeps with a persistent mute, and title and end dialogs.
 
-**Steering.** Five files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md` and `structure.md` always on, with `formulas.md` scoped to `src/engine/**` and `sheet-ui.md` scoped to the UI and CSS.
+**Steering.** Five files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md` and `structure.md` always on, with `formulas.md` scoped to `src/engine/**` and `sheet-ui.md` scoped to `src/ui/**`, `**/*.css`, `src/levels/**`, `index.html` and `public/**`. `sheet-ui.md` also says that any change a player can see retakes the affected screenshots in `docs/screenshots` (as in task 6.2 of the `skin-and-sound` spec), and that all seven are retaken after the last visible change before the 2026-11-28 feature freeze.
 
 **Hooks.** Two in [`.kiro/hooks/`](.kiro/hooks/): run the fast tests on every save under `src/`, and run the full `npm run verify` before a task finishes. Both call `scripts/canonical-cwd.mjs`, a small wrapper that fixes the working-directory drive-letter case before running a command — without it, Vitest launched from a path with a lowercased drive letter loads two copies of itself and every suite fails.
 
@@ -184,7 +180,19 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 ## Screenshots
 
-Screenshots of the skinned game will be listed in `docs/screenshots/README.md` once they are taken.
+![The title dialog over the GRIMSHEET.XLS window, with the Start button focused.](docs/screenshots/01-title.png)
+
+*The title dialog: Start hands the grid to the player.*
+
+![Level 4, The Trap Row: the #DIV/0! cell F6 selected, its formula in the formula bar, and the cause line "B15 (RATIO) divides by zero" under it.](docs/screenshots/04-error-monster.png)
+
+*A #DIV/0! error cell and its cause line, in plain English.*
+
+![Level 5, The Lich: the "#REF! of the Dead" dialog, "GRIMSHEET.XLS has stopped responding", over a sheet with #CYCLE! cells and a ghost in the rules panel.](docs/screenshots/05-death-dialog.png)
+
+*The death dialog, with Recover focused, on a haunted sheet of #CYCLE! cells.*
+
+All seven screenshots are listed in [`docs/screenshots/README.md`](docs/screenshots/README.md).
 
 ## Credits
 

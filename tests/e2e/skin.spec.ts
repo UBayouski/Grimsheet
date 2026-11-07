@@ -248,3 +248,59 @@ test.describe('sticky status bar at 1280x1024', () => {
     await checkStickyStatusBar(page, false);
   });
 });
+
+// The window sits in the vertical middle of a tall viewport, and at the top of a short one.
+async function windowBox(page: Page) {
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  await expect.poll(() => page.evaluate(() => document.fonts.check('1rem VT323'))).toBe(true);
+  return page.evaluate(() => {
+    const box = document.querySelector('#window')?.getBoundingClientRect();
+    return {
+      top: box?.top ?? NaN,
+      bottom: box?.bottom ?? NaN,
+      innerHeight: window.innerHeight,
+      scrollHeight: document.documentElement.scrollHeight,
+      scrollY: window.scrollY,
+    };
+  });
+}
+
+test.describe('vertical centring', () => {
+  for (const [width, height] of [
+    [1920, 1200],
+    [2560, 1440],
+  ] as const) {
+    test.describe(`at ${width}x${height}`, () => {
+      test.use({ viewport: { width, height } });
+
+      test('the gap above the window equals the gap below it, and the page does not scroll', async ({ page }) => {
+        await seedLevel(page, 1);
+        await page.goto('/');
+        await pressStart(page);
+
+        const box = await windowBox(page);
+        const above = box.top;
+        const below = box.innerHeight - box.bottom;
+        expect(above).toBeGreaterThan(0);
+        expect(Math.abs(above - below)).toBeLessThanOrEqual(2);
+        expect(box.scrollHeight).toBeLessThanOrEqual(box.innerHeight);
+      });
+    });
+  }
+
+  test.describe('at 1366x768', () => {
+    test.use({ viewport: { width: 1366, height: 768 } });
+
+    test('nothing is cut off at the top when the window is taller than the viewport', async ({ page }) => {
+      await seedLevel(page, 1);
+      await page.goto('/');
+      await pressStart(page);
+
+      const box = await windowBox(page);
+      expect(box.scrollY).toBe(0);
+      expect(box.top).toBeGreaterThanOrEqual(0);
+      // The window is taller than the viewport here, so the page scrolls instead of centring.
+      expect(box.scrollHeight).toBeGreaterThan(box.innerHeight);
+    });
+  });
+});

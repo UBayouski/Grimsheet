@@ -1079,3 +1079,29 @@ What changed because of it (time saved, bug caught, decision made):
 - The status reset on 3.3 was a tool-state fault, not a code fault: the files were right. I checked them before trusting the status.
 - Not covered: the hero was never moved, so no turn ran. I did not look at how the ghost and the crack behave with the hero standing on or beside them, and I did not test either level in the dark colour scheme or with reduced motion on.
 - Nothing was committed.
+
+## 2026-11-06 — skin-and-sound: spec to screenshots
+
+Surface: IDE and Crew
+
+Features: spec, mcp
+
+What I asked for: The eighth spec, skin-and-sound, from requirements to README screenshots: a late-1990s window around the grid, a pixel font, sound, a title screen and end dialogs, and proof that it all fits and works.
+
+What Kiro did:
+- Requirements and a measured design. The design is built on real measurements, not guesses. Kiro downloaded VT323 and measured it in the browser: error text became 0.75rem after 0.5rem proved illegible, and column A became 7.5rem because the widest rules label at 1rem is 109 px wide. Three decisions were made in review: ship the TTF unchanged (no conversion tool, no new dependency), a sticky status bar with layout checks at 1280 by 1024 and at 1366 by 768, and `R` restarts from the death dialog's Recover button (D21).
+- 13 tasks in 6 batches (the plan counts 13: three in Batch 1, two each in Batches 2 to 6). The IDE ran Batches 1, 3, 4 and 6, and also task 2.1, the audio player, which the plan had marked for Crew. Crew ran task 2.2 (the font, `OFL.txt`, the favicon, the README credit and the `check-dist` update) and task 5.2 (the existing e2e specs). The favicon link in `index.html` was added on the 2.2 branch, ahead of task 4.2, so 2.2 was merged twice.
+- Crew finished task 5.1 with no file and no commit, and task 5.2 with its work left uncommitted. I checked both by file list, not by the run summary. I committed 5.2 by hand, and task 5.1 (`tests/e2e/skin.spec.ts`) was redone in the IDE.
+- Bugs caught by the new tests and screenshots, each fixed with a test:
+  - `N` and `R` stopped working after a win, because the win dialog's Next button took focus and the Key_Map ignored the letters while a button had it. Fixed with Key_Map row 13a (D22), with tests.
+  - Map rows were 41 px tall, because the collapsed border added to `height: 2.5rem`. Fixed with `calc(2.5rem - 1px)`, found by `skin.spec.ts` checking that cells are 40 px square.
+  - Error text in rules-panel cells was clipped (`#DIV/` in level 4 B15, `#CYCL` in level 5 B18 and B19), because the rules-region font-size rule lacked `:not(.cell-error)` and overrode the small error size. I saw it in the screenshots in a separate review session. The fix is one selector, and a new e2e fit check now requires the error text box to fit its cell on those three cells. The check fails on the old CSS.
+- The new product-name check also caught the name of a desktop operating system in `README.md`, which was reworded.
+- Screenshots: seven, taken last with the Playwright MCP from fixed action lists, in `docs/screenshots/`. Screenshots 04 and 05 were retaken after the clipping fix. `README.md` now shows the hero image under the intro and three screenshots in its Screenshots section.
+- End state: 74 unit test files and 1829 tests, 28 e2e tests, seven screenshots in `docs/screenshots`, and the game live on Render.
+
+What changed because of it (time saved, bug caught, decision made):
+- `skin-and-sound/tasks.md` still labels 2.1 and 5.1 `[Crew]`, although the IDE ran both. This entry is the record of where they ran.
+- Lesson, again: a Crew step can end with no file and no commit, or with files and no commit, and the summary reads the same in both cases. Checking the file list against the plan is the check that works.
+- The clipped error text passed every unit test and the first e2e fit check, because that check only looked at one cell in the map region. It was found by looking at the screenshots. The new check covers the rules region too.
+- Nothing was committed by this entry or by the README edit.
