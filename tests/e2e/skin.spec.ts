@@ -163,6 +163,37 @@ test.describe('layout and label fit', () => {
   });
 });
 
+// Error text in a rules-region cell must keep the small error size and fit its cell (S11). A rule
+// for the rules region once set 1.25rem without excluding error cells, which clipped "#DIV/" and "#CYCL".
+const RULES_ERROR_CELLS = [
+  { level: 4, address: 'B15', error: '#DIV/0!' },
+  { level: 5, address: 'B18', error: '#CYCLE!' },
+  { level: 5, address: 'B19', error: '#CYCLE!' },
+] as const;
+
+test.describe('error text in the rules region fits its cell', () => {
+  for (const { level, address, error } of RULES_ERROR_CELLS) {
+    test(`level ${level} ${address} (${error})`, async ({ page }) => {
+      await seedLevel(page, level);
+      await page.goto('/');
+      await pressStart(page);
+
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      await expect.poll(() => page.evaluate(() => document.fonts.check('1rem VT323'))).toBe(true);
+      await expect(page.locator(`#cell-${address}`)).toHaveAttribute('data-error', error);
+
+      const widths = await page.evaluate((id) => {
+        const td = document.querySelector<HTMLElement>(`#cell-${id}`);
+        const text = document.querySelector<HTMLElement>(`#cell-${id} .cell-text`);
+        if (td === null || text === null) return null;
+        return { text: text.getBoundingClientRect().width, inner: td.clientWidth };
+      }, address);
+      expect(widths).not.toBeNull();
+      expect(widths?.text ?? Infinity).toBeLessThanOrEqual(widths?.inner ?? 0);
+    });
+  }
+});
+
 async function checkStickyStatusBar(page: Page, small: boolean): Promise<void> {
   await seedLevel(page, 1);
   await page.goto('/');

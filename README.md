@@ -176,7 +176,7 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 **Steering.** Five files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md` and `structure.md` always on, with `formulas.md` scoped to `src/engine/**` and `sheet-ui.md` scoped to the UI and CSS.
 
-**Hooks.** Two in [`.kiro/hooks/`](.kiro/hooks/): run the fast tests on every save under `src/`, and run the full `npm run verify` before a task finishes. Both call `scripts/canonical-cwd.mjs`, a small wrapper that fixes the working-directory drive-letter case before running a command — without it, Vitest launched from a lowercased Windows drive path loads two copies of itself and every suite fails.
+**Hooks.** Two in [`.kiro/hooks/`](.kiro/hooks/): run the fast tests on every save under `src/`, and run the full `npm run verify` before a task finishes. Both call `scripts/canonical-cwd.mjs`, a small wrapper that fixes the working-directory drive-letter case before running a command — without it, Vitest launched from a path with a lowercased drive letter loads two copies of itself and every suite fails.
 
 **Agent.** One custom agent, `formula-reviewer` in [`.kiro/agents/`](.kiro/agents/): a strictly read-only reviewer that checks the formula engine against section 4 of the brief and the formula-engine spec, and reports findings without changing anything.
 

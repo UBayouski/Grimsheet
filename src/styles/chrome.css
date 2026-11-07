@@ -255,7 +255,7 @@ body {
   font-size: 1.75rem;
 }
 
-.grid-table td.cell[data-region='rules'] .cell-text {
+.grid-table td.cell:not(.cell-error)[data-region='rules'] .cell-text {
   font-size: 1.25rem;
 }
 
