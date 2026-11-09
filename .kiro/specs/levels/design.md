@@ -41,7 +41,7 @@ The confirmed decisions of `requirements.md` and where they land.
 | 14 | Search limits are 100 turns and 1,000 distinct states (measured need: at most 14 turns and 172 states). | Components: search. |
 | 15 | No test asserts elapsed time. Search tests carry a Vitest timeout of 60_000 ms. A level with a monster has at most 60 Walkable_Cells at load. | Components: search; Run-time bounds; `level-02.test.ts`, `level-05.test.ts`. |
 | 16 | The helper is the non-test file `src/levels/helpers.ts`. Only test files import it. | Files, Components, `scan.test.ts`. |
-| 17 | The fractional-rune route to open the level 3 door is a legal clever strategy; Requirement 6 does not change. | Blueprint 3 note. |
+| 17 | The one-edit routes to open the level 3 door (formula in a rune cell, fractional rune) are legal clever strategies; `=1337/RUNE_SALT` in `RUNE_ASH` is the stored solution (Requirement 6, revised). | Blueprint 3 note. |
 | 18 | The State_Key is the exact joined text of the 240 cell values, not a hash. | Components: search. |
 | 19 | The `main.ts` swap waits for grid-ui tasks 4.2 and 5.2. | Files: deferred changes. |
 
@@ -214,10 +214,9 @@ A hash could collide, and a collision could hide a state and make the "unwinnabl
 ```json
 {
   "levelId": "03-the-locked-crypt",
-  "minimalInk": 2,
+  "minimalInk": 1,
   "actions": [
-    { "kind": "edit", "address": "B14", "raw": "7" },
-    { "kind": "edit", "address": "B15", "raw": "191" },
+    { "kind": "edit", "address": "B14", "raw": "=1337/RUNE_SALT" },
     { "kind": "move", "dir": "E" }
   ]
 }
@@ -339,11 +338,13 @@ Hint (105): `The door asks KEY a question. Read what feeds KEY: RUNE_ASH, RUNE_S
 
 Editable cells: `RUNE_ASH`, `RUNE_SALT`, `RUNE_DUST`. `RUNE_DUST` is read by no formula.
 
-Solution (`minimalInk` 2, 11 actions): `edit B14 7`, `edit B15 191`, `move E` x9.
+Solution (`minimalInk` 1, 10 actions): `edit B14 =1337/RUNE_SALT`, `move E` x9.
 
-Hand check: after step 0 `KEY` is 7 x 190 = 1330 and the door stays `#`. After step 1 `KEY` is 7 x 191 = 1337, so the door recalculates to `.` in the same turn. The hero then walks B6 to K6 (C, D, E, F, G, H, I, J, K = 9 moves) with `hp` 3 and `ink` 0. Edit-free the hero is confined to the 5 by 5 west chamber: 25 states, exhausted.
+Hand check: after step 0 `B14` reads 1337/190 and `KEY` is (1337/190) x 190, which evaluates to exactly 1337 in the engine (checked by running it), so the door recalculates to `.` in the same turn. The hero then walks B6 to K6 (C, D, E, F, G, H, I, J, K = 9 moves) with `hp` 3 and `ink` 1. Edit-free the hero is confined to the 5 by 5 west chamber: 25 states, exhausted.
 
-Note (Decisions 9 and 17): a cheaper route exists, for example `RUNE_SALT` set to `167.125` makes `KEY` exactly 1337 (8 x 167.125 is exact in binary) with 1 ink. It is a legal clever strategy. `minimalInk` 2 is the cost of the stored solution, not a global minimum, and Requirement 6 does not change. No test claims that two edits are required.
+Slack route: `edit B14 7`, `edit B15 191`, `move E` x9 still wins (`KEY` 7 x 190 = 1330 after the first edit with the door shut, 7 x 191 = 1337 after the second) with `hp` 3 and `ink` 0. It uses the whole `ink` of 2.
+
+Note (Decisions 9 and 17, revised): the Grimsheet Playtester confirmed twice on `main` at commit bea7a52 that one formula edit wins the level, for example `RUNE_ASH` set to `=1337/RUNE_SALT` or `RUNE_SALT` set to `=1337/RUNE_ASH`. Any door that checks one equation can be met with one formula edit, so the spec keeps the trick and makes it the stored solution instead of patching it. `RUNE_SALT` set to `167.125` (8 x 167.125 is exact in binary) is another 1-ink route. `minimalInk` 1 is the cost of the stored solution, not a global minimum. `ink` stays 2, which is `minimalInk` plus 1. No test claims that two edits are required.
 
 #### Level 4, The Trap Row (`04-the-trap-row`)
 
@@ -519,7 +520,7 @@ Property-based testing does not apply (see Correctness Properties): the inputs a
 | 11.1 to 11.3 Edit-free search | `search.test.ts` | Level 1 outcome `won`. Levels 2 to 5 outcome `exhausted` with `states` above 1. Any `limit` outcome fails with the inconclusive message. Each test is `it('...', () => { ... }, 60_000)`. No clock, no elapsed-time assertion. |
 | 11.4 Size rule | `level-02.test.ts`, `level-05.test.ts` | For each level with a monster (2 and 5), `walkableCount` of the started run is at most 60. |
 | 12 Determinism | `solutions.test.ts` | Two replays from two `startRun` calls give `finalSnapshot` values that are `toEqual`. |
-| 13 Tight but fair | `solutions.test.ts` | The ink table (0, 2, 2, 1, 2 with `minimalInk` 0, 1, 2, 1, 2 and `startingHp` 3, 3, 3, 5, 6); `ink` is `minimalInk` or one more. For levels with `minimalInk` 1 or more, the replay of a copy of the document with `ink` one lower stops at the last edit action with reason `no-ink`. |
+| 13 Tight but fair | `solutions.test.ts` | The ink table (0, 2, 2, 1, 2 with `minimalInk` 0, 1, 1, 1, 2 and `startingHp` 3, 3, 3, 5, 6); `ink` is `minimalInk` or one more. For levels with `minimalInk` 1 or more, the replay of a copy of the document with `ink` one lower stops at the last edit action with reason `no-ink`. |
 | 14 Entry point | none in Vitest | Checked by hand when the grid-ui tasks land (see Files). |
 | 15 Module constraints | `scan.test.ts` | See below. |
 
