@@ -1171,3 +1171,27 @@ What Kiro did:
   - 05-the-lich: won, HP 5, ink spent 2, minimalInk 2, equal.
 
 What changed because of it (time saved, bug caught, decision made): Replaying all five solutions and probing them is now one skill read plus one command per level, and the result fields to read are written down. Checking the skill against the real command caught the PowerShell quoting trap before anyone hit it. `npm run verify` still passes (74 test files, 1830 tests, typecheck and lint clean) and `powers/` is not ignored by `.gitignore`.
+
+## 2026-11-08 — Level 3: the one-ink formula route becomes the official solution
+
+Surface: CLI
+
+Features: spec
+
+What I asked for: Make the one-ink formula route the official solution of level 3 (`03-the-locked-crypt`), spec first, then tests shown failing, then data, and stop for approval before editing any file. The reason: the Grimsheet Playtester (a Kiro Crew app that hunts for exploits headlessly) confirmed twice on `main` at commit bea7a52 that level 3 is won with 1 ink by editing `RUNE_ASH` (B14) to `=1337/RUNE_SALT`, or `RUNE_SALT` (B15) to `=1337/RUNE_ASH`, then walking east 9 times. The stored solution needed two edits (B14 = 7, B15 = 191). Keep ink 2, the map, the hint, the door, `KEY` and the `RUNE_DUST` decoy. Change none of the other four levels.
+
+What Kiro did:
+- Investigated read-only first and showed the plan. Ran both formula routes through the headless play command on stdin: each ended `won` with HP 3 and ink 1 left of 2. Searched the README, docs, steering, the `grimsheet-playtest` skill, the e2e specs, the play command and its tests for statements of level 3's solution or minimal ink. Only the spec files and three test files needed changes.
+- Spec (`.kiro/specs/levels/`): Requirement 6 criterion 3 now says one formula edit, `RUNE_ASH` to `=1337/RUNE_SALT`, `minimalInk` 1, with the 7 and 191 route kept as the slack route and the Playtester finding as the reason. Requirement 12 criterion 1 says level 3 has `ink` 2 and `minimalInk` 1, and that levels 4 and 5 spend all of their ink while level 3 keeps one ink of slack (the old clause "levels 3 to 5 spend all of their ink" would have been false). Decisions 9 and 17 in the requirements and the design were reworded, since "Requirement 6 does not change" no longer held. The design's Solution_File example, Blueprint 3 (solution, hand check, slack route, note) and the ink table now use `minimalInk` 0, 1, 1, 1, 2. Task 2.3 stays ticked and has a "revised" note, and task 3.3 has the new ink table.
+- Tests first: `level-03.test.ts` (`minimalInk` 1, 10 actions, ink 1 left, `KEY` 1337 after the first edit, plus a new test that edits 7 and 191 then 9 moves east still wins with HP 3, ink 0, `KEY` 1330 then 1337), `solutions.test.ts` (`EXPECTED_MINIMAL_INK` is `[0, 1, 1, 1, 2]`) and `src/play/headless.test.ts` (level 3 final ink 0 becomes 1; this file was not in the first list but would have failed). Run against the old data, exactly three tests failed, each for the expected reason: `expected 2 to be 1` in two files and `expected 0 to be 1` in the third. The new slack-route test passed already, which shows the old route is still legal.
+- Data: `tests/solutions/03-the-locked-crypt.json` now has `minimalInk` 1 and `edit B14 "=1337/RUNE_SALT"` followed by `move E` x9, in the same two-space JSON with one trailing newline and no carriage return. `src/levels/03-the-locked-crypt.json` is unchanged.
+- Left alone, as agreed: `src/levels/helpers.test.ts` (it uses level 3's id with `minimalInk` 2 as an inline `parseSolution` fixture and does not read the file), the README, the docs, the steering files, the playtest skill and the other four levels.
+- `npm run verify` passes: 74 test files, 1831 tests (one more than before: the slack-route test), type-check and lint clean.
+- Screenshots: nothing a player sees changed. `minimalInk` is not shown in the UI, the level file is unchanged and the player still starts level 3 with 2 ink, so by the rule in `.kiro/steering/sheet-ui.md` no screenshot needs a retake, including `02-level-play.png`.
+
+What changed because of it (time saved, bug caught, decision made):
+- Decision: keep the trick and make it official instead of patching it. Any door that checks one equation can be met with one formula edit, and the spec already accepted such routes as legal.
+- Caught while writing the spec: Requirement 12 said levels 3 to 5 spend all of their ink. That sentence would have become false, so it was reworded before the tests.
+- Caught while planning: the headless play test hard-coded level 3's final ink, which would have failed on the data change.
+- Checked, not assumed: (1337/190) x 190 evaluates to exactly 1337 in the engine. The play-command run and the new test show it; the spec does not claim it for other numbers.
+- Not committed.

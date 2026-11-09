@@ -90,8 +90,8 @@ describe('level 3, The Locked Crypt', () => {
   it('replays the stored solution to a win', () => {
     const solution = readSolution(ID);
     expect(solution.levelId).toBe(ID);
-    expect(solution.minimalInk).toBe(2);
-    expect(solution.actions).toHaveLength(11);
+    expect(solution.minimalInk).toBe(1);
+    expect(solution.actions).toHaveLength(10);
     const run = replay(file.doc, solution.actions);
     for (const s of run.steps) {
       expect(s.result.ok, describeStep(ID, s)).toBe(true);
@@ -100,6 +100,24 @@ describe('level 3, The Locked Crypt', () => {
     for (const s of run.steps.slice(0, -1)) {
       expect(s.state.hp).toBeGreaterThan(0);
     }
+    expect(run.final.status).toBe('won');
+    expect(run.final.hp).toBe(3);
+    expect(run.final.ink).toBe(1);
+    expect(shown(run.steps[0]!.state, 'B17')).toBe('1337');
+    expect(shown(run.steps[0]!.state, 'G6')).toBe('.');
+  });
+
+  it('still wins by the old two-edit route, the slack route (7 and 191, ink 2)', () => {
+    const actions: Action[] = [
+      { kind: 'edit', address: 'B14', raw: '7' },
+      { kind: 'edit', address: 'B15', raw: '191' },
+      ...Array.from({ length: 9 }, (): Action => ({ kind: 'move', dir: 'E' })),
+    ];
+    const run = replay(file.doc, actions);
+    for (const s of run.steps) {
+      expect(s.result.ok, describeStep(ID, s)).toBe(true);
+    }
+    expect(run.refusedAt).toBeUndefined();
     expect(run.final.status).toBe('won');
     expect(run.final.hp).toBe(3);
     expect(run.final.ink).toBe(0);

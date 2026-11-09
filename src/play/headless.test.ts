@@ -22,7 +22,7 @@ function solution(id: string): { minimalInk: number; actions: unknown[] } {
 const EXPECTED = [
   { id: '01-the-corridor', hp: 3, ink: 0 },
   { id: '02-the-chaser', hp: 3, ink: 1 },
-  { id: '03-the-locked-crypt', hp: 3, ink: 0 },
+  { id: '03-the-locked-crypt', hp: 3, ink: 1 },
   { id: '04-the-trap-row', hp: 5, ink: 0 },
   { id: '05-the-lich', hp: 5, ink: 0 },
 ];
