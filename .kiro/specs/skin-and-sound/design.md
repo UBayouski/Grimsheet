@@ -1005,14 +1005,14 @@ The existing reduced-motion block in `grid-ui.css` (`animation: none !important`
   <rect width="32" height="32" fill="#c0c0c0"/>
   <rect width="32" height="7" fill="#000080"/>
   <rect x="2" y="9" width="28" height="21" fill="#ffffff"/>
-  <path d="M11 9v21M20 9v21M2 16h28M2 23h28" stroke="#808080" stroke-width="1"/>
-  <path d="M22 17h6v5l-1.5-1.2L25 22l-1.5-1.2L22 22z" fill="#2a0a5e"/>
-  <rect x="23" y="18" width="1" height="1" fill="#e6dcff"/><rect x="26" y="18" width="1" height="1" fill="#e6dcff"/>
-  <path d="M4 24l5 5M9 24l-5 5" stroke="#800000" stroke-width="1.5"/>
+  <rect x="3" y="10" width="26" height="19" fill="none" stroke="#000080" stroke-width="2"/>
+  <path d="M9 19a7 7 0 0 1 14 0v8l-3.5-2-3.5 2-3.5-2-3.5 2z" fill="#2a0a5e"/>
+  <rect x="12" y="17" width="3" height="3" fill="#ffffff"/>
+  <rect x="17" y="17" width="3" height="3" fill="#ffffff"/>
 </svg>
 ```
 
-A grey window with a navy title strip, a three-by-three sheet, a small ghost in the right cell (the colours of the cycle error) and a red X in the lower-left cell. Linked as `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` in `index.html`, `tests/fixtures/index.html` and `tests/fixtures/errors.html`.
+A grey window with a navy title strip and a white client area, one selected cell (the navy focus ring) and a cycle ghost in it (the colour of the cycle error, with two white eyes). The window chrome colours are `#c0c0c0`, `#000080` and `#ffffff`; the ghost is `#2a0a5e`. (Replaced on 2026-11-20; the first icon was a three-by-three grid with a red X.) Linked as `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` in `index.html`, `tests/fixtures/index.html` and `tests/fixtures/errors.html`.
 
 Vite copies `public/` to `dist/` unchanged, so `dist/favicon.svg` and `dist/fonts/vt323-regular.ttf` and `dist/fonts/OFL.txt` exist after `npm run build`, and the CSS `url('/fonts/...')` is kept (or base-prefixed) by Vite. The page requests no other origin (Requirement 2.4): the font URL is same-origin and there is no `@import`.
 

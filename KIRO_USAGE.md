@@ -1213,3 +1213,24 @@ What changed because of it (time saved, bug caught, decision made):
 - Two shots were first taken after a page navigation by mistake and were retaken before inspection; the final seven all show the intended state.
 - Sub-step 4.2b, live playthrough on 2026-11-20 at https://grimsheet.onrender.com (clean profile, 1280x1024, Playwright MCP): progress was seeded with levels 1 to 5 cleared, the live site showed six tabs, and level 6 was played through the real UI with the stored solution (click B17, Enter, type -1, Enter, ArrowUp x4, ArrowRight x8). It was won with HP 6 and ink 0 (read from the status bar at turn 13). The win dialog read `Workbook saved. Your soul was not.`, `#win-next` was hidden, `#win-ok` was focused, and `grimsheet.progress` listed all six ids. The console showed no messages. Only level 6 was played in this run; levels 1 to 5 were played on the deployed site earlier. The README bullet now says all six levels were played through in a real browser on the deployed site, replacing the wording that covered levels 1 to 5 only. `src/ui/docs.test.ts` gained two assertions: the README contains `all six levels have been played through`, and it no longer says `levels 1 to 5 have been played through`.
 - Nothing was committed.
+
+## 2026-11-20 — New favicon: the game window with a selected cell and a ghost
+
+Surface: CLI
+
+Features: spec, mcp
+
+What I asked for: Replace `public/favicon.svg`, whose 3x3 grid with an X reads as tic-tac-toe, with a drawing of the game window with one selected cell and a ghost in it. Delete the untracked `public/favicon-draft.svg`, check the repo for anything that pins the old picture, check the colours against the skin, and verify the favicon in the built page.
+
+What Kiro did:
+- The new drawing was made in a separate session outside Kiro. Kiro CLI installed it as given (the exact SVG text, LF line endings, one trailing newline) and checked it here.
+- Deleted `public/favicon-draft.svg`. `dist/` was rebuilt and holds `favicon.svg` and no draft.
+- Searched `src/`, `tests/`, `scripts/`, `index.html`, the specs, steering, README and BRIEF for the favicon. `src/ui/assets.test.ts` only checks that the file is an SVG with a viewBox, has no script and no http href. `scripts/check-dist.mjs` and `tests/e2e/skin.spec.ts` check that the file exists and is not served as HTML. None of them pins the old picture or lists `public/` files, so no test changed.
+- Colours: `#c0c0c0` is `--face`, `#000080` is `--title-a` and `--ring`, `#2a0a5e` is `--error-cycle-fg`, and `#ffffff` is the white client area. In `.kiro/specs/skin-and-sound/design.md` (section "Favicon and hosting") replaced the SVG listing and the sentence that described the grid and the X with the new picture, and noted the replacement date.
+- Ran `npm run verify` (77 test files, 1897 tests, typecheck and lint clean), `npm run build` and `npm run check:dist` (ok). Served `dist/` with `vite preview` and opened it with the Playwright MCP: `/favicon.svg` returned 200 with content type `image/svg+xml`.
+- No screenshot was retaken: the favicon is in none of the seven images in `docs/screenshots`.
+
+What changed because of it (time saved, bug caught, decision made):
+- The old icon no longer reads as tic-tac-toe, and the spec text matches the file.
+- No test needed editing or weakening. The existing favicon checks are about presence and safety, not the picture.
+- No Git command was used. Nothing was committed.
