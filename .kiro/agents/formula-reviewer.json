@@ -29,15 +29,7 @@
         "capability": "shell",
         "match": [
           "npm test",
-          "npm run check",
-          "git status *",
-          "git status",
-          "git diff *",
-          "git diff",
-          "git log *",
-          "git log",
-          "git show *",
-          "git show"
+          "npm run check"
         ],
         "effect": "allow"
       },
@@ -52,8 +44,8 @@
     ]
   },
   "kiroUpgrade": {
-    "revision": 2,
-    "fingerprint": "sha256:e817c0f91183c27a9e526eb7c320f2a20b59c1386bb3ac3d444e3eacdce13ed0",
+    "revision": 3,
+    "fingerprint": "sha256:d9ec9ac8248b6d9c52b05bbd284f919c81854d95fecc1d3a7f661ae9ae208897",
     "source": "sha256:369a64d65bdcfe39e5435df92f8cad1e23426c14f455b329468060bc43cd461d"
   }
 }
