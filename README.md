@@ -161,7 +161,7 @@ Correctness is proven several ways:
 - **Property tests** (fast-check): parse-print-parse is stable, recalculation is independent of definition order, evaluation is total (never throws), the same seed gives the same game, level JSON round-trips exactly, no two entities share a cell, ink never goes negative, undo restores the previous state exactly, and every loaded level starts the hero on a walkable cell.
 - **Stored solutions replayed in tests:** each level has a solution in `tests/solutions/` that is replayed through the public game API and must end in a win within its ink and HP.
 - **An exhaustive no-edit search per level:** for levels 2 to 6, a breadth-first search over moves and waits proves the level cannot be won by walking alone — you must edit.
-- **A live playthrough in a real browser:** levels 1 to 5 have been played through on the deployed site, driven by the Playwright MCP server, and ended on the HP and ink the tests expect. Level 6 is covered by the stored solution replay and the bounded candidate checks.
+- **A live playthrough in a real browser:** all six levels have been played through in a real browser on the deployed site (https://grimsheet.onrender.com), driven by the Playwright MCP server, and ended on the HP and ink the tests expect.
 
 ## Built with Kiro
 

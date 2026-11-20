@@ -7,5 +7,7 @@ describe('README level documentation', () => {
     expect(readme).toContain('6: The Audit');
     expect(readme).toContain('The Audit');
     expect(readme).not.toContain('five hand-built');
+    expect(readme).toContain('all six levels have been played through');
+    expect(readme).not.toMatch(/levels 1 to 5 have been played through/);
   });
 });

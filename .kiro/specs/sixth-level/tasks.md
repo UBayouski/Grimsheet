@@ -144,7 +144,7 @@ Differences from the design's Current hits table: `files.test.ts` also hits at l
     - Acceptance: `npm run verify` passes
     - _Requirements: 6.1, Decisions D1, D4_
 
-- [ ] 4. Checkpoint and screenshots
+- [x] 4. Checkpoint and screenshots
   - [x] 4.1 [Batch 4] [IDE] Checkpoint
     - Files: edit `.kiro/specs/sixth-level/tasks.md` to tick the checkboxes; no source edits unless a defect is found
     - Run `npm run verify`, `npm run e2e`, `npm run build` and `npm run check:dist`; all must pass. Re-run the text searches of this plan and show that no stale `five levels` or `Sheet5`-as-last-tab hit remains outside the allowed list: the historical specs, `KIRO_USAGE.md`, the `five error kinds`, `five beeps` and `Five files` of steering counts, `level-05.test.ts`, and the dated schedule in the brief. Confirm with `git status` that only expected files are new or changed (the level files, the solution, the tests, `src/ui` files of 2.1, `tests/e2e`, `README.md`, `docs/BRIEF.md`, the two steering files, the levels-spec note, this spec folder), that no `author-*.scratch.test.ts` file exists, that nothing under `src/engine`, `src/model` or `src/game` changed, and that nothing is committed. Scan the new and changed files for names of AI tools other than Kiro and for Product_Name strings (none allowed). Confirm `.kiro/specs/hosting/.config.kiro` still exists. Report the `npm run test:fast` time against the time before task 1.1. Note, without writing it, the `KIRO_USAGE.md` entry
@@ -163,7 +163,7 @@ Differences from the design's Current hits table: `files.test.ts` also hits at l
     - Acceptance: the gate passes; the seven PNG files exist with the exact names above, `01` to `06` are 1280 by 1024 pixels and `07` is 1366 by 768 pixels (checked from the PNG header); `docs/screenshots/README.md` lists all seven; `npm run verify` and `npm run e2e` pass. 4.2 is ticked after the screenshots, the gate, verify, e2e and the `KIRO_USAGE.md` entry, without waiting for 4.2b
     - _Requirements: 6.2, 6.3, 5.1, 5.3, Decision D6_
 
-  - [ ] 4.2b [Batch 4] [IDE] HELD: live playthrough of level 6 and README sentence update
+  - [x] 4.2b [Batch 4] [IDE] HELD: live playthrough of level 6 and README sentence update
     - **HELD: this sub-step WAITS FOR THE USER to say the deploy is live. It stays unticked until the user confirms the deployment.** The user does the push; do not push, commit or run any git command
     - Files: edit `README.md`, `src/ui/docs.test.ts`
     - After the user confirms the deploy: play level 6 through on the live site (`https://grimsheet.onrender.com`) with the Playwright MCP and a clean profile, and check it ends on HP 6 and ink 0. Then find the README sentence about the live playthrough by search (`A live playthrough in a real browser`, around line 163; do not rely on the line number) and update it to cover all six levels
