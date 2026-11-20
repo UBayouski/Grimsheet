@@ -1196,15 +1196,20 @@ What changed because of it (time saved, bug caught, decision made):
 - Caught while planning: the headless play test hard-coded level 3's final ink, which would have failed on the data change.
 - Checked, not assumed: (1337/190) x 190 evaluates to exactly 1337 in the engine. The play-command run and the new test show it; the spec does not claim it for other numbers.
 - Not committed.
-
-## 2026-11-20 — Sticky formula row and editable rule cue
-
-Surface: none
-
-Features: spec, steering
-
-What I asked for: Amend the shipped skin-and-sound spec, keep the formula row visible while scrolling, and give populated editable rule cells a visible cue. Review the cue before retaking affected screenshots, then verify the finished UI.
-
-What Kiro did: No Kiro tool was used in this session. The work followed `.kiro/steering/sheet-ui.md` and the dated amendment in `.kiro/specs/skin-and-sound/`. The formula row became sticky with matching scroll padding and a 1 px cell scroll margin for collapsed-border rounding. A UI-only `hasContent` flag drives an inset 2 px bottom rule on unlocked, populated, non-error rules cells. The first open-corner preview touched clipped text; a bottom-rule preview touched the `#CYCLE!` art and ghost, so the final renderer omits the cue on error-valued cells. Unit tests cover cue gain and loss, including value-to-error and error-to-value edits. Browser tests cover the short viewport, keyboard selection, cue placement and unchanged error art and ghost.
-
-What changed because of it (time saved, bug caught, decision made): Retook and inspected `02-level-play.png`, `03-monster-formula.png`, `04-error-monster.png`, `05-death-dialog.png` and `07-small-viewport.png` using the fixed action lists and finite-animation wait; updated the last shot's caption. The two preview failures shaped the final cue rule before saved images were replaced. `npm run verify` passed (74 files, 1834 tests, typecheck and lint), and `npm run e2e` passed (40 tests). No engine, game-rule or level file changed. No Git command, commit or push was used.
+## 2026-11-20 — sixth-level: tab label, level 6, docs review and screenshots
+Surface: IDE
+Features: spec, steering, mcp
+What I asked for: Add a sixth level, The Audit, after the original five, and show the tabs as `1: The Corridor` to `6: The Audit` so six tabs fit on one row. Then retake all seven README screenshots and run the final gate.
+What Kiro did:
+- Kiro IDE wrote the spec (requirements, design, tasks) in `.kiro/specs/sixth-level/` and ran Batches 1, 2 and 4. Batch 1 added level 6 with its stored solution and tests. Batch 2 added the short tab label and the Playwright layout checks.
+- The Batch 3 document edits (tasks 3.1 and 3.2) and the skin-and-sound amendment (tasks 7.1 to 7.3: sticky formula row, cue on unlocked cells) were made in separate sessions outside Kiro. Kiro reviewed them at the 4.1 checkpoint. The checkpoint found no defects; the README level 6 row is a hint.
+- No Crew run happened for this spec.
+- `.kiro/specs/hosting/.config.kiro` was kept. It exists, and so does `.kiro/specs/sixth-level/.config.kiro`; no file was added or removed for either in this task.
+- Task 4.2: checked the gate first (a dated 2026-11-20 amendment in `skin-and-sound/tasks.md` naming the sticky formula row and the cue, with 7.1 to 7.3 ticked). Then retook all seven PNGs in `docs/screenshots/` with the Playwright MCP, following task 6.2 of skin-and-sound: dev server started with `node node_modules/vite/bin/vite.js`, clean profile, progress seeded through `grimsheet.progress`, wait for finite animations to end. `01` to `06` are 1280x1024 and `07` is 1366x768 (checked from the PNG headers). Every image was viewed. Six tabs sit on one row in each in-game shot. The captions in `docs/screenshots/README.md` were still correct and were not changed.
+- Measured tab spare (last tab button to the content box of `#tab-bar`): 83.97 px at 1280x1024 and 83.97 px at 1366x768, against the 24 px minimum. The e2e annotations report the same numbers.
+- `npm run verify`: 77 test files, 1897 tests, typecheck and lint clean. `npm run e2e`: 50 tests passed.
+What changed because of it (time saved, bug caught, decision made):
+- The short tab label gives about 84 px of spare in the tab bar at both viewports, so the fallback labels (`Sheet1` to `Sheet6`) were not needed.
+- Two shots were first taken after a page navigation by mistake and were retaken before inspection; the final seven all show the intended state.
+- The live playthrough of level 6 and the README sentence update are `pending deployment` (sub-step 4.2b).
+- Nothing was committed.

@@ -127,8 +127,8 @@ Differences from the design's Current hits table: `files.test.ts` also hits at l
     - Acceptance: `npm run verify` passes and `npm run e2e` passes
     - _Requirements: 5.1, 5.2, 5.3, 6.1, Decisions D4_
 
-- [ ] 3. Documents
-  - Execution note: tasks 3.1 and 3.2 ran in a local Codex session; no Kiro surface ran this batch.
+- [x] 3. Documents
+  - Execution note: tasks 3.1 and 3.2 were done in a separate session outside Kiro; Kiro reviewed them in task 4.1.
   - [x] 3.1 [Batch 3] [Crew] Update `README.md` and add its text test
     - Files: edit `README.md` (it has uncommitted changes from the other session and the user: read the current file first and edit on top of it; no revert, no overwrite, no git command); create `src/ui/docs.test.ts` (checked: no existing docs test in the repo)
     - Edit: the intro line 17 (`five hand-built puzzle levels` becomes six); the heading at line 61 and the sentence at line 63 (Option A: tabs read `1: The Corridor` through `6: The Audit`, and the status bar keeps the full `SheetN: Title`); a sixth table row `| 6 | The Audit | ... |` (what it teaches: read a monster's attack formula, `ATK_M1` is `=SUM(B16:B17)`, and a charge inside the range is the one to edit; ink 1); line 156 (project layout row says six level JSON files); line 163 (the live playthrough claim: do not claim a live playthrough of level 6 that was not done; reword to what is true, for example that levels 1 to 5 were played through live and level 6 is covered by the stored solution replay and the candidate checks); line 171 (`Eight spec folders`: check the count against `.kiro/specs/` and update it if `sixth-level` is counted, adding it to any list). No change to `five error kinds`, `five beeps` or `Five files` of steering. The Screenshots section line stays unchanged (images come in 4.2)
@@ -145,7 +145,7 @@ Differences from the design's Current hits table: `files.test.ts` also hits at l
     - _Requirements: 6.1, Decisions D1, D4_
 
 - [ ] 4. Checkpoint and screenshots
-  - [ ] 4.1 [Batch 4] [IDE] Checkpoint
+  - [x] 4.1 [Batch 4] [IDE] Checkpoint
     - Files: edit `.kiro/specs/sixth-level/tasks.md` to tick the checkboxes; no source edits unless a defect is found
     - Run `npm run verify`, `npm run e2e`, `npm run build` and `npm run check:dist`; all must pass. Re-run the text searches of this plan and show that no stale `five levels` or `Sheet5`-as-last-tab hit remains outside the allowed list: the historical specs, `KIRO_USAGE.md`, the `five error kinds`, `five beeps` and `Five files` of steering counts, `level-05.test.ts`, and the dated schedule in the brief. Confirm with `git status` that only expected files are new or changed (the level files, the solution, the tests, `src/ui` files of 2.1, `tests/e2e`, `README.md`, `docs/BRIEF.md`, the two steering files, the levels-spec note, this spec folder), that no `author-*.scratch.test.ts` file exists, that nothing under `src/engine`, `src/model` or `src/game` changed, and that nothing is committed. Scan the new and changed files for names of AI tools other than Kiro and for Product_Name strings (none allowed). Confirm `.kiro/specs/hosting/.config.kiro` still exists. Report the `npm run test:fast` time against the time before task 1.1. Note, without writing it, the `KIRO_USAGE.md` entry
     - Ensure all tests pass, ask the user if questions arise
@@ -153,7 +153,7 @@ Differences from the design's Current hits table: `files.test.ts` also hits at l
     - Acceptance: `npm run verify` passes and `npm run e2e` passes
     - _Requirements: 6.1, 6.3, 1.2, 2.2, 5.1_
 
-  - [ ] 4.2 [Batch 4] [IDE] Retake the screenshots and run the final gate (last task)
+  - [x] 4.2 [Batch 4] [IDE] Retake the screenshots and run the final gate (last task)
     - Files: replace `docs/screenshots/01-title.png`, `02-level-play.png`, `03-monster-formula.png`, `04-error-monster.png`, `05-death-dialog.png`, `06-win-dialog.png`, `07-small-viewport.png`; edit `docs/screenshots/README.md` only if a caption changes; append to `KIRO_USAGE.md`
     - **Gate first (D6, Requirement 6.2):** check that `.kiro/specs/skin-and-sound/` holds a dated amendment (a dated file or dated section) that mentions the sticky formula row and the cue on unlocked cells, and that its new tasks (today 7.1 to 7.3 of `skin-and-sound/tasks.md`) are all ticked. If not, STOP, do nothing else, and tell the user. Do not write the amendment, do not retake any image
     - If the gate passes, follow task 6.2 of `.kiro/specs/skin-and-sound/tasks.md` and the `Screenshots stay current` rule in `.kiro/steering/sheet-ui.md`: start the dev server in the background with `node node_modules/vite/bin/vite.js`, use a clean profile (`localStorage.clear()` before the first shot), seed progress through `grimsheet.progress`, use the deterministic action lists of that task at 1280x1024 (`07-small-viewport.png` at 1366x768), wait until no finite animation runs (`document.getAnimations()`), and check that six tabs are on one row. Retake all seven PNGs, add no eighth image, look at every image (shapes read as intended, text legible, six tabs on one row, no clipping), and update the captions in `docs/screenshots/README.md` if needed. Afterwards clear `localStorage`, close the browser, stop the dev server and remove temporary files
