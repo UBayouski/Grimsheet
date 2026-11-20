@@ -269,10 +269,8 @@ What Kiro did:
 What changed because of it (time saved, bug caught, decision made):
 - Decision: I mapped "before you finish a task" to the `Stop` trigger. The `Stop` hook can only run the check and report. It cannot block the finish.
 - Hooks status (updated): both hooks are confirmed running. The IDE shows "Run Command Hook: Full tests, type-check and lint before finishing" when a turn ends, and test-on-save output was attached after a save.
-- Failure found: one run reported 22 failed suites, all with "Cannot read properties of undefined (reading 'config')". It came from the Stop hook, not the save hook: 
-pm test has 22 files and 	est:fast has 19. The cause was the IDE starting hook commands from a lowercase drive path (d:\Projects\...). On Windows, Vitest run from a cwd whose drive letter case differs from the real path loads two copies of itself. --root did not fix it, and from D:\... the run passes.
-- Fix: scripts/canonical-cwd.mjs resets the cwd to its real path, then runs the rest of its arguments. Both hook commands now start with 
-ode scripts/canonical-cwd.mjs.
+- Failure found: one run reported 22 failed suites, all with "Cannot read properties of undefined (reading 'config')". It came from the Stop hook, not the save hook: `npm test` has 22 files and `test:fast` has 19. The cause was the IDE starting hook commands from a lowercase drive path (d:\Projects\...). On Windows, Vitest run from a cwd whose drive letter case differs from the real path loads two copies of itself. --root did not fix it, and from D:\... the run passes.
+- Fix: scripts/canonical-cwd.mjs resets the cwd to its real path, then runs the rest of its arguments. Both hook commands now start with `node scripts/canonical-cwd.mjs`.
 - The save hook's src/ matcher was never at fault.
 
 ## 2026-11-05 — formula-engine Batch 9 property tests run in Kiro Crew's Task Runner
@@ -472,17 +470,6 @@ What changed because of it (time saved, bug caught, decision made):
 - My tooling was flaky in this round: several scratch-copy attempts printed nothing, and one left a temporary folder that had to be removed. No repo file was lost. I checked the sources, `git status` and the test run afterwards.
 - Nothing was committed.
 
-## 2026-11-05 — BRIEF section 6a "Story and names" added outside Kiro
-
-Surface: none
-
-Features: none
-
-What I asked for: Nothing. No Kiro session.
-
-What Kiro did: Nothing. I drafted `docs/BRIEF.md` section 6a, "Story and names", by hand outside Kiro. It covers the Necronomicell rules panel, the sheet-tab level names, the death and win screen text, and one strings file. Kiro only noted in this log that the section exists.
-
-What changed because of it (time saved, bug caught, decision made): The later specs (grid-ui, levels, skin-and-sound) take their text from section 6a, so it is the single source for names and screen text. It did not change the formula engine.
 
 ## 2026-11-05 — sheet-model Batches 2 and 3a: two parallel Crew runs
 
@@ -649,13 +636,25 @@ What changed because of it (time saved, bug caught, decision made):
 - Lesson: read the branch history before merging, since the final step committed `monsters.ts` and the tasks.md ticks.
 - Time: three independent tasks ran side by side in a separate worktree while the main checkout stayed free.
 - Not verified: I did not diff the copied Batch 1 files against the IDE versions myself.
-## 2026-11-06 - game-rules Batch 4: property tests (Crew run)
 
+## 2026-11-06 — game-rules Batch 4: property tests (Crew run)
+
+Surface: Crew
+
+Features: spec, pbt
+
+What I asked for: Not recorded. The scope comes from `.kiro/specs/game-rules/tasks.md`: Batch 4 is tasks 4.1, 4.2 and 4.3, the three property test files, each marked `[Crew]`.
+
+What Kiro did:
 - Task 4.1: `src/game/determinism.prop.test.ts` (Property 1).
 - Task 4.2: `src/game/undo.prop.test.ts` (Properties 2 and 3).
 - Task 4.3: `src/game/invariants.prop.test.ts` (Properties 4 to 7).
 - Task 4 verification: `npm run verify` passes with 40 test files and 804 tests, typecheck and lint clean. The three property files pass twice with different FC_SEED values (3 files, 7 tests each).
+- The branch was merged as `a33d075` (`Merge Crew run: game-rules Batch 4 property tests (determinism, undo, invariants)`, 2026-11-06 11:56:41).
+
+What changed because of it (time saved, bug caught, decision made):
 - Note: `turn.ts` and `turn.test.ts` were committed inside the step 2 commit (74c0125) by an earlier step, not in this task.
+- Time saved and bugs caught: Not recorded.
 
 ## 2026-11-06 — game-rules Batch 3 (IDE)
 
@@ -783,7 +782,7 @@ Surface: IDE
 
 Features: mcp
 
-What I asked for: Add the Playwright MCP server planned in section 13 of `docs/BRIEF.md`. Pin the current `@playwright/mcp` version, configure it in `.kiro/settings/mcp.json`, check that it connects, then use it once: run the app, screenshot the first stub level, move the hero with the arrow keys, select a rule cell and screenshot its formula in the formula bar. Describe what it shows against sections 6a and 8 of the brief, and fix nothing.
+What I asked for: Add the Playwright MCP server planned in section 13 of `docs/BRIEF.md`. Pin the current `@playwright/mcp` version, configure it in `.kiro/settings/mcp.json`, check that it connects, then use it once: run the app, screenshot the first stub level, move the hero with the arrow keys, select a rule cell and screenshot its formula in the formula bar. Describe what it shows against sections 6a and 8 of the brief, and fix nothing. Section 6a of the brief, "Story and names", was drafted by hand outside Kiro on 2026-11-05 as input; it covers the Necronomicell rules panel, the sheet-tab level names, the death and win screen text, and one strings file. The later specs (grid-ui, levels, skin-and-sound) take their names and screen text from it.
 
 What Kiro did:
 - Pinned version: `npm view @playwright/mcp version` returned 0.0.84. `.kiro/settings/mcp.json` has one server, `playwright`, with command `cmd` and args `/c npx -y @playwright/mcp@0.0.84`, `disabled: false` and `autoApprove` of `browser_navigate` and `browser_take_screenshot`.
