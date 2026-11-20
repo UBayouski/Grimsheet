@@ -12,7 +12,7 @@ import {
 import type { RunState } from '../game/index';
 import { tabLabel } from '../model/index';
 import { cycleCellsOf } from './error-look';
-import { isTabEnabled } from './progress';
+import { isTabEnabled, tabDisplayLabel } from './progress';
 import { STRINGS } from './strings';
 import type { CellView, Direction, Env, Fx, Progress, TabView, ViewModel } from './types';
 
@@ -126,6 +126,7 @@ function tabsOf(state: ViewState, env: Env): TabView[] {
   return env.entries.map((entry, levelIndex) => ({
     levelIndex,
     label: entry.label,
+    displayLabel: tabDisplayLabel(entry.label),
     current: levelIndex === state.levelIndex,
     enabled: isTabEnabled(env.entries, state.progress.cleared, levelIndex),
   }));

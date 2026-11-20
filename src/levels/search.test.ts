@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { startRun } from '../game/index';
 import { DEFAULT_SEARCH_LIMITS, boardText, describeLimit, loadLevelFile, searchEditFree } from './helpers';
 
-// Edit-free search: level 1 can be crossed without edits, levels 2 to 5 cannot.
+// Edit-free search: level 1 can be crossed without edits, levels 2 to 6 cannot.
 // No clock and no elapsed-time assertion; the timeout is only a Vitest ceiling.
 
 const TIMEOUT = 60_000;
@@ -27,7 +27,7 @@ describe('edit-free search', () => {
     expect(result.outcome).toBe('won');
   }, TIMEOUT);
 
-  for (const id of ['02-the-chaser', '03-the-locked-crypt', '04-the-trap-row', '05-the-lich']) {
+  for (const id of ['02-the-chaser', '03-the-locked-crypt', '04-the-trap-row', '05-the-lich', '06-the-audit']) {
     it(`exhausts level ${id} without a win`, () => {
       const result = searchEditFree(loadLevelFile(id).doc);
       if (result.outcome === 'limit') {

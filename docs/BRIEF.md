@@ -113,7 +113,8 @@ Hovering an error cell names its cause in plain English, such as "B9 refers to M
 - Premise: you opened GRIMSHEET.XLS, a workbook found on a dead accountant's floppy disk. Its formulas are alive.
   The workbook's hidden rules sheet is the **Necronomicell**: the book of formulas that animates every monster.
 - The rules panel (rows 14 to 20) is titled "NECRONOMICELL". Editing it is reading from the forbidden book.
-- Each level is a sheet tab: "Sheet1: The Corridor" through "Sheet5: The Lich".
+- Each level has a full sheet label from "Sheet1: The Corridor" through "Sheet6: The Audit". The tabs show
+  "1: The Corridor" through "6: The Audit"; the status bar keeps the full label.
 - Death screen: the dialog title is "#REF! of the Dead", the body reads "GRIMSHEET.XLS has stopped responding",
   and the button is Recover.
 - Win screen: "Workbook saved. Your soul was not." on the last level; "Changes saved." on the others.
@@ -122,13 +123,16 @@ Hovering an error cell names its cause in plain English, such as "B9 refers to M
 
 ## 7. Levels
 
-Five hand-written levels as JSON, each teaching one idea:
+Six hand-written levels as JSON, each teaching one idea:
 
 1. **The Corridor**: move, reach the exit, read a formula. No monsters.
 2. **The Chaser**: a monster with `=IF(DIST(HERO,SELF)<4, TOWARD(HERO), "-")`. Change its range to survive.
 3. **The Locked Crypt**: the door is `=IF(KEY=1337,".","#")`. Work out which cells feed `KEY`.
 4. **The Trap Row**: a row of `^` and a `#DIV/0!` tombstone blocking the safe path. Fix the formula behind it.
 5. **The Lich**: a boss whose `HP` formula can never reach 0 and a circular reference haunting the room.
+6. **The Audit**: the monster's attack is `=SUM(B16:B17)`. Edit the charge inside the range; a decoy charge sits outside it.
+
+Added on 2026-11-20 after the original plan: the sixth level is specified in [`.kiro/specs/sixth-level/`](../.kiro/specs/sixth-level/).
 
 Every level must be winnable within its ink and HP. This is checked by an automated solver test, not by hand.
 
@@ -179,7 +183,7 @@ Every level must be winnable within its ink and HP. This is checked by an automa
 3. `game-rules`: turns, movement, monsters, damage, traps, haunting, win and loss, ink, undo, seeded RNG.
 4. `grid-ui`: table rendering, selection, formula bar, editing, locked cells, status bar, keyboard.
 5. `error-monsters`: error looks, hover explanations, the drifting ghost.
-6. `levels`: the five levels and a solver that proves each one winnable within its ink and HP.
+6. `levels`: the six levels and a solver that proves each one winnable within its ink and HP.
 7. `skin-and-sound`: chrome, sprites, animations, title and death screens, beeps.
 8. `hosting`: static build and free deploy.
 

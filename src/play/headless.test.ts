@@ -25,6 +25,7 @@ const EXPECTED = [
   { id: '03-the-locked-crypt', hp: 3, ink: 1 },
   { id: '04-the-trap-row', hp: 5, ink: 0 },
   { id: '05-the-lich', hp: 5, ink: 0 },
+  { id: '06-the-audit', hp: 6, ink: 0 },
 ];
 
 describe('headless play: every stored solution wins', () => {
@@ -122,13 +123,14 @@ describe('headless play: sheet dump and views', () => {
 });
 
 describe('headless level info and ids', () => {
-  it('lists the five level ids in order', () => {
+  it('lists the six level ids in order', () => {
     expect(levelIds()).toEqual([
       '01-the-corridor',
       '02-the-chaser',
       '03-the-locked-crypt',
       '04-the-trap-row',
       '05-the-lich',
+      '06-the-audit',
     ]);
   });
 

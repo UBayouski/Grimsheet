@@ -466,6 +466,7 @@ describe('tab switch confirmation', () => {
       restoreMessage: base.message,
     });
     expect(prompted.state.message).toBe(STRINGS.confirmSwitch(ENV.entries[1]?.label ?? ''));
+    expect(prompted.state.message).toContain('Sheet2: Second');
     const switched = step(prompted.state, tab(1), ENV);
     expect(switched.state.levelIndex).toBe(1);
     expect(switched.state.pending).toBeUndefined();
@@ -971,5 +972,39 @@ describe('fx', () => {
     expect(afterEdit.fx).toBe(refusedEdit.fx);
     const parseError = go(base, ...edit('=1+'));
     expect(parseError.fx).toBe(base.fx);
+  });
+});
+
+describe('win with six levels', () => {
+  const SIX_IDS = ['01-a', '02-b', '03-c', '04-d', '05-e', '06-f'];
+  const SIX: Env = {
+    entries: describeLevels(SIX_IDS.map((id, i) => makeDoc({ id, title: `L${i + 1}` }))),
+  };
+  const at = (index: number): AppState =>
+    createInitialState(SIX, {
+      version: 1,
+      cleared: SIX_IDS.slice(0, index),
+      current: SIX_IDS[index] ?? null,
+    });
+
+  it('wins on the fifth level with the plain message and starts the sixth on next-level', () => {
+    const start = at(4);
+    expect(start.levelIndex).toBe(4);
+    const won = stepIn(SIX, start, move('E'));
+    expect(won.message).toBe(STRINGS.won);
+    expect(won.message).toBe('Changes saved.');
+    expect(keyContext(won, SIX, 'other').hasNext).toBe(true);
+    const next = step(won, command({ type: 'next-level' }), SIX).state;
+    expect(next.levelIndex).toBe(5);
+    expect(runOf(next).status).toBe('playing');
+  });
+
+  it('wins on the sixth level with wonLast, no next, and ignores next-level', () => {
+    const start = at(5);
+    expect(start.levelIndex).toBe(5);
+    const won = stepIn(SIX, start, move('E'));
+    expect(won.message).toBe(STRINGS.wonLast);
+    expect(keyContext(won, SIX, 'other').hasNext).toBe(false);
+    expect(step(won, command({ type: 'next-level' }), SIX).state).toBe(won);
   });
 });

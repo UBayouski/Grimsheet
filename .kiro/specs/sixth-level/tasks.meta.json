@@ -1,0 +1,122 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 [Batch 1] [IDE] [unit with 1.2] Create the level, its solution and `level-06.test.ts`": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201957729
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201962918
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202169444
+      }
+    ],
+    "1.2 [Batch 1] [IDE] [unit with 1.1] Register the level in the shared code and tests": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201957793
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201963102
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202169697
+      }
+    ],
+    "2.1 [Batch 2] [IDE] Add `tabDisplayLabel` and show it on the tab buttons": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201957846
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202173272
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202358627
+      }
+    ],
+    "2.2 [Batch 2] [IDE] Playwright layout checks with the measured 24 px spare": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201957895
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202360640
+      },
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202474335
+      }
+    ],
+    "3.1 [Batch 3] [Crew] Update `README.md` and add its text test": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201957946
+      }
+    ],
+    "3.2 [Batch 3] [Crew] Update the brief, the steering files and the levels-spec note": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201958004
+      }
+    ],
+    "4. Checkpoint and screenshots": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201958062
+      }
+    ],
+    "4.1 [Batch 4] [IDE] Checkpoint": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201958129
+      }
+    ],
+    "4.2 [Batch 4] [IDE] Retake the screenshots and run the final gate (last task)": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795201958193
+      }
+    ],
+    "1. Level data and registration": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202169824
+      }
+    ],
+    "2. Short tab label": [
+      {
+        "executionId": "4a1121d8-4031-46db-a38e-ecc8379cbb61",
+        "chatSessionId": "sess_67c031ee-a1b5-4ae1-9e7b-01f313c6f682",
+        "timestamp": 1795202474514
+      }
+    ]
+  }
+}

@@ -328,7 +328,7 @@ export function createView(root: HTMLElement): View {
       const b = tabButtons[i];
       if (!b) return;
       setAttr(b, 'data-level-index', String(tab.levelIndex));
-      setText(b, tab.label);
+      setText(b, tab.displayLabel);
       if (b.disabled !== !tab.enabled) b.disabled = !tab.enabled;
       setAttr(b, 'aria-current', tab.current ? 'page' : undefined);
     });

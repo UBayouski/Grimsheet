@@ -11,9 +11,9 @@ import {
   replay,
 } from './helpers';
 
-const EXPECTED_INK = [0, 2, 2, 1, 2];
-const EXPECTED_MINIMAL_INK = [0, 1, 1, 1, 2];
-const EXPECTED_HP = [3, 3, 3, 5, 6];
+const EXPECTED_INK = [0, 2, 2, 1, 2, 1];
+const EXPECTED_MINIMAL_INK = [0, 1, 1, 1, 2, 1];
+const EXPECTED_HP = [3, 3, 3, 5, 6, 6];
 
 describe.each(LEVEL_IDS.map((id, index) => ({ id, index })))('solution of $id', ({ id, index }) => {
   const file = loadLevelFile(id);

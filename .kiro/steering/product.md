@@ -46,7 +46,7 @@ rewriting rules. Errors are not messages; they are the monsters.
 Breaking a monster's rule is a legal strategy.
 
 ## Levels
-Five hand-written JSON levels: The Corridor, The Chaser, The Locked Crypt, The Trap Row, The Lich. Each must be
+Six hand-written JSON levels: The Corridor, The Chaser, The Locked Crypt, The Trap Row, The Lich, The Audit. Each must be
 winnable within its ink and HP, proven by an automated solver test.
 
 ## Non-goals

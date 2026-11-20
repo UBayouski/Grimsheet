@@ -470,3 +470,31 @@ describe('viewOf fx', () => {
     expect(last).toEqual({ title: STRINGS.titleBar, body: STRINGS.wonLast, hasNext: false });
   });
 });
+
+describe('viewOf tab display labels', () => {
+  it('sets displayLabel without the Sheet prefix and keeps label and status label full', () => {
+    const vm = viewOf(stateOf(), ENV);
+    expect(vm.tabs.map((t) => t.displayLabel)).toEqual(['1: Level 1', '2: Level 2', '3: Level 3']);
+    expect(vm.tabs.map((t) => t.label)).toEqual([
+      'Sheet1: Level 1',
+      'Sheet2: Level 2',
+      'Sheet3: Level 3',
+    ]);
+    expect(vm.status.label).toBe('Sheet1: Test level');
+  });
+});
+
+describe('viewOf win with six levels', () => {
+  const SIX: Env = { entries: entries(6) };
+
+  it('has Next on the fifth level', () => {
+    const win = viewOf(stateOf({ run: wonRun(), levelIndex: 4 }), SIX).win;
+    expect(win).toMatchObject({ body: STRINGS.won, hasNext: true });
+  });
+
+  it('has wonLast and no Next on the sixth level', () => {
+    const vm = viewOf(stateOf({ run: wonRun(), levelIndex: 5 }), SIX);
+    expect(vm.win).toMatchObject({ body: STRINGS.wonLast, hasNext: false });
+    expect(vm.buttons.nextVisible).toBe(false);
+  });
+});

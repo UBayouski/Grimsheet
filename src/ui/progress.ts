@@ -96,6 +96,11 @@ export function describeLevels(docs: readonly unknown[]): LevelEntry[] {
   });
 }
 
+/** Short text for a tab button: the full label without its leading `Sheet`. Never throws. */
+export function tabDisplayLabel(label: string): string {
+  return label.startsWith('Sheet') ? label.slice('Sheet'.length) : label;
+}
+
 /** First index whose id is not cleared, or undefined when all are cleared. */
 export function firstUnclearedIndex(
   entries: readonly LevelEntry[],

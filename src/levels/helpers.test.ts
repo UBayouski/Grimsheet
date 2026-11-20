@@ -77,11 +77,11 @@ function applied(state: RunState, action: Action): RunState {
 }
 
 describe('LEVEL_IDS', () => {
-  it('holds five unique ids in numeric order', () => {
-    expect(LEVEL_IDS).toHaveLength(5);
-    expect(new Set(LEVEL_IDS).size).toBe(5);
+  it('holds six unique ids in numeric order', () => {
+    expect(LEVEL_IDS).toHaveLength(6);
+    expect(new Set(LEVEL_IDS).size).toBe(6);
     LEVEL_IDS.forEach((id, i) => {
-      expect(id).toMatch(/^0[1-5]-[a-z]+(-[a-z]+)*$/);
+      expect(id).toMatch(/^0[1-6]-[a-z]+(-[a-z]+)*$/);
       expect(Number(id.slice(0, 2))).toBe(i + 1);
     });
   });

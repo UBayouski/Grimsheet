@@ -170,13 +170,14 @@ describe('import lists', () => {
     );
   });
 
-  it('index.ts imports exactly the five level files', () => {
+  it('index.ts imports exactly the six level files', () => {
     expect(importsOf(read(indexFile))).toEqual([
       './01-the-corridor.json',
       './02-the-chaser.json',
       './03-the-locked-crypt.json',
       './04-the-trap-row.json',
       './05-the-lich.json',
+      './06-the-audit.json',
     ]);
   });
 

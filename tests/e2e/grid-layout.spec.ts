@@ -85,37 +85,79 @@ for (const viewport of [
 
     });
 
-    test('the five tab buttons share one top and nothing sticks out on the right', async ({
+    test('the six tab buttons share one top, fit the tab bar with 24 px spare and nothing sticks out', async ({
       page,
-    }) => {
+    }, testInfo) => {
       await page.addInitScript(() => {
         window.localStorage.setItem(
           'grimsheet.progress',
           JSON.stringify({
             version: 1,
-            cleared: ['01-the-corridor', '02-the-chaser', '03-the-locked-crypt', '04-the-trap-row'],
-            current: '05-the-lich',
+            cleared: [
+              '01-the-corridor',
+              '02-the-chaser',
+              '03-the-locked-crypt',
+              '04-the-trap-row',
+              '05-the-lich',
+            ],
+            current: '06-the-audit',
           }),
         );
       });
       await page.goto('/');
       await page.locator('#title-start').click();
       await expect(page.locator('#title-dialog')).toBeHidden();
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      await expect.poll(() => page.evaluate(() => document.fonts.check('1rem VT323'))).toBe(true);
 
       // The current tab is lifted 2 px by design (chrome.css: .tab[aria-current='page'] top: -2px).
-      // The four other tabs must share one top, and the current tab sits exactly 2 px above it.
+      // The five other tabs must share one top, and the current tab sits exactly 2 px above it.
       const tabs = await page.locator('#tab-bar button').evaluateAll((els) =>
         els.map((el) => ({
           top: el.getBoundingClientRect().top,
           current: el.getAttribute('aria-current') === 'page',
+          text: el.textContent ?? '',
         })),
       );
-      expect(tabs).toHaveLength(5);
+      expect(tabs).toHaveLength(6);
+      expect(tabs.map((tab) => tab.text)).toEqual([
+        '1: The Corridor',
+        '2: The Chaser',
+        '3: The Locked Crypt',
+        '4: The Trap Row',
+        '5: The Lich',
+        '6: The Audit',
+      ]);
       const restingTops = tabs.filter((tab) => !tab.current).map((tab) => tab.top);
       const currentTops = tabs.filter((tab) => tab.current).map((tab) => tab.top);
-      expect(restingTops).toHaveLength(4);
+      expect(restingTops).toHaveLength(5);
       expect(new Set(restingTops).size).toBe(1);
       expect(currentTops).toEqual([(restingTops[0] ?? 0) - 2]);
+
+      // Spare width: the right edge of the last button against the content box of the tab bar.
+      const spare = await page.evaluate(() => {
+        const bar = document.querySelector<HTMLElement>('#tab-bar');
+        const last = document.querySelector<HTMLElement>('#tab-bar button:last-child');
+        if (bar === null || last === null) return Number.NaN;
+        const style = getComputedStyle(bar);
+        const contentRight =
+          bar.getBoundingClientRect().right -
+          parseFloat(style.borderRightWidth) -
+          parseFloat(style.paddingRight);
+        return contentRight - last.getBoundingClientRect().right;
+      });
+      console.log(`tab bar spare at ${viewport.width}x${viewport.height}: ${spare} px`);
+      testInfo.annotations.push({
+        type: 'tab-bar-spare',
+        description: `${viewport.width}x${viewport.height}: ${spare} px`,
+      });
+      expect(spare).toBeGreaterThanOrEqual(24);
+
+      expect(await page.locator('#window').evaluate((el) => el.getBoundingClientRect().width)).toBe(832);
+      const noHorizontalScroll = await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      );
+      expect(noHorizontalScroll).toBe(true);
       const beyond = await page.evaluate(() => {
         const limit = document.documentElement.clientWidth;
         return Array.from(document.querySelectorAll('button, input'))

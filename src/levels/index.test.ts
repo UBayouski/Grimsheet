@@ -11,6 +11,7 @@ const LEVEL_FILES = [
   '03-the-locked-crypt.json',
   '04-the-trap-row.json',
   '05-the-lich.json',
+  '06-the-audit.json',
 ];
 
 function read(name: string): string {
@@ -18,7 +19,7 @@ function read(name: string): string {
 }
 
 describe('levels barrel', () => {
-  it('has exactly the five level files, index.ts and helpers.ts as non-test entries', () => {
+  it('has exactly the six level files, index.ts and helpers.ts as non-test entries', () => {
     const entries = readdirSync(DIR, { withFileTypes: true });
     expect(entries.filter((e) => e.isDirectory())).toEqual([]);
     const names = entries
@@ -28,10 +29,23 @@ describe('levels barrel', () => {
     expect(names).toEqual([...LEVEL_FILES, 'helpers.ts', 'index.ts'].sort());
   });
 
-  it('exports only LEVELS, with five entries and no default', () => {
+  it('exports only LEVELS, with six entries and no default', () => {
     expect(Object.keys(barrel)).toEqual(['LEVELS']);
     expect('default' in barrel).toBe(false);
-    expect(LEVELS).toHaveLength(5);
+    expect(LEVELS).toHaveLength(6);
+  });
+
+  it('keeps the first five ids and titles in order', () => {
+    const expected = [
+      ['01-the-corridor', 'The Corridor'],
+      ['02-the-chaser', 'The Chaser'],
+      ['03-the-locked-crypt', 'The Locked Crypt'],
+      ['04-the-trap-row', 'The Trap Row'],
+      ['05-the-lich', 'The Lich'],
+    ];
+    expected.forEach(([id, title], i) => {
+      expect(LEVELS[i]).toMatchObject({ id, title });
+    });
   });
 
   it('holds each level file at the same position', () => {
@@ -40,10 +54,10 @@ describe('levels barrel', () => {
     });
   });
 
-  it('has a source with five JSON imports, one export, no call and no default export', () => {
+  it('has a source with six JSON imports, one export, no call and no default export', () => {
     const source = read('index.ts');
     const imports = source.match(/^import\s.+$/gm) ?? [];
-    expect(imports).toHaveLength(5);
+    expect(imports).toHaveLength(6);
     LEVEL_FILES.forEach((name, i) => {
       expect(imports[i]).toContain(`'./${name}'`);
     });

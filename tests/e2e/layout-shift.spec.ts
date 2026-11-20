@@ -10,6 +10,7 @@ const LEVEL_IDS = [
   '03-the-locked-crypt',
   '04-the-trap-row',
   '05-the-lich',
+  '06-the-audit',
 ] as const;
 
 test.use({ viewport: { width: 1280, height: 1024 } });
@@ -63,7 +64,7 @@ test('level 4: selecting and deselecting the error cell F6 leaves the window and
   expect(await scrollHeight(page)).toBeLessThanOrEqual(1024);
 });
 
-test('all five levels: selecting any error cell keeps the window box and a page height of at most 1024', async ({
+test('all six levels: selecting any error cell keeps the window box and a page height of at most 1024', async ({
   page,
 }) => {
   let errorCellsSeen = 0;
@@ -88,4 +89,22 @@ test('all five levels: selecting any error cell keeps the window box and a page 
   }
   // Level 4 has a #DIV/0! cell on the map and in the rules panel; level 5 has the two cycle cells.
   expect(errorCellsSeen).toBeGreaterThanOrEqual(4);
+});
+
+test('the title shows six levels and switching tabs leaves the window box and page width unchanged', async ({
+  page,
+}) => {
+  await startLevel(page, 6);
+  await expect(page.locator('#tab-bar button')).toHaveCount(6);
+
+  const before = await windowBox(page);
+  const widthBefore = await pageWidth(page);
+
+  await page.locator('#tab-bar button').nth(4).click();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#status-bar')).toContainText('Sheet5:');
+
+  expect(await windowBox(page)).toEqual(before);
+  expect(await pageWidth(page)).toBe(widthBefore);
+  expect(await scrollHeight(page)).toBeLessThanOrEqual(1024);
 });

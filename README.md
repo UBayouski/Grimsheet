@@ -14,7 +14,7 @@ You opened GRIMSHEET.XLS, a workbook from a dead accountant's floppy disk. Its f
 
 The rules that animate the dungeon live in rows 14 to 20, a panel titled **NECRONOMICELL** — the book of formulas behind every monster. Each monster has a `move` rule and an `atk` rule, and both are ordinary named cells you can read. How a monster chases you, how hard it hits, when a door opens: all of it is a formula sitting in a cell, and editing those cells is reading from the forbidden book.
 
-The errors are the monsters. A broken reference, an unknown name, a division by zero — these are not messages in the corner of the screen; they are the things in the dungeon that block your path or haunt the sheet. You survive by rewriting the formulas, spending a limited budget of **ink**, until the workbook lets you reach the exit. There are five hand-built puzzle levels, each teaching one formula trick.
+The errors are the monsters. A broken reference, an unknown name, a division by zero — these are not messages in the corner of the screen; they are the things in the dungeon that block your path or haunt the sheet. You survive by rewriting the formulas, spending a limited budget of **ink**, until the workbook lets you reach the exit. There are six hand-built puzzle levels, each teaching one formula trick.
 
 ## How to play
 
@@ -58,9 +58,9 @@ Every evaluation ends as a value or an error — the engine never throws. The fi
 
 Hovering an error names its cause in plain English.
 
-## The five levels
+## The six levels
 
-Each level is a tab in the workbook — "Sheet1: The Corridor" through "Sheet5: The Lich" — and each teaches one idea. The in-game hints, not solutions:
+Each level is a tab in the workbook, displayed as `1: The Corridor` through `6: The Audit`; the status bar keeps the full `SheetN: Title` label. Each level teaches one idea. The in-game hints, not solutions:
 
 | # | Title | The idea |
 |---|---|---|
@@ -69,6 +69,7 @@ Each level is a tab in the workbook — "Sheet1: The Corridor" through "Sheet5: 
 | 3 | The Locked Crypt | Follow what feeds a cell. A door asks `KEY` a question; not every rune that feeds it counts. |
 | 4 | The Trap Row | Trace an error to its cause. A `#DIV/0!` is a hole; follow a ratio back to what broke it, and mind the traps. |
 | 5 | The Lich | Timing under a haunt. A boss's HP is just a number — change it while he is far, before the cycle bleeds you out. |
+| 6 | The Audit | Read the range. A monster's attack is a `SUM`; check which charges it really adds up before you spend ink. |
 
 ## Formula cheat sheet
 
@@ -153,14 +154,14 @@ TypeScript (strict) and Vite, no UI framework. The grid is a DOM table and CSS; 
 | Model | `src/model/` | Cell and level types, the level JSON schema, the loader, lossless round-trip. |
 | Game | `src/game/` | Turns, movement, monsters, damage, traps, haunting, win and loss, ink, one-step undo, seeded RNG. DOM-free. |
 | UI | `src/ui/` | The grid table, formula bar, status bar, screens, keyboard handling. |
-| Levels | `src/levels/` | The five hand-written level JSON files and their barrel. |
+| Levels | `src/levels/` | The six hand-written level JSON files and their barrel. |
 
 Correctness is proven several ways:
 
 - **Property tests** (fast-check): parse-print-parse is stable, recalculation is independent of definition order, evaluation is total (never throws), the same seed gives the same game, level JSON round-trips exactly, no two entities share a cell, ink never goes negative, undo restores the previous state exactly, and every loaded level starts the hero on a walkable cell.
 - **Stored solutions replayed in tests:** each level has a solution in `tests/solutions/` that is replayed through the public game API and must end in a win within its ink and HP.
-- **An exhaustive no-edit search per level:** for levels 2 to 5, a breadth-first search over moves and waits proves the level cannot be won by walking alone — you must edit.
-- **A live playthrough in a real browser:** all five levels have been played through on the deployed site, driven by the Playwright MCP server, and ended on the HP and ink the tests expect.
+- **An exhaustive no-edit search per level:** for levels 2 to 6, a breadth-first search over moves and waits proves the level cannot be won by walking alone — you must edit.
+- **A live playthrough in a real browser:** levels 1 to 5 have been played through on the deployed site, driven by the Playwright MCP server, and ended on the HP and ink the tests expect. Level 6 is covered by the stored solution replay and the bounded candidate checks.
 
 ## Built with Kiro
 
@@ -168,7 +169,7 @@ Grimsheet was built with Kiro, from a single input brief (`docs/BRIEF.md`) that 
 
 **Surfaces.** The Kiro IDE was used to write and review every spec and diff. The Kiro Crew Task Runner ran independent task batches in parallel on their own branches, merged after review. Kiro Web opened pull requests for spec documentation, the hosting spec with the Render static-site setup, and this README. The Kiro CLI ran the read-only reviewer agent on engine changes.
 
-**Specs.** Eight spec folders in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels`, `hosting` and `skin-and-sound`. All eight are built and shipped in the live build. The last one, `skin-and-sound`, gave the game its look and sound: the VT323 font shipped unchanged, beveled window chrome, a sticky status bar, five Web Audio beeps with a persistent mute, and title and end dialogs.
+**Specs.** Nine spec folders in [`.kiro/specs/`](.kiro/specs/), each with `requirements.md`, `design.md` and `tasks.md`: `formula-engine`, `sheet-model`, `game-rules`, `grid-ui`, `error-monsters`, `levels`, `hosting`, `skin-and-sound` and `sixth-level`. The original eight are built and shipped in the live build; `sixth-level` adds the sixth level, The Audit, and the short tab labels. `skin-and-sound` gave the game its look and sound: the VT323 font shipped unchanged, beveled window chrome, a sticky status bar, five Web Audio beeps with a persistent mute, and title and end dialogs.
 
 **Steering.** Five files in [`.kiro/steering/`](.kiro/steering/): `product.md`, `tech.md` and `structure.md` always on, with `formulas.md` scoped to `src/engine/**` and `sheet-ui.md` scoped to `src/ui/**`, `**/*.css`, `src/levels/**`, `index.html` and `public/**`. `sheet-ui.md` also says that any change a player can see retakes the affected screenshots in `docs/screenshots` (as in task 6.2 of the `skin-and-sound` spec), and that all seven are retaken after the last visible change before the 2026-11-28 feature freeze.
 

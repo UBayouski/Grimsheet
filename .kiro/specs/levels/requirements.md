@@ -245,3 +245,7 @@ Example hints (example, the design may reword; each is one line of at most 120 c
 1. THE Levels_Module test files SHALL run under Vitest in the Node environment with no DOM, SHALL import only the Levels_Helpers, their own siblings and the barrels `src/game/index.ts`, `src/model/index.ts` and `src/engine/index.ts` from the lower layers, SHALL read the Solution_Files and Level_Files with `node:fs`, and SHALL use no `Math.random`, `Date.now`, `new Date`, `eval` or `new Function`.
 2. THE scan test SHALL check that every file under `src/levels/` and `tests/solutions/` contains no entry of the Deny_List, compared case-insensitively, and the Deny_List SHALL be assembled from fragments so that no test file contains an entry as a whole word.
 3. THE file `src/levels/index.ts` SHALL import only the five Level_Files, reference no browser global and make no function call, and THE Levels_Helpers SHALL import only the three barrels and `node:fs`, use no `Math.random`, `Date.now`, `new Date`, `performance.now`, `eval` or `new Function`, and be imported by no file other than test files, so that neither `index.ts` nor `src/main.ts` reaches it and it cannot enter the production bundle.
+
+## 2026-11-20 — Sixth-level extension
+
+The original five-level scope above is retained as written. The sixth level, its tab labels, and the updated level set are specified in [the sixth-level requirements](../sixth-level/requirements.md).

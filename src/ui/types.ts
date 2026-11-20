@@ -165,6 +165,7 @@ export interface CellView {
 export interface TabView {
   readonly levelIndex: number;
   readonly label: string;
+  readonly displayLabel: string;
   readonly current: boolean;
   readonly enabled: boolean;
 }

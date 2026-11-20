@@ -47,8 +47,8 @@ function makeVm(
   return {
     screen: 'playing',
     tabs: [
-      { levelIndex: 0, label: 'Sheet1: A', current: true, enabled: true },
-      { levelIndex: 1, label: 'Sheet2: B', current: false, enabled: false },
+      { levelIndex: 0, label: 'Sheet1: A', displayLabel: '1: A', current: true, enabled: true },
+      { levelIndex: 1, label: 'Sheet2: B', displayLabel: '2: B', current: false, enabled: false },
     ],
     nameBox: 'B3',
     formula: { text: '=1+1', readOnly: false, locked: false, alert: '' },
@@ -431,7 +431,10 @@ describe('chrome', () => {
     expect(tabs).toHaveLength(2);
     expect(tabs[0]?.disabled).toBe(false);
     expect(tabs[0]?.getAttribute('aria-current')).toBe('page');
-    expect(tabs[0]?.textContent).toBe('Sheet1: A');
+    expect(tabs[0]?.textContent).toBe('1: A');
+    expect(tabs[1]?.textContent).toBe('2: B');
+    expect(tabs[0]?.hasAttribute('aria-label')).toBe(false);
+    expect(tabs[1]?.hasAttribute('aria-label')).toBe(false);
     expect(tabs[1]?.disabled).toBe(true);
     expect(tabs[1]?.hasAttribute('aria-current')).toBe(false);
     expect(tabs[1]?.dataset['levelIndex']).toBe('1');
@@ -673,5 +676,19 @@ describe('grid-ui.css', () => {
   it('honors reduced motion and has a focus style', () => {
     expect(css).toContain('prefers-reduced-motion');
     expect(css).toContain(':focus-visible');
+  });
+});
+
+describe('tab display labels', () => {
+  it('shows markup in a display label as text', () => {
+    const base = makeVm();
+    const vm: ViewModel = {
+      ...base,
+      tabs: [{ levelIndex: 0, label: 'Sheet1: <b>x</b>', displayLabel: '1: <b>x</b>', current: true, enabled: true }],
+    };
+    createView(root).update(vm);
+    const tab = root.querySelector('[data-control="tab"]');
+    expect(tab?.textContent).toBe('1: <b>x</b>');
+    expect(tab?.querySelector('b')).toBeNull();
   });
 });

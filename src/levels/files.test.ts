@@ -12,6 +12,7 @@ const TAB_LABELS: readonly string[] = [
   'Sheet3: The Locked Crypt',
   'Sheet4: The Trap Row',
   'Sheet5: The Lich',
+  'Sheet6: The Audit',
 ];
 
 /** Requirement 2.5: every alternative in a group is acceptable; the check passes if any one is in the hint. */
@@ -21,6 +22,7 @@ const HINT_WORDS: readonly (readonly (readonly string[])[])[] = [
   [['KEY'], ['RUNE_ASH', 'RUNE_SALT']],
   [['#DIV/0!'], ['RATIO']],
   [['LICH_HP'], ['HEX_A', 'HEX_B']],
+  [['ATK_M1'], ['SUM']],
 ];
 
 const EDITABLE: readonly (readonly string[])[] = [
@@ -29,9 +31,10 @@ const EDITABLE: readonly (readonly string[])[] = [
   ['RUNE_ASH', 'RUNE_DUST', 'RUNE_SALT'],
   ['DIVISOR', 'LOAD'],
   ['HEX_A', 'HEX_B', 'LICH_HP'],
+  ['LIVE_CHARGE', 'UNFILED_CHARGE'],
 ];
 
-const MONSTER_COUNTS: readonly number[] = [0, 1, 0, 0, 1];
+const MONSTER_COUNTS: readonly number[] = [0, 1, 0, 0, 1, 1];
 
 /** Built from fragments so this file never holds the word whole. */
 const BANNED_FRAGMENT = ['ra', 'nd'].join('');
@@ -52,11 +55,11 @@ function firstBadChar(text: string): { index: number; kind: string } | undefined
   return undefined;
 }
 
-describe('level files, all five', () => {
-  it('lists five ids in numeric order that match LEVELS', () => {
-    expect(LEVEL_IDS).toHaveLength(5);
-    expect(new Set(LEVEL_IDS).size).toBe(5);
-    expect(LEVELS).toHaveLength(5);
+describe('level files, all six', () => {
+  it('lists six ids in numeric order that match LEVELS', () => {
+    expect(LEVEL_IDS).toHaveLength(6);
+    expect(new Set(LEVEL_IDS).size).toBe(6);
+    expect(LEVELS).toHaveLength(6);
   });
 
   it('has the two required lines in .gitattributes', () => {
@@ -158,7 +161,7 @@ describe('level files, all five', () => {
 
       it('has an exit, or the level 5 gate', () => {
         const state = started(id);
-        if (number < 5) {
+        if (number !== 5) {
           let exits = 0;
           for (let row = 1; row <= 12; row += 1) {
             for (const letter of 'ABCDEFGHIJKL') {
@@ -178,9 +181,9 @@ describe('level files, all five', () => {
     });
   });
 
-  it('has five distinct tab labels', () => {
+  it('has six distinct tab labels', () => {
     const labels = LEVEL_IDS.map((id) => tabLabel(loadLevelFile(id).level));
     expect(labels).toEqual([...TAB_LABELS]);
-    expect(new Set(labels).size).toBe(5);
+    expect(new Set(labels).size).toBe(6);
   });
 });

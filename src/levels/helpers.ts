@@ -16,13 +16,14 @@ import type { Action, ActionResult, Direction, RunState } from '../game/index';
 import { loadLevelText } from '../model/index';
 import type { Level } from '../model/index';
 
-/** The five level ids, in order. */
+/** The six level ids, in order. */
 export const LEVEL_IDS: readonly string[] = [
   '01-the-corridor',
   '02-the-chaser',
   '03-the-locked-crypt',
   '04-the-trap-row',
   '05-the-lich',
+  '06-the-audit',
 ];
 
 export interface SolutionFile {

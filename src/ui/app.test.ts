@@ -660,6 +660,41 @@ describe('win dialog', () => {
   });
 });
 
+describe('win dialog with six levels', () => {
+  const IDS = ['01-six-a', '02-six-b', '03-six-c', '04-six-d', '05-six-e', '06-six-f'];
+  const doc = (id: string, n: number): unknown => ({
+    schemaVersion: 1,
+    id,
+    title: `Six ${n}`,
+    hint: 'Walk right.',
+    map: [WALLS, '#.X........#', ...Array.from({ length: 9 }, () => OPEN_ROW), WALLS],
+    cells: [],
+    hero: { at: 'B2' },
+    monsters: [],
+    startingHp: 5,
+    ink: 1,
+    seed: n,
+  });
+  const LEVELS = IDS.map((id, i) => doc(id, i + 1));
+  const openAt = (index: number): void => {
+    const progress = { version: 1, cleared: IDS.slice(0, index), current: IDS[index] };
+    mountWith(LEVELS, {}, fakeStorage(JSON.stringify(progress)));
+    key(document, 'ArrowRight');
+    expect(root?.getAttribute('data-screen')).toBe('won');
+  };
+
+  it('focuses Next on the fifth level', () => {
+    openAt(4);
+    expect(q<HTMLElement>('#win-next').hidden).toBe(false);
+    expect(document.activeElement).toBe(q('#win-next'));
+  });
+
+  it('focuses OK with Next hidden on the sixth level', () => {
+    openAt(5);
+    expect(q<HTMLElement>('#win-next').hidden).toBe(true);
+    expect(document.activeElement).toBe(q('#win-ok'));
+  });
+});
 describe('barrel', () => {
   it('exports exactly the expected runtime names', () => {
     expect(Object.keys(barrel).sort()).toEqual(['browserStorage', 'mountApp']);

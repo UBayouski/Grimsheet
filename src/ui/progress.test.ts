@@ -8,8 +8,10 @@ import {
   parseProgress,
   serializeProgress,
   startIndexFor,
+  tabDisplayLabel,
 } from './progress';
 import type { LevelEntry, Progress, StorageLike } from './types';
+import { viewOf } from './view-model';
 
 const IDS = ['01-a', '02-b', '03-c'];
 
@@ -190,5 +192,54 @@ describe('startIndexFor', () => {
   it('uses the first match for duplicate ids', () => {
     const dup = [entry('01-a'), entry('01-a'), entry('02-b')];
     expect(startIndexFor(dup, progress([], '01-a'))).toBe(0);
+  });
+});
+
+describe('tabDisplayLabel', () => {
+  it.each([
+    ['Sheet1: The Corridor', '1: The Corridor'],
+    ['Sheet2: The Chaser', '2: The Chaser'],
+    ['Sheet3: The Locked Crypt', '3: The Locked Crypt'],
+    ['Sheet4: The Trap Row', '4: The Trap Row'],
+    ['Sheet5: The Lich', '5: The Lich'],
+    ['Sheet6: The Audit', '6: The Audit'],
+    ['Sheet10: X', '10: X'],
+    ['The Audit', 'The Audit'],
+    ['', ''],
+  ])('maps %j to %j', (label, expected) => {
+    expect(tabDisplayLabel(label)).toBe(expected);
+    expect(tabDisplayLabel(label)).toBe(tabDisplayLabel(label));
+  });
+});
+
+describe('six levels with the first five cleared', () => {
+  const SIX_IDS = ['01-a', '02-b', '03-c', '04-d', '05-e', '06-f'];
+  const SIX = SIX_IDS.map(entry);
+  const CLEARED = SIX_IDS.slice(0, 5);
+
+  it('unlocks the sixth tab and starts at the saved current or the sixth', () => {
+    expect(isTabEnabled(SIX, CLEARED, 5)).toBe(true);
+    expect(firstUnclearedIndex(SIX, CLEARED)).toBe(5);
+    expect(startIndexFor(SIX, progress(CLEARED, '05-e'))).toBe(4);
+    expect(startIndexFor(SIX, progress(CLEARED, null))).toBe(5);
+  });
+
+  it('builds an enabled TabView for the sixth tab', () => {
+    const vm = viewOf(
+      {
+        levelIndex: 4,
+        run: undefined,
+        selection: 'B2',
+        edit: undefined,
+        message: '',
+        alert: '',
+        changed: new Set<string>(),
+        progress: progress(CLEARED, '05-e'),
+        fx: { beat: 0, slide: undefined, damaged: false, cues: [] },
+      },
+      { entries: SIX },
+    );
+    expect(vm.tabs[5]?.enabled).toBe(true);
+    expect(vm.tabs[5]?.current).toBe(false);
   });
 });

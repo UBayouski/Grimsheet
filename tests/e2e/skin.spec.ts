@@ -6,6 +6,7 @@ const LEVEL_IDS = [
   '03-the-locked-crypt',
   '04-the-trap-row',
   '05-the-lich',
+  '06-the-audit',
 ] as const;
 
 test.use({ viewport: { width: 1280, height: 1024 } });
@@ -91,6 +92,36 @@ test('every request stays on the page origin and every response succeeds', async
   const ttf = await page.request.get(ttfUrl);
   expect(ttf.status()).toBe(200);
   expect(ttf.headers()['content-type'] ?? '').not.toContain('text/html');
+});
+
+const TAB_TEXTS = [
+  '1: The Corridor',
+  '2: The Chaser',
+  '3: The Locked Crypt',
+  '4: The Trap Row',
+  '5: The Lich',
+  '6: The Audit',
+] as const;
+const FULL_LABELS = [
+  'Sheet1: The Corridor',
+  'Sheet2: The Chaser',
+  'Sheet3: The Locked Crypt',
+  'Sheet4: The Trap Row',
+  'Sheet5: The Lich',
+  'Sheet6: The Audit',
+] as const;
+
+test.describe('tab texts and status label', () => {
+  for (const [index, id] of LEVEL_IDS.entries()) {
+    test(`level ${index + 1} (${id}) shows the short tab texts and the full status label`, async ({ page }) => {
+      await seedLevel(page, index + 1);
+      await page.goto('/');
+      await pressStart(page);
+
+      await expect(page.locator('#tab-bar button')).toHaveText([...TAB_TEXTS]);
+      await expect(page.locator('#status-bar')).toContainText(FULL_LABELS[index] ?? '');
+    });
+  }
 });
 
 test.describe('layout and label fit', () => {

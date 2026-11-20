@@ -12,7 +12,7 @@ src/engine/      formula engine: tokenizer, parser, AST, printer, evaluator, dep
 src/model/       cell and level types, level JSON schema, loader
 src/game/        turns, movement, monsters, damage, traps, haunting, ink, undo, seeded RNG (DOM-free)
 src/ui/          grid table, formula bar, status bar, screens, audio
-src/levels/      the five level JSON files
+src/levels/      the six level JSON files
 src/styles/      CSS
 tests/           e2e (Playwright) and solver tests
 public/          self-hosted fonts and sprites
