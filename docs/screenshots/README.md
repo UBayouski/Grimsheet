@@ -4,4 +4,4 @@
 04-error-monster.png: level 4, The Trap Row, with the #DIV/0! cell F6 selected and its cause line on the toolbar row below the formula bar (1280x1024).
 05-death-dialog.png: level 5, The Lich, after six waits in a haunted sheet, with the lost dialog and the focus ring on Recover (1280x1024).
 06-win-dialog.png: level 1, The Corridor, with the hero on K6 and the win dialog showing Next level focused (1280x1024).
-07-small-viewport.png: level 1 at 1366x768, scrolled so the status bar with HP, ink, turn and the message rests at the bottom of the viewport.
+07-small-viewport.png: level 1 at 1366x768, scrolled with the selected B6 formula row visible at the top and the status bar with HP, ink, turn and the message at the bottom.

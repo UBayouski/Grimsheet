@@ -309,6 +309,10 @@ export function mountApp(root: HTMLElement, options: MountOptions): AppHandle {
     if (result === undefined) return;
     if (result.preventDefault) e.preventDefault();
     command(result.command);
+    if (result.command.type === 'select-move') {
+      const selected = root.querySelector<HTMLElement>('td[aria-selected="true"]');
+      selected?.scrollIntoView?.({ block: 'nearest' });
+    }
     // Game keys work from the body (design: focus management), but focus belongs on the grid during play.
     if (doc.activeElement === null || doc.activeElement === doc.body) {
       runEffect({ type: 'focus', target: 'grid' });

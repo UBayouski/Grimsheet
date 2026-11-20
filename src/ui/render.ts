@@ -56,6 +56,7 @@ interface CellParts {
   readonly text: HTMLSpanElement;
   glyph: HTMLSpanElement | undefined;
   padlock: HTMLSpanElement | undefined;
+  editableCue: HTMLSpanElement | undefined;
 }
 
 function cellClasses(errorKind: ErrorKind | undefined): string {
@@ -97,6 +98,18 @@ function updateCell(doc: Document, parts: CellParts, cell: CellView): void {
   }
 
   if (parts.glyph) setAttr(parts.glyph, 'data-slide', cell.entity?.type === 'hero' ? cell.slide : undefined);
+
+  if (cell.region === 'rules' && !cell.locked && cell.hasContent && cell.errorKind === undefined) {
+    if (!parts.editableCue) {
+      const cue = make(doc, 'span', 'editable-cue');
+      cue.setAttribute('aria-hidden', 'true');
+      td.append(cue);
+      parts.editableCue = cue;
+    }
+  } else if (parts.editableCue) {
+    parts.editableCue.remove();
+    parts.editableCue = undefined;
+  }
 
   // Padlock: drawn by CSS, only on locked cells of the rules panel.
   if (!(cell.locked && cell.region === 'rules')) {
@@ -233,7 +246,7 @@ export function createView(root: HTMLElement): View {
         const text = make(doc, 'span', 'cell-text');
         td.append(text);
         tr.append(td);
-        cells.set(address, { td, text, glyph: undefined, padlock: undefined });
+        cells.set(address, { td, text, glyph: undefined, padlock: undefined, editableCue: undefined });
       }
     }
     tbody.append(tr);

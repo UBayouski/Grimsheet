@@ -119,6 +119,16 @@ function lostRun(): RunState {
 }
 
 describe('viewOf rows', () => {
+  it('reports raw content even when the evaluated value is an error', () => {
+    const run = start();
+    const vm = viewOf(stateOf({ run }), ENV);
+    expect(cellAt(vm, 'B14').hasContent).toBe(true);
+    expect(cellAt(vm, 'G3').hasContent).toBe(true);
+    expect(cellAt(vm, 'C14').hasContent).toBe(false);
+    const edited = act(run, { kind: 'edit', address: 'C14', raw: '2' });
+    expect(cellAt(viewOf(stateOf({ run: edited }), ENV), 'C14').hasContent).toBe(true);
+  });
+
   it('has 19 rows in order: 1 to 12 then 14 to 20, 12 cells each', () => {
     const vm = viewOf(stateOf(), ENV);
     expect(vm.rows).toHaveLength(19);

@@ -871,6 +871,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Still open from the first session: the page has no late-1990s chrome yet (bevels, title bar, fonts), the status bar text has no separators, and the favicon 404 remains. These belong to skin-and-sound and were not part of this task.
 - Not committed.
 
+
 ## 2026-11-06 — levels Batch 2: Crew run, then IDE fixes
 
 Surface: Crew, then IDE
@@ -1195,3 +1196,15 @@ What changed because of it (time saved, bug caught, decision made):
 - Caught while planning: the headless play test hard-coded level 3's final ink, which would have failed on the data change.
 - Checked, not assumed: (1337/190) x 190 evaluates to exactly 1337 in the engine. The play-command run and the new test show it; the spec does not claim it for other numbers.
 - Not committed.
+
+## 2026-11-20 — Sticky formula row and editable rule cue
+
+Surface: none
+
+Features: spec, steering
+
+What I asked for: Amend the shipped skin-and-sound spec, keep the formula row visible while scrolling, and give populated editable rule cells a visible cue. Review the cue before retaking affected screenshots, then verify the finished UI.
+
+What Kiro did: No Kiro tool was used in this session. The work followed `.kiro/steering/sheet-ui.md` and the dated amendment in `.kiro/specs/skin-and-sound/`. The formula row became sticky with matching scroll padding and a 1 px cell scroll margin for collapsed-border rounding. A UI-only `hasContent` flag drives an inset 2 px bottom rule on unlocked, populated, non-error rules cells. The first open-corner preview touched clipped text; a bottom-rule preview touched the `#CYCLE!` art and ghost, so the final renderer omits the cue on error-valued cells. Unit tests cover cue gain and loss, including value-to-error and error-to-value edits. Browser tests cover the short viewport, keyboard selection, cue placement and unchanged error art and ghost.
+
+What changed because of it (time saved, bug caught, decision made): Retook and inspected `02-level-play.png`, `03-monster-formula.png`, `04-error-monster.png`, `05-death-dialog.png` and `07-small-viewport.png` using the fixed action lists and finite-animation wait; updated the last shot's caption. The two preview failures shaped the final cue rule before saved images were replaced. `npm run verify` passed (74 files, 1834 tests, typecheck and lint), and `npm run e2e` passed (40 tests). No engine, game-rule or level file changed. No Git command, commit or push was used.

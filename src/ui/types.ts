@@ -144,6 +144,8 @@ export interface CellView {
   readonly col: number;
   readonly region: 'map' | 'rules';
   readonly text: string;
+  /** Whether the effective raw value or formula contains non-whitespace content. */
+  readonly hasContent: boolean;
   readonly errorKind: ErrorKind | undefined;
   /** Defined exactly when `errorKind` is defined (invariant held by the view model). */
   readonly cause: string | undefined;

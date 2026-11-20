@@ -92,6 +92,7 @@ function cellViewOf(
     col,
     region: row <= LAST_MAP_ROW ? 'map' : 'rules',
     text,
+    hasContent: (run === undefined ? '' : cellRawText(run, address) ?? '').trim() !== '',
     errorKind: isError ? value.error : undefined,
     cause:
       isError && run !== undefined

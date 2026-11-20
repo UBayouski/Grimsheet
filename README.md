@@ -14,11 +14,11 @@ You opened GRIMSHEET.XLS, a workbook from a dead accountant's floppy disk. Its f
 
 The rules that animate the dungeon live in rows 14 to 20, a panel titled **NECRONOMICELL** — the book of formulas behind every monster. Each monster has a `move` rule and an `atk` rule, and both are ordinary named cells you can read. How a monster chases you, how hard it hits, when a door opens: all of it is a formula sitting in a cell, and editing those cells is reading from the forbidden book.
 
-The errors are the monsters. A broken reference, an unknown name, a division by zero — these are not messages in the corner of the screen; they are the things in the dungeon that block your path or haunt the sheet. You survive by rewriting the formulas, spending a limited budget of **ink**, until the workbook lets you reach the exit.
+The errors are the monsters. A broken reference, an unknown name, a division by zero — these are not messages in the corner of the screen; they are the things in the dungeon that block your path or haunt the sheet. You survive by rewriting the formulas, spending a limited budget of **ink**, until the workbook lets you reach the exit. There are five hand-built puzzle levels, each teaching one formula trick.
 
 ## How to play
 
-Select a cell with the mouse or arrow keys, read its formula in the formula bar, and edit it if it is not locked. Move with the arrow keys, wait with Space, and take a turn at a time.
+Select a cell with the mouse or Ctrl + arrow keys, read its formula in the formula bar, and edit it if it is not locked. Move with the arrow keys, wait with Space, and take a turn at a time.
 
 | Key | Action |
 |---|---|

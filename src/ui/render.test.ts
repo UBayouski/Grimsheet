@@ -16,6 +16,7 @@ function cell(row: number, col: number, over: Partial<CellView> = {}): CellView 
     col,
     region: row < 13 ? 'map' : 'rules',
     text: '.',
+    hasContent: false,
     errorKind: undefined,
     cause: undefined,
     name: undefined,
@@ -274,6 +275,43 @@ describe('cell attributes', () => {
     expect(b9.querySelector('.entity-glyph')?.textContent).toBe('M');
     expect(b9.getAttribute('aria-label')).toBe('Monster M1 at B9');
     expect(b9.getAttribute('title')).toBe('B9 is part of a circular reference');
+  });
+});
+
+describe('editable cue', () => {
+  it('tracks populated non-error rules cells through edits, errors, emptying and locking', () => {
+    const view = createView(root);
+    view.update(makeVm({
+      B14: { text: '4', hasContent: true, name: 'POWER' },
+      B15: { text: '#DIV/0!', hasContent: true, errorKind: '#DIV/0!' },
+      B16: { text: '', hasContent: false },
+      B17: { text: '8', hasContent: true, locked: true },
+      B2: { text: '.', hasContent: true, locked: false },
+    }));
+    const cue = (address: string) => td(address).querySelector('.editable-cue');
+    expect(cue('B14')?.getAttribute('aria-hidden')).toBe('true');
+    expect(cue('B14')?.textContent).toBe('');
+    expect(cue('B15')).toBeNull();
+    expect(cue('B16')).toBeNull();
+    expect(cue('B17')).toBeNull();
+    expect(cue('B2')).toBeNull();
+    expect(td('B17').querySelector('.padlock')).not.toBeNull();
+
+    view.update(makeVm({
+      B14: { text: '#DIV/0!', hasContent: true, errorKind: '#DIV/0!' },
+      B15: { text: '2', hasContent: true, name: 'ATTACK' },
+    }));
+    expect(cue('B14')).toBeNull();
+    expect(cue('B15')).not.toBeNull();
+
+    view.update(makeVm({ B16: { text: '3', hasContent: true } }));
+    expect(cue('B16')).not.toBeNull();
+    expect(cue('B14')).toBeNull();
+    view.update(makeVm({ B16: { text: '', hasContent: false } }));
+    expect(cue('B16')).toBeNull();
+    view.update(makeVm({ B16: { text: '3', hasContent: true, locked: true } }));
+    expect(cue('B16')).toBeNull();
+    expect(td('B16').querySelector('.padlock')).not.toBeNull();
   });
 });
 

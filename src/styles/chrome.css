@@ -20,6 +20,7 @@
 }
 
 html {
+  scroll-padding-top: 1.875rem;
   scroll-padding-bottom: 3.5rem;
 }
 
@@ -183,11 +184,15 @@ body {
 
 /* Formula row and toolbar */
 .formula-row {
+  position: sticky;
+  top: 0;
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
   padding: 2px;
+  background: var(--face);
 }
 
 .name-box {
@@ -294,6 +299,23 @@ body {
 
 .grid-table td.cell[data-col='A'][data-region='rules'] .cell-text {
   font-size: 1rem;
+}
+
+/* Editable cue: inset bottom rule on populated, unlocked rules cells. */
+.editable-cue {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  right: 5px;
+  z-index: 2;
+  height: 2px;
+  background: currentColor;
+  pointer-events: none;
+}
+
+/* The collapsed cell border can land on a half pixel after scrollIntoView. */
+.grid-table td.cell {
+  scroll-margin-top: 1px;
 }
 
 /* Padlock: CSS shape, rules region only */

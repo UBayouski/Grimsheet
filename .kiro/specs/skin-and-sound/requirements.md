@@ -286,3 +286,37 @@ The BRIEF does not decide these. Each has a working assumption above or a note h
 8. **Playwright and animation.** The animations move only a glyph and the table for at most 300 ms. Playwright waits for stable elements, so a global `reducedMotion` setting is not recommended (the ghost test needs real motion). Sound cannot be checked in headless runs; the mapper and a fake `AudioContext` cover it.
 9. **Hosting.** Tasks 1.2 and later of the hosting spec are open. The build must copy `public/` to `dist/`; Vite does this by default.
 10. **Desktop colour behind the window.** The BRIEF fixes no page colour. The design picks one that meets the contrast floor for any text placed on it.
+
+## Amendment — 2026-11-20: Sticky formula row and editable-cell cue
+
+This amendment extends the shipped skin. It supersedes the formula-row decision in design caveat 6 without reopening completed tasks 1.1–6.2. It changes no player-visible string, padlock, selected-cell outline, level file, engine, model or game rule. The changes are static and add no motion, including under `prefers-reduced-motion: reduce`.
+
+### Requirement 12: Formula stays visible on a short viewport
+
+**User Story:** As a player inspecting a rule in rows 14–20 on a 1366x768 screen, I want its formula to stay in view while I scroll, so that I can read and edit the rule I selected.
+
+#### Acceptance Criteria
+
+1. THE existing `.formula-row`, containing the Name_Box, Formula_Bar and Formula_Alert, SHALL stick to the top of the viewport during page scroll. It SHALL have an opaque background matching the existing chrome and stack above grid content. The existing Status_Bar SHALL continue to stick at the bottom.
+2. THE row SHALL keep its normal document space and dimensions when it begins to stick. `scroll-padding-top` SHALL match the sticky formula row's height alongside the existing `scroll-padding-bottom` for the Status_Bar, so keyboard selection and focus do not scroll a cell beneath the row. No ancestor of the row, including `#window`, `.grimsheet-app`, `body` or `html`, SHALL gain a clipping `overflow` value. Sticking SHALL create no horizontal or vertical layout shift, hide no selected rule cell, and change no visible layout at 1280x1024 when that page does not scroll.
+3. A Playwright test at 1366x768 SHALL select a rules-panel formula cell, scroll that cell into view, and assert that the Formula_Bar shows that cell's exact raw formula while both the Formula_Bar and Status_Bar have bounding boxes inside the viewport. It SHALL also check that the selected cell is not covered by the sticky row and that document dimensions stay unchanged across the scroll. A second case SHALL scroll to the bottom, move the selection up into the top map rows with the keyboard, and assert the selected cell's box is fully below the formula row. At 1280x1024, the existing no-scroll and layout-shift checks SHALL continue to pass.
+
+### Requirement 13: Unlocked cells look editable
+
+**User Story:** As a player reading the rules panel, I want a small shape on cells I can edit, so that I can find the game's central action without guessing from the absence of a padlock.
+
+#### Acceptance Criteria
+
+1. EVERY unlocked rules-panel Grid_Cell with a non-empty raw value or formula and no error kind SHALL carry the same subtle, static, non-colour-only cue; locked, empty and error-valued cells SHALL not. Empty and error-valued rules cells remain editable under the current game rules. A cell SHALL gain the cue when an edit gives it non-error content or clears its error, and lose it when emptied, locked or made erroneous. Map cells keep their existing appearance and lock treatment.
+2. THE cue SHALL fit the late-1990s chrome and existing palette, remain distinguishable on a selected cell, and not obstruct the cell value, padlock or selected outline. The error art, ring and ghost already mark error-valued cells and SHALL remain unchanged. The cue SHALL not alter any cell's width, height, border, text, or selection outline, cause layout shift, or introduce animation. Forced-colour and reduced-motion modes SHALL preserve the cue's shape.
+3. A unit or Playwright test SHALL check the cue on an unlocked named non-error cell; its absence on an unlocked empty rules cell, an unlocked error cell, locked rules cells and map cells; gain-on-edit, loss-on-empty-or-lock, error-to-value gain and value-to-error loss transitions. A browser check SHALL confirm cell dimensions and the selected outline remain unchanged, and that unlocked `#CYCLE!` cells have no cue while their error art and ghost remain unchanged.
+
+### Requirement 14: Evidence and scope
+
+**User Story:** As the author, I want the screenshots and tests to describe the visible amendment accurately.
+
+#### Acceptance Criteria
+
+1. THE final amendment task SHALL run `npm run verify` and `npm run e2e` to completion and append a dated `KIRO_USAGE.md` entry in its existing format. It SHALL change no file under `src/engine/`, `src/model/`, `src/game/` or `src/levels/`, and SHALL not commit, push or run Git commands.
+2. THE final task SHALL retake affected screenshots using the already-completed task 6.2 procedure and the `Screenshots stay current` steering rule. The task SHALL derive the exact list from the action lists and visible unlocked non-error cells with content; the scrolled `07-small-viewport.png` is affected by the sticky row. It SHALL list the files retaken, inspect each, and update `docs/screenshots/README.md` only if a caption changes. The three enlarged crops and full-window preview were reviewed before this revision; error-valued cells now carry no cue. The user authorized task 7.3 after this revision.
+3. THE task plan SHALL note that `.kiro/specs/sixth-level/` retakes all seven screenshots again after the sixth level lands. Its screenshot task is ordered after this amendment's visible changes.

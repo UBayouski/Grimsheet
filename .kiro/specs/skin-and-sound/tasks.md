@@ -177,3 +177,27 @@ Rules that apply to every task:
   ]
 }
 ```
+
+## Amendment tasks — 2026-11-20: Formula visibility and editable cells
+
+The original tasks 1.1–6.2 remain complete. The user approved this amendment on 2026-11-20 with the cue-scope, scroll-padding and screenshot refinements below. Work in order 7.1 → 7.2 → 7.3; keep each task unchecked until its acceptance gates pass. The sixth-level spec later retakes all seven screenshots after it lands; its screenshot task follows this amendment's visible changes.
+
+- [x] **7.1 [Amendment] Make the formula row sticky**
+  - Files: `src/styles/chrome.css`, `src/ui/app.ts`, `src/ui/skin-css.test.ts`, `tests/e2e/skin.spec.ts`. Keep `src/styles/grid-ui.css` and the `render.ts` skeleton unchanged for this task.
+  - Add the sticky positioning, top offset, stacking and opaque `--face` background of design D22, plus `scroll-padding-top` matching the row height alongside the existing `scroll-padding-bottom` and a 1 px cell scroll margin for collapsed-border rounding. Keep `.toolbar` in normal flow, preserve the no-clipping ancestor rule and the current Status_Bar, and add no size-changing border or permanent shadow.
+  - CSS test: `.formula-row` has `position: sticky`, `top: 0`, opaque `--face` background and z-index above the Status_Bar; `scroll-padding-top` matches its height; guarded ancestors have no clipping overflow.
+  - E2E at 1366x768: seed level 5, select `B16`, scroll it into view, require the Formula_Bar to show `=MAX(1,PHYLACTERY)`, both bars and the selected cell inside the viewport without overlap, and unchanged document dimensions. Scroll to the bottom, move selection into top map rows with Ctrl + arrows, and require the selected cell fully below the formula row. Repeat with reduced motion. At 1280x1024, retain no-scroll height and the existing window-box/layout-shift checks; the row remains visually unchanged at scroll 0.
+  - _Requirements: amendment 12.1–12.3._
+
+- [x] **7.2 [Amendment] Mark unlocked rules cells**
+  - Files: `src/ui/types.ts`, `src/ui/view-model.ts`, `src/ui/render.ts`, `src/styles/chrome.css`, `src/ui/render.test.ts`, `src/ui/view-model.test.ts`, `tests/e2e/skin.spec.ts`. Derive UI-only `hasContent` from raw text. No player-visible string, level file, padlock branch or selected-outline CSS changes.
+  - Implement design D23 option B in span form: an empty `aria-hidden` span with a solid 2 px currentColor bottom rule, inset 5 px from left, right and bottom, on unlocked rules cells with non-empty raw content and `cell.errorKind === undefined`. Keep the CSS shape exactly as previewed. Add it when an edit gives a cell non-error content or clears its error; remove it when the cell is emptied, locked or becomes erroneous. Empty and error-valued rules cells stay editable without a cue. Do not add the cue to locked cells or map cells; only a padlock claims a cell is locked.
+  - Unit test presence on named non-error cells, absence on empty, error-valued and locked rules and map cells, gain-on-edit, loss-on-empty-or-lock, error-to-value gain and value-to-error loss; e2e check the cue box below normal text and inside the selected outline, 40 px cell width, no window shift and reduced-motion appearance at the supported viewports. On level 5, assert both unlocked `#CYCLE!` cells have no cue and their art and ghost are unchanged.
+  - _Requirements: amendment 13.1–13.3._
+
+- [x] **7.3 [Amendment] Retake affected screenshots and finish**
+  - Files: retake `docs/screenshots/02-level-play.png`, `03-monster-formula.png`, `04-error-monster.png`, `05-death-dialog.png`, `07-small-viewport.png`; edit `docs/screenshots/README.md` only if a caption changes; append `KIRO_USAGE.md` in its existing dated format; tick these three new task boxes only after completion.
+  - Why each shot: change 1 affects the scrolled `07-small-viewport.png`. The task 6.2 action lists put populated unlocked rule cells in the level 3, 2, 4 and 5 shots (`02`–`05`). Level 1 has no populated unlocked rule cell, so `01-title.png` and `06-win-dialog.png` stay unchanged; its `07` shot is already included for the sticky row. No new screenshot is added. The sixth-level spec retakes all seven again after it lands.
+  - Follow completed task 6.2 exactly: same filenames, action lists and viewports, clean profile, seeded progress, wait for finite animations, then inspect every retaken image. The user reviewed the three enlarged crops and full-window preview, chose to omit the cue on error-valued cells, and authorized this task. Report the actual five filenames and any visual concern before calling the amendment done.
+  - Run `npm run verify` and `npm run e2e` after the final visual state; both must pass. Confirm no engine, model, game-rule or level files changed. Use no Git command, commit or push.
+  - _Requirements: amendment 14.1–14.3 and 12–13._

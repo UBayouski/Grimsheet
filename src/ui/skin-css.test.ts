@@ -97,6 +97,16 @@ describe('skin stylesheets: sources', () => {
 });
 
 describe('skin stylesheets: layout', () => {
+  it('pins an opaque formula row above the grid and reserves its scroll height', () => {
+    const chrome = read('chrome.css');
+    expect(declared(chrome, '.formula-row', 'position')).toContain('sticky');
+    expect(declared(chrome, '.formula-row', 'top')).toContain('0');
+    expect(declared(chrome, '.formula-row', 'z-index')).toContain('6');
+    expect(declared(chrome, '.formula-row', 'background')).toContain('var(--face)');
+    expect(declared(chrome, 'html', 'scroll-padding-top')).toContain('1.875rem');
+    expect(declared(chrome, 'html', 'scroll-padding-bottom')).toContain('3.5rem');
+  });
+
   it('pins the status bar to the bottom of the page', () => {
     const chrome = read('chrome.css');
     expect(declared(chrome, '#status-bar', 'position')).toContain('sticky');

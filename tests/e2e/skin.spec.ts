@@ -241,6 +241,170 @@ test.describe('sticky status bar at 1366x768', () => {
   });
 });
 
+test.describe('sticky formula row at 1366x768', () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    test(`keeps the selected rule formula visible while scrolled (${reducedMotion})`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion });
+      await seedLevel(page, 5);
+      await page.goto('/');
+      await pressStart(page);
+      const before = await page.evaluate(() => {
+        const windowBox = document.querySelector('#window')?.getBoundingClientRect();
+        return {
+          height: document.documentElement.scrollHeight,
+          width: document.documentElement.scrollWidth,
+          windowWidth: windowBox?.width ?? NaN,
+          windowHeight: windowBox?.height ?? NaN,
+          windowLeft: windowBox?.left ?? NaN,
+        };
+      });
+      await page.locator('#cell-B16').click();
+      await page.locator('#cell-B16').scrollIntoViewIfNeeded();
+      await expect(page.locator('#formula-bar')).toHaveValue('=MAX(1,PHYLACTERY)');
+
+      const boxes = await page.evaluate(() => {
+        const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
+        const formula = rect('.formula-row');
+        const status = rect('#status-bar');
+        const cell = rect('#cell-B16');
+        return {
+          formulaTop: formula?.top ?? NaN,
+          formulaBottom: formula?.bottom ?? NaN,
+          formulaHeight: formula?.height ?? NaN,
+          statusTop: status?.top ?? NaN,
+          statusBottom: status?.bottom ?? NaN,
+          cellTop: cell?.top ?? NaN,
+          cellBottom: cell?.bottom ?? NaN,
+          innerHeight: window.innerHeight,
+          scrollY: window.scrollY,
+          scrollHeight: document.documentElement.scrollHeight,
+          scrollWidth: document.documentElement.scrollWidth,
+          scrollPaddingTop: parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
+        };
+      });
+      expect(boxes.scrollY).toBeGreaterThan(0);
+      expect(boxes.formulaTop).toBeGreaterThanOrEqual(0);
+      expect(boxes.formulaBottom).toBeLessThanOrEqual(boxes.cellTop);
+      expect(boxes.cellBottom).toBeLessThanOrEqual(boxes.statusTop);
+      expect(boxes.statusBottom).toBeLessThanOrEqual(boxes.innerHeight);
+      expect(boxes.scrollPaddingTop).toBe(boxes.formulaHeight);
+      const dimensions = await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        width: document.documentElement.scrollWidth,
+        windowWidth: document.querySelector('#window')?.getBoundingClientRect().width ?? NaN,
+        windowHeight: document.querySelector('#window')?.getBoundingClientRect().height ?? NaN,
+        windowLeft: document.querySelector('#window')?.getBoundingClientRect().left ?? NaN,
+      }));
+      expect(dimensions).toEqual(before);
+    });
+
+    test(`keeps keyboard-selected top map cells below the row (${reducedMotion})`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion });
+      await page.goto('/');
+      await pressStart(page);
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.keyboard.press('Control+ArrowUp');
+      await page.keyboard.press('Control+ArrowUp');
+      await page.keyboard.press('Control+ArrowUp');
+      await page.keyboard.press('Control+ArrowUp');
+      await expect(page.locator('#cell-B2')).toHaveAttribute('aria-selected', 'true');
+      const boxes = await page.evaluate(() => ({
+        row: document.querySelector('.formula-row')?.getBoundingClientRect().bottom ?? NaN,
+        cell: document.querySelector('#cell-B2')?.getBoundingClientRect().top ?? NaN,
+      }));
+      expect(boxes.cell).toBeGreaterThanOrEqual(boxes.row);
+    });
+  }
+});
+
+test.describe('populated editable rules cells', () => {
+  for (const viewport of [
+    { width: 1280, height: 1024 },
+    { width: 1366, height: 768 },
+  ]) {
+    test(`shows a shape cue without changing cell size at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await seedLevel(page, 2);
+      await page.goto('/');
+      await pressStart(page);
+      await page.locator('#cell-B14').click();
+      await expect(page.locator('#cell-B14 .editable-cue')).toHaveAttribute('aria-hidden', 'true');
+      await expect(page.locator('#cell-C14 .editable-cue')).toHaveCount(0);
+      await expect(page.locator('#cell-A14 .editable-cue')).toHaveCount(0);
+      await expect(page.locator('#cell-A14 .padlock')).toHaveCount(1);
+      await expect(page.locator('#cell-B2 .editable-cue')).toHaveCount(0);
+      const geometry = await page.evaluate(() => {
+        const cell = document.querySelector('#cell-B14');
+        const cue = cell?.querySelector('.editable-cue');
+        const text = cell?.querySelector('.cell-text');
+        const cellBox = cell?.getBoundingClientRect();
+        const cueBox = cue?.getBoundingClientRect();
+        const textBox = text?.getBoundingClientRect();
+        return {
+          cellWidth: cellBox?.width ?? NaN,
+          cueWidth: cueBox?.width ?? NaN,
+          cueHeight: cueBox?.height ?? NaN,
+          cueTop: cueBox?.top ?? NaN,
+          cueBottom: cueBox?.bottom ?? NaN,
+          cueLeft: cueBox?.left ?? NaN,
+          cueRight: cueBox?.right ?? NaN,
+          textBottom: textBox?.bottom ?? NaN,
+          cellTop: cellBox?.top ?? NaN,
+          cellBottom: cellBox?.bottom ?? NaN,
+          cellLeft: cellBox?.left ?? NaN,
+          cellRight: cellBox?.right ?? NaN,
+          outline: cell === null ? '' : getComputedStyle(cell).outlineWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          innerWidth: window.innerWidth,
+        };
+      });
+      expect(geometry.cellWidth).toBe(40);
+      expect(geometry.cueWidth).toBeGreaterThan(20);
+      expect(geometry.cueHeight).toBe(2);
+      expect(geometry.cueTop).toBeGreaterThanOrEqual(geometry.textBottom);
+      expect(geometry.cueBottom).toBeLessThanOrEqual(geometry.cellBottom - 4);
+      expect(geometry.cueLeft).toBeGreaterThanOrEqual(geometry.cellLeft + 4);
+      expect(geometry.cueRight).toBeLessThanOrEqual(geometry.cellRight - 4);
+      expect(geometry.outline).toBe('3px');
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.innerWidth);
+    });
+  }
+
+  test('keeps the error art and ghost without a cue on unlocked cycle cells', async ({ page }) => {
+    await page.clock.install();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await seedLevel(page, 5);
+    await page.goto('/');
+    await pressStart(page);
+    for (const address of ['B18', 'B19']) {
+      const cell = page.locator(`#cell-${address}`);
+      await expect(cell).toHaveAttribute('data-error', '#CYCLE!');
+      await expect(cell).toHaveClass(/cell-error-cycle/);
+      await expect(cell).not.toHaveAttribute('data-locked', 'true');
+      await expect(cell.locator('.editable-cue')).toHaveCount(0);
+      const art = await cell.evaluate((el) => ({
+        ring: getComputedStyle(el, '::before').borderTopStyle,
+        underline: getComputedStyle(el).textDecorationLine,
+      }));
+      expect(art.ring).toBe('dotted');
+      expect(art.underline).toContain('underline');
+    }
+    await expect(page.locator('#cell-B18')).toHaveAttribute('data-ghost', 'true');
+    await expect(page.locator('[data-ghost]')).toHaveCount(1);
+    const ghost = await page.locator('#cell-B18').evaluate((el) => ({
+      content: getComputedStyle(el, '::after').content,
+      width: getComputedStyle(el, '::after').width,
+      height: getComputedStyle(el, '::after').height,
+    }));
+    expect(ghost.content).toBe('""');
+    expect(ghost.width).toBe('14px');
+    expect(ghost.height).toBe('16px');
+    await expect(page.locator('#cell-B17 .editable-cue')).toHaveCount(0);
+  });
+});
+
 test.describe('sticky status bar at 1280x1024', () => {
   test.use({ viewport: { width: 1280, height: 1024 } });
 
