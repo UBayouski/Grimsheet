@@ -15,7 +15,8 @@ if (!fs.existsSync(path.join(dist, 'index.html'))) {
 // Text that only the fixture levels and the fixture page contain.
 const FIXTURE_MARKERS = ['tests/fixtures', '(fixtures)', 'Fixture Corridor', 'Fixture Lab', 'fixture-corridor', 'fixture-lab'];
 // Any absolute http(s) URL, except the XML namespace strings that SVG and DOM code carry.
-const EXTERNAL_URL = /https?:\/\/(?!www\.w3\.org\/)[^\s"'`)]+/g;
+// The game's own address (the link-preview tags in index.html) is not another origin.
+const EXTERNAL_URL = /https?:\/\/(?!www\.w3\.org\/|grimsheet\.onrender\.com(?:[/"'\s]|$))[^\s"'`)]+/g;
 // A protocol-relative reference such as src="//cdn.example/x.js".
 const PROTOCOL_RELATIVE = /(?:src|href|action)\s*=\s*["']\/\/[^\s"']+/g;
 

@@ -6,7 +6,7 @@ Judges ask about: surfaces (IDE / CLI / Web / Crew), custom agents, hooks, specs
 
 ## Entry format
 
-## YYYY-MM-DD — short title
+## YYYY-MM-DD Ã¢â‚¬â€ short title
 
 Surface: IDE | CLI | Web | Crew | none
 
@@ -20,7 +20,7 @@ What changed because of it (time saved, bug caught, decision made):
 
 ---
 
-## 2026-11-05 — Repo created, brief written
+## 2026-11-05 Ã¢â‚¬â€ Repo created, brief written
 
 Surface: none
 
@@ -32,7 +32,7 @@ What Kiro did: Nothing.
 
 What changed because of it (time saved, bug caught, decision made): The author created the public repo with an MIT license and wrote `docs/BRIEF.md` by hand as the input to Kiro.
 
-## 2026-11-05 — Steering docs generated from the brief
+## 2026-11-05 Ã¢â‚¬â€ Steering docs generated from the brief
 
 Surface: IDE
 
@@ -46,7 +46,7 @@ What Kiro did: Read the brief and created five files in `.kiro/steering/`.
 
 What changed because of it (time saved, bug caught, decision made): The brief did not specify a folder layout, so the layout in `structure.md` (`src/model/`, `src/game/`, `src/levels/`, `tests/` and so on) was Kiro's choice, made to match the spec plan. Kiro also added an accessibility section to `sheet-ui.md` that the brief does not ask for. Both are open to review and change.
 
-## 2026-11-05 — Project scaffold from the brief
+## 2026-11-05 Ã¢â‚¬â€ Project scaffold from the brief
 
 Surface: IDE
 
@@ -58,7 +58,7 @@ What Kiro did: Created `package.json`, `tsconfig.json`, `vite.config.ts`, `eslin
 
 What changed because of it (time saved, bug caught, decision made): Decision: the latest TypeScript (7.0.2) is outside the range `typescript-eslint` 8.72.1 supports (below 6.1.0), so Kiro pinned TypeScript 6.0.3 to keep linting working. Revisit when `typescript-eslint` supports TypeScript 7. The scaffold follows the steering layout; empty folders for later specs (`src/engine/`, `src/model/`, `src/game/`, `src/ui/`, `src/levels/`) were not created yet. Unit tests live next to source as `*.test.ts`, and e2e tests under `tests/e2e/`. `npm install` reported 10 moderate audit findings, not yet reviewed.
 
-## 2026-11-05 — formula-engine spec: requirements, design and tasks
+## 2026-11-05 Ã¢â‚¬â€ formula-engine spec: requirements, design and tasks
 
 Surface: IDE
 
@@ -83,7 +83,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Gaps found: review found gaps between criteria (a rule cell on a cycle, an error downstream of a cycle, a per-monster call on an empty cell). Each was settled in the spec and none was left for the code.
 - Batch dependencies were checked before any task ran, which is what let Batch 1 go to Kiro Crew.
 
-## 2026-11-05 — formula-engine Batch 1 run in Kiro Crew
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 1 run in Kiro Crew
 
 Surface: Crew
 
@@ -107,7 +107,7 @@ What changed because of it (time saved, bug caught, decision made):
   - The plan's verification step can be ordered wrongly, so I re-check the merged result myself.
   - The task checkboxes in `tasks.md` were not updated by the run. I ticked them by hand after checking the merge.
 
-## 2026-11-05 — formula-engine Batch 2 done in a Kiro Crew chat session
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 2 done in a Kiro Crew chat session
 
 Surface: Crew
 
@@ -128,7 +128,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: I used chat mode for this batch because it was quicker to start than reviewing and running a plan.
 - Comparison of the two Kiro Crew modes: the Task Runner gives isolation and a per-step history, while chat mode is quicker to start but leaves review and commits to the author.
 
-## 2026-11-05 — formula-engine Batch 3 run in Kiro Crew's Task Runner
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 3 run in Kiro Crew's Task Runner
 
 Surface: Crew
 
@@ -150,7 +150,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Gap found: with no test command set, Kiro Crew's per-step verification checked nothing. My re-run outside Kiro Crew is still the only real check of the combined result. Setting the Task Runner test command would close this gap.
 - Time: two independent tasks ran in a separate worktree in about 8 minutes while the main checkout stayed free.
 
-## 2026-11-05 — formula-engine Batch 4 run in Kiro Crew's Task Runner
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 4 run in Kiro Crew's Task Runner
 
 Surface: Crew
 
@@ -171,7 +171,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught: a step labelled "verification" rewrote code before the tests that cover it existed. The evaluator edit was not checked by its own tests at the time it was made. It was checked only by the tests written afterwards and by my re-run.
 - Time: three independent tasks ran in a separate worktree in about 10 minutes while the main checkout stayed free.
 
-## 2026-11-05 — formula-engine Batch 5 run in Kiro Crew's Task Runner
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 5 run in Kiro Crew's Task Runner
 
 Surface: Crew
 
@@ -191,7 +191,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The new rule held in this run: the verification step made no commit and edited no code. Earlier batches differed. In Batch 1 verification ran before the last test file. Batch 2 was a chat session with no Task Runner run. In Batch 3 verification ran last without editing, and in Batch 4 it ran early and edited `evaluator.ts`. One run is not enough to say the rule is reliable.
 - Time: two independent tasks ran in a separate worktree in about 7 minutes while the main checkout stayed free.
 
-## 2026-11-05 — formula-engine task 4.3 (recalculator) run in the IDE
+## 2026-11-05 Ã¢â‚¬â€ formula-engine task 4.3 (recalculator) run in the IDE
 
 Surface: IDE
 
@@ -213,7 +213,7 @@ What changed because of it (time saved, bug caught, decision made):
   - I approved each change in the diff view, instead of reviewing a plan and merging a branch afterwards.
   - Kiro committed nothing, so there are no per-step commits and no separate author in the history. This entry is the record of what Kiro did.
 
-## 2026-11-05 — formula-engine task 4.4 (evaluate-cell, per-monster evaluation) run in the IDE
+## 2026-11-05 Ã¢â‚¬â€ formula-engine task 4.4 (evaluate-cell, per-monster evaluation) run in the IDE
 
 Surface: IDE
 
@@ -252,7 +252,7 @@ What changed because of it (time saved, bug caught, decision made):
 - I re-ran `npm test` and `npm run check` myself after that change: 16 test files, 341 tests passing, typecheck and lint clean. The 340 count above is the sub-agent's earlier report.
 - As with task 4.3, Kiro committed nothing, so this entry is the record of what Kiro did.
 
-## 2026-11-05 — Agent hooks: tests on save, check before finishing
+## 2026-11-05 Ã¢â‚¬â€ Agent hooks: tests on save, check before finishing
 
 Surface: IDE
 
@@ -273,7 +273,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Fix: scripts/canonical-cwd.mjs resets the cwd to its real path, then runs the rest of its arguments. Both hook commands now start with `node scripts/canonical-cwd.mjs`.
 - The save hook's src/ matcher was never at fault.
 
-## 2026-11-05 — formula-engine Batch 9 property tests run in Kiro Crew's Task Runner
+## 2026-11-05 Ã¢â‚¬â€ formula-engine Batch 9 property tests run in Kiro Crew's Task Runner
 
 Surface: Crew
 
@@ -292,7 +292,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Bug caught: design open question 26 says a Random_Source that breaks its contract makes that `RAND()` call `#VALUE!`. The evaluator never implemented it, and no example test used a bad source. The property test's misbehaving-`random` generator found it.
 - Decision: the test was right and the engine was wrong, so the fix goes in the engine and the test is not changed. The fix is the next entry.
 
-## 2026-11-05 — RAND() guard fix and property-test timeout, in the IDE
+## 2026-11-05 Ã¢â‚¬â€ RAND() guard fix and property-test timeout, in the IDE
 
 Surface: IDE
 
@@ -323,7 +323,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: saves run the fast suite, so the save hook stays quick. Finishing runs everything, including the property tests.
 - Not verified: the changed hooks take effect from the next session start, so neither has been seen firing yet.
 
-## 2026-11-05 — Formula engine Batch 10: public API and constraint scan
+## 2026-11-05 Ã¢â‚¬â€ Formula engine Batch 10: public API and constraint scan
 
 Surface: Crew, then IDE
 
@@ -349,7 +349,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Hooks: this was the first session with the split hooks. The IDE file-edit tools were not available in this session, so the edits were made through the terminal, and no `PostFileSave` hook fired. No hook output appeared during the session. Whether the `Stop` hook (`npm run verify`) ran at the end could not be observed from inside the session.
 - Nothing was committed.
 
-## 2026-11-05 — formula-reviewer custom agent and its first review of src/engine
+## 2026-11-05 Ã¢â‚¬â€ formula-reviewer custom agent and its first review of src/engine
 
 Surface: CLI
 
@@ -381,7 +381,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Open: the findings are from reading the code and were not reproduced. The agent said so for findings 1, 2, 3, 4 and 7. Nothing is fixed yet.
 - Not verified: the agent's read-only guarantee rests on its tool list (no write tools) and its allowlist. A GitHub issue reports that `toolsSettings` may not be enforced at runtime in some CLI versions, so the missing write tools are the stronger guard. I did not test an attempted write.
 
-## 2026-11-05 — Acting on the first formula-reviewer review
+## 2026-11-05 Ã¢â‚¬â€ Acting on the first formula-reviewer review
 
 Surface: IDE, with the Kiro CLI for the second review
 
@@ -416,7 +416,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Save hook: every edit in this session went through the IDE tools (`str_replace`, `fs_write`, `fs_append`). No hook output appeared in the result of any of those edits, so I did not see the `PostFileSave` hook fire. That does not show that it did not run, because I cannot see it from inside the session, and a result without output is also what a hook that ran and printed nothing would give. The old-code check was the one place I used the terminal to change source files, and I restored them straight after. The full `npm run verify` I ran myself passed.
 - Nothing was committed.
 
-## 2026-11-05 — Acting on the second formula-reviewer review
+## 2026-11-05 Ã¢â‚¬â€ Acting on the second formula-reviewer review
 
 Surface: IDE, with the Kiro CLI for the third review
 
@@ -447,7 +447,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Save hook, from the Kiro output log (`Kiro Logs.log` of this window) after my edits: there are no lines with a `[hooks]` tag at all (0 matches across all Kiro logs). The hook lines that exist are `hooks.reload.loaded` entries. They show `read:0, registered:0` until 19:34:16, then `read:2, registered:2` at 19:34:16 and again at 21:28:59, so both hooks were loaded. There is also an early line, `hooks.v2.executionDisabledUntrustedWorkspace` at 14:01:18, from before the hooks were loaded. After the 21:28 reload the log has no entry that says a hook ran, for any of my `str_replace`, `fs_write` or `fs_append` edits. The log only shows `acp.policy-eval.complete` lines for those edits. So the log shows the hooks were registered, and it does not show the `PostFileSave` hook firing. I cannot tell from the log whether it ran silently or did not run.
 - Nothing was committed.
 
-## 2026-11-05 — Final engine round (third formula-reviewer review)
+## 2026-11-05 Ã¢â‚¬â€ Final engine round (third formula-reviewer review)
 
 Surface: IDE
 
@@ -471,7 +471,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Nothing was committed.
 
 
-## 2026-11-05 — sheet-model Batches 2 and 3a: two parallel Crew runs
+## 2026-11-05 Ã¢â‚¬â€ sheet-model Batches 2 and 3a: two parallel Crew runs
 
 Surface: Crew
 
@@ -494,7 +494,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Attribution: the step commits of both runs carry my git identity, not a separate "Kiro Crew" author, unlike the formula-engine Batch 3 to 5 runs. This entry is the record that Crew made them. I have not found out why the author setting did not apply here.
 - Crew's own per-step verification is not what I rely on. I re-ran the combined suite myself.
 
-## 2026-11-05 — sheet-model task 3.4 (sheet construction, placement, final result) run in the IDE
+## 2026-11-05 Ã¢â‚¬â€ sheet-model task 3.4 (sheet construction, placement, final result) run in the IDE
 
 Surface: IDE
 
@@ -514,7 +514,7 @@ What changed because of it (time saved, bug caught, decision made):
 - `buildSheet` and `checkPlacement` are exported from `loader.ts` for testing. They are not part of the public barrel, which task 5.1 will define.
 - Nothing was committed.
 
-## 2026-11-06 — sheet-model label rule settled (Web surface)
+## 2026-11-06 Ã¢â‚¬â€ sheet-model label rule settled (Web surface)
 
 Surface: Web
 
@@ -532,7 +532,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: labels are plain text. 5.11 stays, and 5.14 now covers numeric literals only, so the two criteria no longer overlap.
 - No code changed. The loader tests from the 3.4 run already followed this reading (`missing-label` for the four formula labels, `bad-label-value` for numeric literals such as `5` and `-2.5`), so the specs now match the tests.
 
-## 2026-11-06 — sheet-model Batch 4: Crew property tests, generator fix in the IDE
+## 2026-11-06 Ã¢â‚¬â€ sheet-model Batch 4: Crew property tests, generator fix in the IDE
 
 Surface: Crew, then IDE
 
@@ -558,7 +558,7 @@ What changed because of it (time saved, bug caught, decision made):
 - While this was going on, the spec label rule was settled separately (labels are plain text, and 5.14 covers numeric literals). That change did not touch the code I changed here.
 - Nothing was committed.
 
-## 2026-11-06 — formula-reviewer over src/model (read-only review)
+## 2026-11-06 Ã¢â‚¬â€ formula-reviewer over src/model (read-only review)
 
 Surface: CLI
 
@@ -590,7 +590,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Nothing was fixed and nothing was committed. Each finding still needs a decision.
 - Decision afterwards: six findings were fixed in the next entry (the two high ones, the internal-error message, the derived errors, -0, the unused has()). The other seven are accepted, not fixed: the Level built from raw input (M1), a non-plain value inside a field reporting not-an-object (M4), the missing hostile-input tests (T1) and the unconfirmed test coverage (T2) all concern Proxies, getters, cycles, sparse arrays or non-plain values, and JSON text cannot produce those; the surrogate clamp (L2) is cosmetic; the error-order drift (L3) is harmless; and engine internals are imported only by test files (L5), as the design intends.
 
-## 2026-11-06 — sheet-model: review fixes, tasks 5.1 and 5.2, spec closed
+## 2026-11-06 Ã¢â‚¬â€ sheet-model: review fixes, tasks 5.1 and 5.2, spec closed
 
 Surface: IDE
 
@@ -615,7 +615,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The sheet-model spec is closed with every task in the plan done. The next spec in the brief is `game-rules`.
 - Nothing was committed. The working tree holds the four edited model files, `testing/arbitraries.test.ts`, and the new `index.ts` and `module.test.ts`.
 
-## 2026-11-06 — game-rules Batches 1 and 2
+## 2026-11-06 Ã¢â‚¬â€ game-rules Batches 1 and 2
 
 Surface: IDE, Crew
 
@@ -637,7 +637,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Time: three independent tasks ran side by side in a separate worktree while the main checkout stayed free.
 - Not verified: I did not diff the copied Batch 1 files against the IDE versions myself.
 
-## 2026-11-06 — game-rules Batch 4: property tests (Crew run)
+## 2026-11-06 Ã¢â‚¬â€ game-rules Batch 4: property tests (Crew run)
 
 Surface: Crew
 
@@ -656,7 +656,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Note: `turn.ts` and `turn.test.ts` were committed inside the step 2 commit (74c0125) by an earlier step, not in this task.
 - Time saved and bugs caught: Not recorded.
 
-## 2026-11-06 — game-rules Batch 3 (IDE)
+## 2026-11-06 Ã¢â‚¬â€ game-rules Batch 3 (IDE)
 
 Surface: IDE
 
@@ -674,7 +674,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Batch 3 was committed after the two Crew runs that used it. The Batch 4 Crew run (property tests) needed `turn.ts`, and the Batch 4 entry notes that `turn.ts` and `turn.test.ts` ended up inside a Crew step commit (`74c0125`) before my IDE commit. I did not diff the two versions, so I cannot say whether the Crew copy and the IDE version were identical.
 - Same lesson as in Batches 1 and 2: commit the batch a Crew run depends on before the run starts.
 
-## 2026-11-06 — grid-ui Batches 1 and 2: IDE then Crew
+## 2026-11-06 Ã¢â‚¬â€ grid-ui Batches 1 and 2: IDE then Crew
 
 Surface: IDE, Crew
 
@@ -694,7 +694,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: the grid-ui tasks carry "can start before game-rules Batch 5" or "needs game-rules Batch 5" tags, so I only started the tasks that do not import the game barrel.
 - Not verified: I did not diff the Batch 1 files that Crew copied into its worktree against the IDE versions.
 
-## 2026-11-06 — node_modules wiped during parallel runs
+## 2026-11-06 Ã¢â‚¬â€ node_modules wiped during parallel runs
 
 Surface: Crew, IDE
 
@@ -710,7 +710,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Update after the next Crew run (game-rules Batch 5 and grid-ui 4.1): after its worktree cleanup `node_modules` was intact (108 packages), so Crew cleanup is not confirmed as the cause.
 - Update after two more Crew runs (the grid-ui 2.3 and Batch 3 run, and one before it): `node_modules` was intact each time. It has now survived three Crew worktree cleanups since the wipe.
 
-## 2026-11-06 — game-rules Batch 5 and grid-ui 4.1 in one Crew run; game-rules spec complete
+## 2026-11-06 Ã¢â‚¬â€ game-rules Batch 5 and grid-ui 4.1 in one Crew run; game-rules spec complete
 
 Surface: Crew
 
@@ -733,7 +733,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: I did not diff the checkpoint step's changes beyond the file list, and did not read `render.ts` or the CSS line by line. I only know they pass the suite and the checks.
 - Nothing was committed by me.
 
-## 2026-11-06 — grid-ui 2.3 and Batch 3 in one Crew run
+## 2026-11-06 Ã¢â‚¬â€ grid-ui 2.3 and Batch 3 in one Crew run
 
 Surface: Crew, then IDE
 
@@ -754,7 +754,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The suite is now heavy enough (51 files, much of it property tests) that default per-test timeouts are too tight under parallel load. Every property test file now carries an explicit timeout.
 - Nothing was committed by me.
 
-## 2026-11-06 — hosting spec and Render static site (Web surface)
+## 2026-11-06 Ã¢â‚¬â€ hosting spec and Render static site (Web surface)
 
 Surface: Web
 
@@ -776,7 +776,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Gap found, not changed: `src/main.ts` still passes `STUB_LEVELS` (one stub level) to `mountApp`. Until the `levels` spec's task 5.1 swaps in the five real levels, the deployed game shows the stub.
 - Decision: no rewrite rule. A catch-all rewrite to `/index.html` would only matter for client routes, and the game has none; Requirement 5.2 says to add one if a route is ever added.
 
-## 2026-11-06 — Playwright MCP added
+## 2026-11-06 Ã¢â‚¬â€ Playwright MCP added
 
 Surface: IDE
 
@@ -811,7 +811,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: I took no screenshots of the death or win screens, the title screen, error cells, hover causes or sound.
 - Unrelated changes noticed: `git status` also showed edits to `.kiro/specs/formula-engine/design.md`, `src/engine/recalculator.test.ts` and `src/engine/totality.prop.test.ts`. I did not make them in this session.
 
-## 2026-11-06 — Engine timing check moved out of the totality property
+## 2026-11-06 Ã¢â‚¬â€ Engine timing check moved out of the totality property
 
 Surface: IDE
 
@@ -833,7 +833,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Update, fixed: `jsonValueArbitrary` in `src/model/testing/arbitraries.ts` now maps every `-0` to `0`, because JSON cannot represent `-0`. The test's `toEqual` comparison is unchanged. Seed `824341943` reproduced the failure first and passes with the fix. A new test (2,000 cases) asserts the generator never holds `-0`; it fails on the old generator on that seed (at case 723) and passes on the new one. Two `npm run verify` runs after the fix were not clean for a different reason: files under `src/ui` (`app.ts`, `render.ts`, `grid-ui.css`) were being edited at the same time. Run 1 had a parse error in `src/ui/app.ts` and a `style` attribute check failing in `src/ui/render.test.ts`. Run 2 had only that `render.test.ts` check ("never sets a style attribute", a `<col style="width: 3rem">`) failing, with 1344 of 1345 tests passing. Nothing in `src/model` or `src/engine` failed in either run.
 - Nothing was committed.
 
-## 2026-11-06 — grid-ui fixes from the first MCP session
+## 2026-11-06 Ã¢â‚¬â€ grid-ui fixes from the first MCP session
 
 Surface: IDE
 
@@ -871,7 +871,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not committed.
 
 
-## 2026-11-06 — levels Batch 2: Crew run, then IDE fixes
+## 2026-11-06 Ã¢â‚¬â€ levels Batch 2: Crew run, then IDE fixes
 
 Surface: Crew, then IDE
 
@@ -894,7 +894,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not done: the Batch 3 cross-level tests (files, solutions, search, scan) are still ahead, and they include a lock check across all levels (`files.test.ts`). The per-level lock test added here does not replace it.
 - Nothing was committed.
 
-## 2026-11-06 — levels Batch 3: Crew run, all six files present
+## 2026-11-06 Ã¢â‚¬â€ levels Batch 3: Crew run, all six files present
 
 Surface: Crew
 
@@ -912,7 +912,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Time: the five tests were written side by side in a separate worktree while the IDE was free.
 - Nothing was committed by me.
 
-## 2026-11-06 — levels 4.1 and 5.1: final checkpoint, real levels in main.ts, global timeout
+## 2026-11-06 Ã¢â‚¬â€ levels 4.1 and 5.1: final checkpoint, real levels in main.ts, global timeout
 
 Surface: IDE
 
@@ -934,7 +934,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not verified: the e2e tests do not play the real levels. They use the fixture page, and the real levels are proven only by the replay tests and the build check.
 - Nothing was committed.
 
-## 2026-11-06 — first live playthrough of all five levels
+## 2026-11-06 Ã¢â‚¬â€ first live playthrough of all five levels
 
 Surface: IDE
 
@@ -972,7 +972,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Display note for skin-and-sound: padlocks render on every map cell because all map cells are locked by Decision 7; padlocks should be confined to the rules panel.
 - Not committed.
 
-## 2026-11-06 — headless play command for the playtester app
+## 2026-11-06 Ã¢â‚¬â€ headless play command for the playtester app
 
 Surface: IDE
 
@@ -993,7 +993,7 @@ What changed because of it (time saved, bug caught, decision made):
 - `npm run verify` did not pass cleanly, for a reason outside this task: `src/ui/module.test.ts` asserts the exact set of `src/ui` files, and two untracked files from error-monsters work in progress (`src/ui/error-look.ts` and its test) are present, so that one layout test fails. With those set aside the run is 66 files and 1573 tests passing; my `src/play` tests pass on their own (17). I did not touch `src/ui` except to drop the already-deleted `stub-levels.ts` from a file list in a previous task. I left the error-monsters files alone.
 - Nothing was committed.
 
-## 2026-11-06 — README written with Kiro Web (PR #4)
+## 2026-11-06 Ã¢â‚¬â€ README written with Kiro Web (PR #4)
 
 Surface: Web
 
@@ -1016,7 +1016,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The review was necessary: a from-sources draft still had five concrete mistakes, each checkable against the code, and all five were fixed before merge rather than landing and being corrected later.
 - The correction happened on the PR as a second commit, so the history shows the draft and the fix separately.
 
-## 2026-11-06 — error-monsters Batches 1 to 3
+## 2026-11-06 Ã¢â‚¬â€ error-monsters Batches 1 to 3
 
 Surface: IDE
 
@@ -1034,7 +1034,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The save hook firing on each edit in Batches 1 and 2 is the first time in this project I have seen it fire visibly during a spec-panel run.
 - Nothing about this entry is a code change; it records how the batches were run.
 
-## 2026-11-06 — Recover then R did not confirm (found in play)
+## 2026-11-06 Ã¢â‚¬â€ Recover then R did not confirm (found in play)
 
 Surface: IDE, with the Playwright MCP on the live dev server
 
@@ -1054,7 +1054,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The Playwright MCP check was worth running: it proved the fix on the real entry point and the real focus behaviour, which the happy-dom app test approximates but does not guarantee.
 - Nothing was committed.
 
-## 2026-11-06 — error-monsters Batch 4 and an eye pass on the real levels 4 and 5
+## 2026-11-06 Ã¢â‚¬â€ error-monsters Batch 4 and an eye pass on the real levels 4 and 5
 
 Surface: IDE
 
@@ -1080,7 +1080,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Not covered: the hero was never moved, so no turn ran. I did not look at how the ghost and the crack behave with the hero standing on or beside them, and I did not test either level in the dark colour scheme or with reduced motion on.
 - Nothing was committed.
 
-## 2026-11-06 — skin-and-sound: spec to screenshots
+## 2026-11-06 Ã¢â‚¬â€ skin-and-sound: spec to screenshots
 
 Surface: IDE and Crew
 
@@ -1106,7 +1106,7 @@ What changed because of it (time saved, bug caught, decision made):
 - The clipped error text passed every unit test and the first e2e fit check, because that check only looked at one cell in the map region. It was found by looking at the screenshots. The new check covers the rules region too.
 - Nothing was committed by this entry or by the README edit.
 
-## 2026-11-06 — skin follow-ups: vertical centring, animation-safe retakes, no layout shift
+## 2026-11-06 Ã¢â‚¬â€ skin follow-ups: vertical centring, animation-safe retakes, no layout shift
 
 Surface: IDE
 
@@ -1120,7 +1120,7 @@ What Kiro did:
 - Animation-safe retakes:
   - `06-win-dialog.png` had been captured mid-animation: the hero glyph was half-slid into K6 and B14 still showed the yellow value flash.
   - I added an explicit wait to task 6.2 and to the steering rule: poll `document.getAnimations()` until no finite animation is still running, then shoot.
-  - The wait ignores the endless ghost drift (`ghost-bob … infinite`), because a literal "all animations finished" check would never pass on level 5.
+  - The wait ignores the endless ghost drift (`ghost-bob Ã¢â‚¬Â¦ infinite`), because a literal "all animations finished" check would never pass on level 5.
   - `06` was retaken with the wait. The hero now sits in K6 and B14 shows a plain 0.
 - Layout shift, cause: the cause line `#cell-explanation` was hidden until an error cell was selected, then wrapped onto its own line in the formula row. That added 26 px (the window grew from 1001.4 px to 1027.4 px and its `y` fell from 11.3 to 4), so a vertical scrollbar appeared and the window jumped about 7 px sideways.
 - Layout shift, fix: I moved `#cell-explanation` into the toolbar row, between the buttons and Sound. That row already has about 620 px of free space and its buttons are taller than the text, so the line adds 0 px of height. Its id is unchanged and it still has no role. It never wraps; a cause too long for the row is clipped with an ellipsis, and the full text stays in the DOM and in `title`. The longest real cause is 47 characters and fits. Reserving the line in the formula row would have cost 26 px on every screen, and the formula row has no room beside the "locked" note.
@@ -1135,7 +1135,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Decision: the cause line moved to free space that already existed, not to reserved space with height taken from somewhere else, so no other screenshot moved.
 - Not committed.
 
-## 2026-11-07 — Custom power: grimsheet-playtest
+## 2026-11-07 Ã¢â‚¬â€ Custom power: grimsheet-playtest
 
 Surface: CLI
 
@@ -1172,7 +1172,7 @@ What Kiro did:
 
 What changed because of it (time saved, bug caught, decision made): Replaying all five solutions and probing them is now one skill read plus one command per level, and the result fields to read are written down. Checking the skill against the real command caught the PowerShell quoting trap before anyone hit it. `npm run verify` still passes (74 test files, 1830 tests, typecheck and lint clean) and `powers/` is not ignored by `.gitignore`.
 
-## 2026-11-08 — Level 3: the one-ink formula route becomes the official solution
+## 2026-11-08 Ã¢â‚¬â€ Level 3: the one-ink formula route becomes the official solution
 
 Surface: CLI
 
@@ -1195,7 +1195,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Caught while planning: the headless play test hard-coded level 3's final ink, which would have failed on the data change.
 - Checked, not assumed: (1337/190) x 190 evaluates to exactly 1337 in the engine. The play-command run and the new test show it; the spec does not claim it for other numbers.
 - Not committed.
-## 2026-11-20 — sixth-level: tab label, level 6, docs review and screenshots
+## 2026-11-20 Ã¢â‚¬â€ sixth-level: tab label, level 6, docs review and screenshots
 Surface: IDE
 Features: spec, steering, mcp
 What I asked for: Add a sixth level, The Audit, after the original five, and show the tabs as `1: The Corridor` to `6: The Audit` so six tabs fit on one row. Then retake all seven README screenshots and run the final gate.
@@ -1213,7 +1213,7 @@ What changed because of it (time saved, bug caught, decision made):
 - Sub-step 4.2b, live playthrough on 2026-11-20 at https://grimsheet.onrender.com (clean profile, 1280x1024, Playwright MCP): progress was seeded with levels 1 to 5 cleared, the live site showed six tabs, and level 6 was played through the real UI with the stored solution (click B17, Enter, type -1, Enter, ArrowUp x4, ArrowRight x8). It was won with HP 6 and ink 0 (read from the status bar at turn 13). The win dialog read `Workbook saved. Your soul was not.`, `#win-next` was hidden, `#win-ok` was focused, and `grimsheet.progress` listed all six ids. The console showed no messages. Only level 6 was played in this run; levels 1 to 5 were played on the deployed site earlier. The README bullet now says all six levels were played through in a real browser on the deployed site, replacing the wording that covered levels 1 to 5 only. `src/ui/docs.test.ts` gained two assertions: the README contains `all six levels have been played through`, and it no longer says `levels 1 to 5 have been played through`.
 - Nothing was committed.
 
-## 2026-11-20 — New favicon: the game window with a selected cell and a ghost
+## 2026-11-20 Ã¢â‚¬â€ New favicon: the game window with a selected cell and a ghost
 
 Surface: CLI
 
@@ -1232,4 +1232,26 @@ What Kiro did:
 What changed because of it (time saved, bug caught, decision made):
 - The old icon no longer reads as tic-tac-toe, and the spec text matches the file.
 - No test needed editing or weakening. The existing favicon checks are about presence and safety, not the picture.
+- No Git command was used. Nothing was committed.
+## 2026-11-27 - Link preview tags, preview image and noscript line in index.html
+
+Surface: CLI
+
+Features: none
+
+What I asked for: Add a meta description, Open Graph and Twitter card tags, a 1200 x 630 preview image in `public/` made from the best gallery screenshot, a theme-color from the skin, and a noscript line. Check the first frame before the script runs. Add one test and run the full verify command.
+
+What Kiro did:
+- `index.html`: added `description`, `theme-color`, `og:title`, `og:description`, `og:type` website, `og:url` (`https://grimsheet.onrender.com`, from the README), `og:image` (`https://grimsheet.onrender.com/og-image.png`) and `twitter:card` summary_large_image. The description is the README's opening sentence. Added `<noscript>GRIMSHEET.XLS needs JavaScript to run.</noscript>`.
+- `public/og-image.png`: first made from `docs/screenshots/02-level-play.png` (the README hero) scaled to 788 x 630 and padded, which was too small to read at preview size. On the owner's review it became a crop: the 800 x 420 region whose top-left corner is the window corner at x 223, y 14 (title bar, formula bar, toolbar, map rows 1 to 7, with the @ on row 6 and the X in column K), scaled 1.5x to 1200 x 630 by upscaling 3x with nearest-neighbour and halving with a bicubic filter, no padding. A first 2x crop (600 x 315 at x 224, y 12) stopped at row 5 and showed a teal strip at the top and left, so it was replaced. A pixel scan found no backdrop-colour pixel inside the crop or on the four edges of the PNG. Nothing was redrawn. The title, `=RUNE_ASH*RUNE_SALT`, the @ and the X were checked readable in the opened image. `npm run build` copies it to `dist/`, and `vite preview` served it as `image/png`, 126,993 bytes.
+- theme-color is `#3f7f7f`, the existing `--backdrop` in `src/styles/chrome.css`.
+- First frame: the built page links the CSS in `<head>` (render-blocking) and `body` uses `background: var(--backdrop)`, so the first paint already has the app's colour. No stylesheet change was made.
+- `scripts/check-dist.mjs` rejected any absolute URL, which includes the new tags, so its pattern now also accepts the game's own origin `grimsheet.onrender.com`. Other origins still fail.
+- `src/ui/link-preview.test.ts`: checks the tags against the README, the PNG size from its header, and that theme-color equals `--backdrop`.
+- `npm run verify`: 78 test files, 1901 tests, typecheck and lint clean. `npm run build` and `npm run check:dist` ok.
+- No screenshot was retaken: nothing inside the app changed.
+
+What changed because of it (time saved, bug caught, decision made):
+- `check-dist` would have failed on the new tags, so the own-origin allowance was added.
+- Decision: the image was changed from a scaled and padded copy to a crop on the owner's review, so the pixel font stays readable at link-preview size. The right part of the window is cut off.
 - No Git command was used. Nothing was committed.
